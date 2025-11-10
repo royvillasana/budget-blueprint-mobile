@@ -97,12 +97,15 @@ const MonthlyBudget = () => {
       }
 
       // Load or create monthly budget
+      const yearNum = year ? parseInt(year) : new Date().getFullYear();
+      const monthNum = month ? parseInt(month) : new Date().getMonth() + 1;
+      
       const { data: existingBudget, error: budgetError } = await supabase
         .from('monthly_budgets')
         .select('*')
         .eq('user_id', user.id)
-        .eq('year', year)
-        .eq('month', month)
+        .eq('year', yearNum)
+        .eq('month', monthNum)
         .maybeSingle();
 
       if (budgetError) throw budgetError;
@@ -110,10 +113,10 @@ const MonthlyBudget = () => {
       if (existingBudget) {
         setMonthlyBudgetId(existingBudget.id);
         setMonthlyGoal(existingBudget.monthly_goal || '');
-        setPreviousBalance(parseFloat(existingBudget.previous_balance) || 0);
+        setPreviousBalance(Number(existingBudget.previous_balance) || 0);
         setAddPreviousBalance(existingBudget.add_previous_balance);
         setBudgetFromScratch(existingBudget.budget_from_scratch);
-        setDebtContribution(parseFloat(existingBudget.debt_contribution) || 0);
+        setDebtContribution(Number(existingBudget.debt_contribution) || 0);
 
         // Load all related data
         await Promise.all([
@@ -129,8 +132,8 @@ const MonthlyBudget = () => {
           .from('monthly_budgets')
           .insert({
             user_id: user.id,
-            year: year,
-            month: month,
+            year: yearNum,
+            month: monthNum,
           })
           .select()
           .single();
@@ -160,8 +163,8 @@ const MonthlyBudget = () => {
       setIncomeItems(data.map(item => ({
         id: item.id,
         concept: item.concept,
-        estimated: parseFloat(item.estimated) || 0,
-        actual: parseFloat(item.actual) || 0,
+        estimated: Number(item.estimated) || 0,
+        actual: Number(item.actual) || 0,
       })));
     }
   };
@@ -176,36 +179,36 @@ const MonthlyBudget = () => {
       setNeedsCategories(data.filter(c => c.type === 'needs').map(c => ({
         id: c.id,
         category_name: c.category_name,
-        estimated: parseFloat(c.estimated) || 0,
-        actual: parseFloat(c.actual) || 0,
+        estimated: Number(c.estimated) || 0,
+        actual: Number(c.actual) || 0,
         icon: c.icon,
       })));
       setDesiresCategories(data.filter(c => c.type === 'desires').map(c => ({
         id: c.id,
         category_name: c.category_name,
-        estimated: parseFloat(c.estimated) || 0,
-        actual: parseFloat(c.actual) || 0,
+        estimated: Number(c.estimated) || 0,
+        actual: Number(c.actual) || 0,
         icon: c.icon,
       })));
       setSavingsCategories(data.filter(c => c.type === 'savings').map(c => ({
         id: c.id,
         category_name: c.category_name,
-        estimated: parseFloat(c.estimated) || 0,
-        actual: parseFloat(c.actual) || 0,
+        estimated: Number(c.estimated) || 0,
+        actual: Number(c.actual) || 0,
         icon: c.icon,
       })));
       setInvestmentsCategories(data.filter(c => c.type === 'investments').map(c => ({
         id: c.id,
         category_name: c.category_name,
-        estimated: parseFloat(c.estimated) || 0,
-        actual: parseFloat(c.actual) || 0,
+        estimated: Number(c.estimated) || 0,
+        actual: Number(c.actual) || 0,
         icon: c.icon,
       })));
       setDebtsCategories(data.filter(c => c.type === 'debts').map(c => ({
         id: c.id,
         category_name: c.category_name,
-        estimated: parseFloat(c.estimated) || 0,
-        actual: parseFloat(c.actual) || 0,
+        estimated: Number(c.estimated) || 0,
+        actual: Number(c.actual) || 0,
         icon: c.icon,
       })));
     }
@@ -222,7 +225,7 @@ const MonthlyBudget = () => {
       setTransactions(data.map(t => ({
         id: t.id,
         category: t.category,
-        amount: parseFloat(t.amount),
+        amount: Number(t.amount),
         transaction_date: t.transaction_date,
         concept: t.concept,
       })));
@@ -430,7 +433,7 @@ const MonthlyBudget = () => {
       setTransactions([{
         id: data.id,
         category: data.category,
-        amount: parseFloat(data.amount),
+        amount: Number(data.amount),
         transaction_date: data.transaction_date,
         concept: data.concept,
       }, ...transactions]);
@@ -467,6 +470,8 @@ const MonthlyBudget = () => {
   const totalSpent = totalNeedsActual + totalDesiresActual;
   const availableToSpend = budgetAllocated - totalSpent;
 
+  const currencySymbol = config.currency === 'EUR' ? '€' : '$';
+  
   const monthNames = config.language === 'es' 
     ? ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
     : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
