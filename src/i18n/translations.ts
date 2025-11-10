@@ -3,6 +3,7 @@ export const translations = {
     // Header
     budget: 'Presupuesto',
     dashboard: 'Panel',
+    monthlyBudget: 'Presupuesto Mensual',
     settings: 'Configuración',
     
     // Budget Categories
@@ -23,6 +24,36 @@ export const translations = {
     cancel: 'Cancelar',
     edit: 'Editar',
     delete: 'Eliminar',
+    
+    // Monthly budget
+    myGoalForThisMonth: 'Mi mayor meta para este mes es:',
+    fromPreviousMonth: 'Del mes anterior tengo disponible en mi cuenta:',
+    addToThisMonth: 'Sumar a este mes',
+    myIncome: 'Mis ingresos',
+    concept: 'Concepto',
+    estimated: 'Estimado',
+    actual: 'Actual',
+    fixedSalary: 'Salario Fijo',
+    independent: 'Independiente',
+    passive: 'Pasivos',
+    bonus: 'Bono',
+    thisMonthBudget: 'Este mes quiero hacer mi presupuesto:',
+    fromScratch: 'Desde Cero',
+    copyPreviousMonth: 'Copiar mes anterior',
+    totalIncome: 'Ingresos totales',
+    debtContribution: 'Aporte a deudas',
+    allocatedForBudget: 'Asignado para presupuesto',
+    pendingToAllocate: 'Pendiente por asignar',
+    availableToSpend: 'Disponible para gastar',
+    spentSoFar: 'Gastado hasta ahora',
+    transactionRegistry: 'Registro de Transacciones',
+    date: 'Fecha',
+    wishList: 'Lista de deseos',
+    todoList: 'Cosas por hacer',
+    currentBudget: 'Mi presupuesto actual 50 / 30 / 20',
+    currentPercentage: '% actual',
+    used: 'Usado',
+    noTransactionsYet: 'No hay transacciones todavía',
     
     // Settings
     settingsTitle: 'Configuración del Planificador',
@@ -58,6 +89,7 @@ export const translations = {
     // Header
     budget: 'Budget',
     dashboard: 'Dashboard',
+    monthlyBudget: 'Monthly Budget',
     settings: 'Settings',
     
     // Budget Categories
@@ -78,6 +110,36 @@ export const translations = {
     cancel: 'Cancel',
     edit: 'Edit',
     delete: 'Delete',
+    
+    // Monthly budget
+    myGoalForThisMonth: 'My biggest goal for this month is:',
+    fromPreviousMonth: 'From previous month I have available in my account:',
+    addToThisMonth: 'Add to this month',
+    myIncome: 'My income',
+    concept: 'Concept',
+    estimated: 'Estimated',
+    actual: 'Actual',
+    fixedSalary: 'Fixed Salary',
+    independent: 'Independent',
+    passive: 'Passive',
+    bonus: 'Bonus',
+    thisMonthBudget: 'This month I want to make my budget:',
+    fromScratch: 'From Scratch',
+    copyPreviousMonth: 'Copy previous month',
+    totalIncome: 'Total income',
+    debtContribution: 'Debt contribution',
+    allocatedForBudget: 'Allocated for budget',
+    pendingToAllocate: 'Pending to allocate',
+    availableToSpend: 'Available to spend',
+    spentSoFar: 'Spent so far',
+    transactionRegistry: 'Transaction Registry',
+    date: 'Date',
+    wishList: 'Wish List',
+    todoList: 'To-do List',
+    currentBudget: 'My current 50 / 30 / 20 budget',
+    currentPercentage: '% current',
+    used: 'Used',
+    noTransactionsYet: 'No transactions yet',
     
     // Settings
     settingsTitle: 'Planner Configuration',
