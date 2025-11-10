@@ -57,6 +57,10 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        needs: "hsl(var(--needs))",
+        desires: "hsl(var(--desires))",
+        future: "hsl(var(--future))",
+        debt: "hsl(var(--debt))",
       },
       borderRadius: {
         lg: "var(--radius)",
