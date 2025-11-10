@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { getMonthName, getTableName } from '@/utils/monthUtils';
 
 const MonthlyBudget = () => {
   const { year, month } = useParams<{ year: string; month: string }>();
@@ -36,6 +37,8 @@ const MonthlyBudget = () => {
   const [loading, setLoading] = useState(true);
   const [monthId, setMonthId] = useState<number>(0);
   const [userId, setUserId] = useState<string>('');
+  const [currentMonth, setCurrentMonth] = useState<number>(1);
+  const [currentYear, setCurrentYear] = useState<number>(2025);
   
   // Settings
   const [challenge, setChallenge] = useState('');
@@ -85,6 +88,10 @@ const MonthlyBudget = () => {
   const [newWish, setNewWish] = useState({ item: '', estimated_cost: 0, priority: 1 });
 
   useEffect(() => {
+    const monthNum = parseInt(month || '1');
+    const yearNum = parseInt(year || '2025');
+    setCurrentMonth(monthNum);
+    setCurrentYear(yearNum);
     loadMonthData();
   }, [year, month]);
 
@@ -138,8 +145,9 @@ const MonthlyBudget = () => {
   };
 
   const loadSettings = async (monthId: number) => {
-    const { data } = await supabase
-      .from('monthly_settings_jan')
+    const tableName = getTableName('monthly_settings', currentMonth) as any;
+    const { data } = await (supabase as any)
+      .from(tableName)
       .select('*')
       .eq('month_id', monthId)
       .maybeSingle();
@@ -153,8 +161,9 @@ const MonthlyBudget = () => {
   };
 
   const loadIncome = async (monthId: number) => {
+    const tableName = getTableName('monthly_income', currentMonth) as any;
     const { data } = await supabase
-      .from('monthly_income_jan')
+      .from(tableName)
       .select('*')
       .eq('month_id', monthId)
       .order('date', { ascending: false });
@@ -162,8 +171,9 @@ const MonthlyBudget = () => {
   };
 
   const loadBudget = async (monthId: number) => {
+    const tableName = getTableName('monthly_budget', currentMonth) as any;
     const { data } = await supabase
-      .from('monthly_budget_jan')
+      .from(tableName)
       .select(`
         *,
         categories(name, emoji, bucket_50_30_20)
@@ -173,8 +183,9 @@ const MonthlyBudget = () => {
   };
 
   const loadTransactions = async (monthId: number) => {
+    const tableName = getTableName('monthly_transactions', currentMonth) as any;
     const { data } = await supabase
-      .from('monthly_transactions_jan')
+      .from(tableName)
       .select(`
         *,
         categories(name, emoji),
@@ -187,16 +198,18 @@ const MonthlyBudget = () => {
   };
 
   const loadDebts = async (monthId: number) => {
+    const tableName = getTableName('monthly_debts', currentMonth) as any;
     const { data } = await supabase
-      .from('monthly_debts_jan')
+      .from(tableName)
       .select('*')
       .eq('month_id', monthId);
     setDebts(data || []);
   };
 
   const loadWishlist = async (monthId: number) => {
+    const tableName = getTableName('monthly_wishlist', currentMonth) as any;
     const { data } = await supabase
-      .from('monthly_wishlist_jan')
+      .from(tableName)
       .select('*')
       .eq('month_id', monthId);
     setWishlist(data || []);
@@ -221,8 +234,9 @@ const MonthlyBudget = () => {
   };
 
   const saveSettings = async () => {
-    const { data: existing } = await supabase
-      .from('monthly_settings_jan')
+    const tableName = getTableName('monthly_settings', currentMonth) as any;
+    const { data: existing } = await (supabase as any)
+      .from(tableName)
       .select('id')
       .eq('month_id', monthId)
       .maybeSingle();
@@ -238,12 +252,12 @@ const MonthlyBudget = () => {
 
     if (existing) {
       await supabase
-        .from('monthly_settings_jan')
+        .from(tableName)
         .update(settingsData)
         .eq('id', existing.id);
     } else {
       await supabase
-        .from('monthly_settings_jan')
+        .from(tableName)
         .insert([settingsData]);
     }
 
@@ -251,7 +265,8 @@ const MonthlyBudget = () => {
   };
 
   const addIncome = async () => {
-    await supabase.from('monthly_income_jan').insert([{
+    const tableName = getTableName('monthly_income', currentMonth) as any;
+    await supabase.from(tableName).insert([{
       month_id: monthId,
       user_id: userId,
       source: newIncome.source,
@@ -266,21 +281,24 @@ const MonthlyBudget = () => {
   };
 
   const deleteIncome = async (id: string) => {
-    await supabase.from('monthly_income_jan').delete().eq('id', id);
+    const tableName = getTableName('monthly_income', currentMonth) as any;
+    await supabase.from(tableName).delete().eq('id', id);
     loadIncome(monthId);
     toast({ title: 'Eliminado', description: 'Ingreso eliminado' });
   };
 
   const updateBudgetItem = async (id: string, field: string, value: number) => {
+    const tableName = getTableName('monthly_budget', currentMonth) as any;
     await supabase
-      .from('monthly_budget_jan')
+      .from(tableName)
       .update({ [field]: value })
       .eq('id', id);
     loadBudget(monthId);
   };
 
   const addTransaction = async () => {
-    await supabase.from('monthly_transactions_jan').insert([{
+    const tableName = getTableName('monthly_transactions', currentMonth) as any;
+    await supabase.from(tableName).insert([{
       month_id: monthId,
       user_id: userId,
       category_id: newTxn.category_id,
@@ -299,13 +317,15 @@ const MonthlyBudget = () => {
   };
 
   const deleteTransaction = async (id: string) => {
-    await supabase.from('monthly_transactions_jan').delete().eq('id', id);
+    const tableName = getTableName('monthly_transactions', currentMonth) as any;
+    await supabase.from(tableName).delete().eq('id', id);
     loadTransactions(monthId);
     toast({ title: 'Eliminado', description: 'Transacción eliminada' });
   };
 
   const addDebt = async () => {
-    await supabase.from('monthly_debts_jan').insert([{
+    const tableName = getTableName('monthly_debts', currentMonth) as any;
+    await supabase.from(tableName).insert([{
       month_id: monthId,
       user_id: userId,
       debt_account_id: newDebt.debt_account_id,
@@ -321,13 +341,15 @@ const MonthlyBudget = () => {
   };
 
   const deleteDebt = async (id: string) => {
-    await supabase.from('monthly_debts_jan').delete().eq('id', id);
+    const tableName = getTableName('monthly_debts', currentMonth) as any;
+    await supabase.from(tableName).delete().eq('id', id);
     loadDebts(monthId);
     toast({ title: 'Eliminado', description: 'Deuda eliminada' });
   };
 
   const addWish = async () => {
-    await supabase.from('monthly_wishlist_jan').insert([{
+    const tableName = getTableName('monthly_wishlist', currentMonth) as any;
+    await supabase.from(tableName).insert([{
       month_id: monthId,
       user_id: userId,
       item: newWish.item,
@@ -341,7 +363,8 @@ const MonthlyBudget = () => {
   };
 
   const deleteWish = async (id: string) => {
-    await supabase.from('monthly_wishlist_jan').delete().eq('id', id);
+    const tableName = getTableName('monthly_wishlist', currentMonth) as any;
+    await supabase.from(tableName).delete().eq('id', id);
     loadWishlist(monthId);
     toast({ title: 'Eliminado', description: 'Deseo eliminado' });
   };
@@ -375,7 +398,9 @@ const MonthlyBudget = () => {
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Enero 2025</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            {getMonthName(currentMonth, config.language)} {currentYear}
+          </h1>
           <p className="text-muted-foreground">Presupuesto mensual detallado</p>
         </div>
 

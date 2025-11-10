@@ -5,9 +5,10 @@ import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/i18n/translations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, CreditCard, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, CreditCard, Calendar, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { getMonthName, MONTH_INFO } from '@/utils/monthUtils';
 
 interface MonthlySummary {
   month_name: string | null;
@@ -81,7 +82,7 @@ const Dashboard = () => {
     return `${symbol}${Math.abs(value).toFixed(2)}`;
   };
 
-  const getMonthName = (monthName: string) => {
+  const getLocalizedMonthName = (monthName: string) => {
     const monthMap: Record<string, string> = {
       'January': config.language === 'es' ? 'Enero' : 'January',
       'February': config.language === 'es' ? 'Febrero' : 'February',
@@ -118,6 +119,28 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold mb-2">{t.dashboard}</h1>
           <p className="text-muted-foreground">{t.annualSummary} - 2025</p>
         </div>
+
+        {/* Quick Month Navigation */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Navegación Rápida de Meses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {Object.entries(MONTH_INFO).map(([num, info]) => (
+                <Button
+                  key={num}
+                  variant="outline"
+                  className="flex items-center justify-between"
+                  onClick={() => navigate(`/budget/2025/${num}`)}
+                >
+                  <span>{getMonthName(parseInt(num), config.language)}</span>
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Annual KPIs */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -224,7 +247,7 @@ const Dashboard = () => {
               <TableBody>
                 {monthlySummaries.map((month) => (
                   <TableRow key={month.month_id}>
-                    <TableCell className="font-medium">{getMonthName(month.month_name || '')}</TableCell>
+                    <TableCell className="font-medium">{getLocalizedMonthName(month.month_name || '')}</TableCell>
                     <TableCell className="text-right">{formatCurrency(month.total_income)}</TableCell>
                     <TableCell className="text-right">{formatCurrency(month.total_expenses)}</TableCell>
                     <TableCell className={`text-right ${(month.net_cash_flow || 0) >= 0 ? 'text-green-600' : 'text-destructive'}`}>

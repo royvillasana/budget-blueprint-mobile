@@ -9,6 +9,7 @@ import MonthlyBudget from "./pages/MonthlyBudget";
 import Catalog from "./pages/Catalog";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -20,7 +21,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/budget/:year/:month" element={<MonthlyBudget />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/settings" element={<Settings />} />
