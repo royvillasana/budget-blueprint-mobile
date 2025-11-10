@@ -90,19 +90,25 @@ const MonthlyBudget = () => {
 
   const loadMonthData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const userResponse = await supabase.auth.getUser() as any;
+      const user = userResponse.data?.user;
+      
       if (!user) {
         navigate('/');
         return;
       }
+      
+      setUserId(user.id);
 
       // Get month record
-      const { data: monthData } = await supabase
+      const monthResponse = await (supabase as any)
         .from('months')
         .select('id')
         .eq('year', parseInt(year || '2025'))
         .eq('month_number', parseInt(month || '1'))
         .single();
+      
+      const monthData = monthResponse.data;
 
       if (!monthData) {
         toast({ title: 'Error', description: 'Month not found', variant: 'destructive' });
