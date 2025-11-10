@@ -230,6 +230,174 @@ export type Database = {
           },
         ]
       }
+      monthly_budget_apr: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_aug: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_dec: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_feb: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
       monthly_budget_jan: {
         Row: {
           actual: number | null
@@ -287,6 +455,300 @@ export type Database = {
           },
         ]
       }
+      monthly_budget_jul: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_jun: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_mar: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_may: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_nov: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_oct: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
+      monthly_budget_sep: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: []
+      }
       monthly_budgets: {
         Row: {
           add_previous_balance: boolean | null
@@ -335,6 +797,174 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           year?: number
+        }
+        Relationships: []
+      }
+      monthly_debts_apr: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_aug: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_dec: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_feb: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -394,6 +1024,456 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_debts_jul: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_jun: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_mar: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_may: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_nov: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_oct: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_debts_sep: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_apr: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_aug: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_dec: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_feb: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       monthly_income_jan: {
         Row: {
@@ -456,6 +1536,423 @@ export type Database = {
           },
         ]
       }
+      monthly_income_jul: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_jun: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_mar: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_may: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_nov: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_oct: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_income_sep: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_apr: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_aug: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_dec: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_feb: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       monthly_settings_jan: {
         Row: {
           budget_mode: string
@@ -499,6 +1996,450 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_settings_jul: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_jun: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_mar: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_may: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_nov: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_oct: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_settings_sep: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_apr: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_aug: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_dec: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_feb: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       monthly_transactions_jan: {
         Row: {
@@ -584,6 +2525,486 @@ export type Database = {
           },
         ]
       }
+      monthly_transactions_jul: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_jun: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_mar: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_may: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_nov: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_oct: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_transactions_sep: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_apr: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_aug: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_dec: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_feb: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       monthly_wishlist_jan: {
         Row: {
           acquired: boolean | null
@@ -634,6 +3055,258 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      monthly_wishlist_jul: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_jun: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_mar: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_may: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_nov: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_oct: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_wishlist_sep: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       months: {
         Row: {
