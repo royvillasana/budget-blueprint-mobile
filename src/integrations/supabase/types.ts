@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          created_at: string | null
+          currency_code: string
+          id: string
+          name: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency_code: string
+          id?: string
+          name: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          currency_code?: string
+          id?: string
+          name?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       annual_goals: {
         Row: {
           created_at: string | null
@@ -82,6 +109,60 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          bucket_50_30_20: string
+          created_at: string | null
+          emoji: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          user_id: string
+        }
+        Insert: {
+          bucket_50_30_20: string
+          created_at?: string | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          user_id: string
+        }
+        Update: {
+          bucket_50_30_20?: string
+          created_at?: string | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      currencies: {
+        Row: {
+          code: string
+          rate_to_eur: number | null
+          rate_to_usd: number | null
+          symbol: string
+          updated_at: string | null
+        }
+        Insert: {
+          code: string
+          rate_to_eur?: number | null
+          rate_to_usd?: number | null
+          symbol: string
+          updated_at?: string | null
+        }
+        Update: {
+          code?: string
+          rate_to_eur?: number | null
+          rate_to_usd?: number | null
+          symbol?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       financial_goals: {
         Row: {
           annual_goal_id: string
@@ -149,6 +230,63 @@ export type Database = {
           },
         ]
       }
+      monthly_budget_jan: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at: string | null
+          estimated: number | null
+          id: string
+          month_id: number
+          updated_at: string | null
+          user_id: string
+          variance: number | null
+        }
+        Insert: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20: string
+          category_id: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id: number
+          updated_at?: string | null
+          user_id: string
+          variance?: number | null
+        }
+        Update: {
+          actual?: number | null
+          assigned?: number | null
+          bucket_50_30_20?: string
+          category_id?: string
+          created_at?: string | null
+          estimated?: number | null
+          id?: string
+          month_id?: number
+          updated_at?: string | null
+          user_id?: string
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_jan_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_budget_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "months"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_budgets: {
         Row: {
           add_previous_balance: boolean | null
@@ -197,6 +335,354 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           year?: number
+        }
+        Relationships: []
+      }
+      monthly_debts_jan: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string
+          due_day: number | null
+          ending_balance: number | null
+          id: string
+          interest_rate_apr: number | null
+          min_payment: number
+          month_id: number
+          payment_made: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          debt_account_id: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment: number
+          month_id: number
+          payment_made?: number | null
+          starting_balance: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          debt_account_id?: string
+          due_day?: number | null
+          ending_balance?: number | null
+          id?: string
+          interest_rate_apr?: number | null
+          min_payment?: number
+          month_id?: number
+          payment_made?: number | null
+          starting_balance?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_jan_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_debts_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "months"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_income_jan: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string | null
+          currency_code: string
+          date: string
+          id: string
+          month_id: number
+          notes: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string | null
+          currency_code: string
+          date: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          source: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_income_jan_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_income_jan_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "monthly_income_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "months"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_settings_jan: {
+        Row: {
+          budget_mode: string
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string
+          month_id: number
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          budget_mode?: string
+          carryover_prev_balance?: number | null
+          created_at?: string | null
+          id?: string
+          month_id?: number
+          monthly_challenge?: string | null
+          unassigned_pool?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_settings_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "months"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_transactions_jan: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category_id: string
+          created_at: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id: string
+          month_id: number
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category_id: string
+          created_at?: string | null
+          currency_code: string
+          date: string
+          description: string
+          direction: string
+          id?: string
+          month_id: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category_id?: string
+          created_at?: string | null
+          currency_code?: string
+          date?: string
+          description?: string
+          direction?: string
+          id?: string
+          month_id?: number
+          notes?: string | null
+          payment_method_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_transactions_jan_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_transactions_jan_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_transactions_jan_currency_code_fkey"
+            columns: ["currency_code"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "monthly_transactions_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "months"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_transactions_jan_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_wishlist_jan: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string
+          item: string
+          month_id: number
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item: string
+          month_id: number
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          acquired?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          item?: string
+          month_id?: number
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_wishlist_jan_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_wishlist_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "months"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      months: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          id: number
+          name: string
+          start_date: string
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          id: number
+          name: string
+          start_date: string
+          year?: number
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          id?: number
+          name?: string
+          start_date?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
