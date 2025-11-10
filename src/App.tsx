@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "./contexts/AppContext";
 import Dashboard from "./pages/Dashboard";
-import Budget from "./pages/Budget";
 import MonthlyBudget from "./pages/MonthlyBudget";
 import Catalog from "./pages/Catalog";
 import Settings from "./pages/Settings";
@@ -22,7 +21,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/budget" element={<Budget />} />
             <Route path="/budget/:year/:month" element={<MonthlyBudget />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/settings" element={<Settings />} />

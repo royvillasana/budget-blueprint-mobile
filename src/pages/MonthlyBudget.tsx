@@ -7,49 +7,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, Check } from 'lucide-react';
+import { Plus, Trash2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-
-interface IncomeItem {
-  id?: string;
-  concept: string;
-  estimated: number;
-  actual: number;
-}
-
-interface BudgetCategoryItem {
-  id?: string;
-  category_name: string;
-  estimated: number;
-  actual: number;
-  icon?: string;
-}
-
-interface Transaction {
-  id?: string;
-  category: string;
-  amount: number;
-  transaction_date: string;
-  concept: string;
-}
-
-interface WishItem {
-  id?: string;
-  wish_text: string;
-  is_completed: boolean;
-}
-
-interface TodoItem {
-  id?: string;
-  task_text: string;
-  is_completed: boolean;
-}
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const MonthlyBudget = () => {
   const { year, month } = useParams<{ year: string; month: string }>();
@@ -58,37 +33,62 @@ const MonthlyBudget = () => {
   const t = translations[config.language];
   const { toast } = useToast();
 
-  const [monthlyBudgetId, setMonthlyBudgetId] = useState<string | null>(null);
-  const [monthlyGoal, setMonthlyGoal] = useState('');
-  const [previousBalance, setPreviousBalance] = useState(0);
-  const [addPreviousBalance, setAddPreviousBalance] = useState(false);
-  const [budgetFromScratch, setBudgetFromScratch] = useState(true);
-  const [debtContribution, setDebtContribution] = useState(0);
-
-  const [incomeItems, setIncomeItems] = useState<IncomeItem[]>([
-    { concept: t.fixedSalary, estimated: 0, actual: 0 },
-    { concept: t.independent, estimated: 0, actual: 0 },
-    { concept: t.passive, estimated: 0, actual: 0 },
-    { concept: t.bonus, estimated: 0, actual: 0 },
-  ]);
-
-  const [needsCategories, setNeedsCategories] = useState<BudgetCategoryItem[]>([]);
-  const [desiresCategories, setDesiresCategories] = useState<BudgetCategoryItem[]>([]);
-  const [savingsCategories, setSavingsCategories] = useState<BudgetCategoryItem[]>([]);
-  const [investmentsCategories, setInvestmentsCategories] = useState<BudgetCategoryItem[]>([]);
-  const [debtsCategories, setDebtsCategories] = useState<BudgetCategoryItem[]>([]);
-  
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [wishList, setWishList] = useState<WishItem[]>([]);
-  const [todoList, setTodoList] = useState<TodoItem[]>([]);
-
   const [loading, setLoading] = useState(true);
+  const [monthId, setMonthId] = useState<number>(0);
+  const [userId, setUserId] = useState<string>('');
+  
+  // Settings
+  const [challenge, setChallenge] = useState('');
+  const [carryover, setCarryover] = useState(0);
+  const [budgetMode, setBudgetMode] = useState<'ZERO_BASED' | 'COPY_PREVIOUS'>('ZERO_BASED');
+  const [unassignedPool, setUnassignedPool] = useState(0);
+
+  // Income
+  const [incomeItems, setIncomeItems] = useState<any[]>([]);
+  const [newIncomeOpen, setNewIncomeOpen] = useState(false);
+  const [newIncome, setNewIncome] = useState({ source: '', amount: 0, date: '' });
+
+  // Budget categories
+  const [categories, setCategories] = useState<any[]>([]);
+  const [budgetItems, setBudgetItems] = useState<any[]>([]);
+
+  // Transactions
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [newTxnOpen, setNewTxnOpen] = useState(false);
+  const [newTxn, setNewTxn] = useState({ 
+    category_id: '', 
+    description: '', 
+    amount: 0, 
+    date: '',
+    payment_method_id: '',
+    account_id: ''
+  });
+
+  // Payment methods & accounts
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+
+  // Debts
+  const [debts, setDebts] = useState<any[]>([]);
+  const [newDebtOpen, setNewDebtOpen] = useState(false);
+  const [newDebt, setNewDebt] = useState({
+    debt_account_id: '',
+    starting_balance: 0,
+    interest_rate_apr: 0,
+    payment_made: 0,
+    min_payment: 0,
+  });
+
+  // Wishlist
+  const [wishlist, setWishlist] = useState<any[]>([]);
+  const [newWishOpen, setNewWishOpen] = useState(false);
+  const [newWish, setNewWish] = useState({ item: '', estimated_cost: 0, priority: 1 });
 
   useEffect(() => {
-    loadMonthlyBudget();
+    loadMonthData();
   }, [year, month]);
 
-  const loadMonthlyBudget = async () => {
+  const loadMonthData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -96,395 +96,269 @@ const MonthlyBudget = () => {
         return;
       }
 
-      // Load or create monthly budget
-      const yearNum = year ? parseInt(year) : new Date().getFullYear();
-      const monthNum = month ? parseInt(month) : new Date().getMonth() + 1;
-      
-      const { data: existingBudget, error: budgetError } = await supabase
-        .from('monthly_budgets')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('year', yearNum)
-        .eq('month', monthNum)
-        .maybeSingle();
+      // Get month record
+      const { data: monthData } = await supabase
+        .from('months')
+        .select('id')
+        .eq('year', parseInt(year || '2025'))
+        .eq('month_number', parseInt(month || '1'))
+        .single();
 
-      if (budgetError) throw budgetError;
-
-      if (existingBudget) {
-        setMonthlyBudgetId(existingBudget.id);
-        setMonthlyGoal(existingBudget.monthly_goal || '');
-        setPreviousBalance(Number(existingBudget.previous_balance) || 0);
-        setAddPreviousBalance(existingBudget.add_previous_balance);
-        setBudgetFromScratch(existingBudget.budget_from_scratch);
-        setDebtContribution(Number(existingBudget.debt_contribution) || 0);
-
-        // Load all related data
-        await Promise.all([
-          loadIncomeItems(existingBudget.id),
-          loadBudgetCategories(existingBudget.id),
-          loadTransactions(existingBudget.id),
-          loadWishList(existingBudget.id),
-          loadTodoList(existingBudget.id),
-        ]);
-      } else {
-        // Create new monthly budget
-        const { data: newBudget, error: createError } = await supabase
-          .from('monthly_budgets')
-          .insert({
-            user_id: user.id,
-            year: yearNum,
-            month: monthNum,
-          })
-          .select()
-          .single();
-
-        if (createError) throw createError;
-        setMonthlyBudgetId(newBudget.id);
+      if (!monthData) {
+        toast({ title: 'Error', description: 'Month not found', variant: 'destructive' });
+        return;
       }
+
+      setMonthId(monthData.id);
+
+      // Load all data for January (month 1)
+      await Promise.all([
+        loadSettings(monthData.id),
+        loadIncome(monthData.id),
+        loadBudget(monthData.id),
+        loadTransactions(monthData.id),
+        loadDebts(monthData.id),
+        loadWishlist(monthData.id),
+        loadCategories(),
+        loadPaymentMethods(),
+        loadAccounts(),
+      ]);
     } catch (error) {
-      console.error('Error loading monthly budget:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load monthly budget',
-        variant: 'destructive',
-      });
+      console.error('Error loading month data:', error);
+      toast({ title: 'Error', description: 'Failed to load data', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  const loadIncomeItems = async (budgetId: string) => {
-    const { data, error } = await supabase
-      .from('income_items')
+  const loadSettings = async (monthId: number) => {
+    const { data } = await supabase
+      .from('monthly_settings_jan')
       .select('*')
-      .eq('monthly_budget_id', budgetId);
+      .eq('month_id', monthId)
+      .maybeSingle();
 
-    if (!error && data && data.length > 0) {
-      setIncomeItems(data.map(item => ({
-        id: item.id,
-        concept: item.concept,
-        estimated: Number(item.estimated) || 0,
-        actual: Number(item.actual) || 0,
-      })));
+    if (data) {
+      setChallenge(data.monthly_challenge || '');
+      setCarryover(Number(data.carryover_prev_balance) || 0);
+      setBudgetMode((data.budget_mode as 'ZERO_BASED' | 'COPY_PREVIOUS') || 'ZERO_BASED');
+      setUnassignedPool(Number(data.unassigned_pool) || 0);
     }
   };
 
-  const loadBudgetCategories = async (budgetId: string) => {
-    const { data, error } = await supabase
-      .from('budget_categories')
+  const loadIncome = async (monthId: number) => {
+    const { data } = await supabase
+      .from('monthly_income_jan')
       .select('*')
-      .eq('monthly_budget_id', budgetId);
-
-    if (!error && data) {
-      setNeedsCategories(data.filter(c => c.type === 'needs').map(c => ({
-        id: c.id,
-        category_name: c.category_name,
-        estimated: Number(c.estimated) || 0,
-        actual: Number(c.actual) || 0,
-        icon: c.icon,
-      })));
-      setDesiresCategories(data.filter(c => c.type === 'desires').map(c => ({
-        id: c.id,
-        category_name: c.category_name,
-        estimated: Number(c.estimated) || 0,
-        actual: Number(c.actual) || 0,
-        icon: c.icon,
-      })));
-      setSavingsCategories(data.filter(c => c.type === 'savings').map(c => ({
-        id: c.id,
-        category_name: c.category_name,
-        estimated: Number(c.estimated) || 0,
-        actual: Number(c.actual) || 0,
-        icon: c.icon,
-      })));
-      setInvestmentsCategories(data.filter(c => c.type === 'investments').map(c => ({
-        id: c.id,
-        category_name: c.category_name,
-        estimated: Number(c.estimated) || 0,
-        actual: Number(c.actual) || 0,
-        icon: c.icon,
-      })));
-      setDebtsCategories(data.filter(c => c.type === 'debts').map(c => ({
-        id: c.id,
-        category_name: c.category_name,
-        estimated: Number(c.estimated) || 0,
-        actual: Number(c.actual) || 0,
-        icon: c.icon,
-      })));
-    }
+      .eq('month_id', monthId)
+      .order('date', { ascending: false });
+    setIncomeItems(data || []);
   };
 
-  const loadTransactions = async (budgetId: string) => {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('monthly_budget_id', budgetId)
-      .order('transaction_date', { ascending: false });
-
-    if (!error && data) {
-      setTransactions(data.map(t => ({
-        id: t.id,
-        category: t.category,
-        amount: Number(t.amount),
-        transaction_date: t.transaction_date,
-        concept: t.concept,
-      })));
-    }
+  const loadBudget = async (monthId: number) => {
+    const { data } = await supabase
+      .from('monthly_budget_jan')
+      .select(`
+        *,
+        categories(name, emoji, bucket_50_30_20)
+      `)
+      .eq('month_id', monthId);
+    setBudgetItems(data || []);
   };
 
-  const loadWishList = async (budgetId: string) => {
-    const { data, error } = await supabase
-      .from('wish_list')
-      .select('*')
-      .eq('monthly_budget_id', budgetId);
-
-    if (!error && data) {
-      setWishList(data.map(w => ({
-        id: w.id,
-        wish_text: w.wish_text,
-        is_completed: w.is_completed,
-      })));
-    }
+  const loadTransactions = async (monthId: number) => {
+    const { data } = await supabase
+      .from('monthly_transactions_jan')
+      .select(`
+        *,
+        categories(name, emoji),
+        payment_methods(name),
+        accounts(name)
+      `)
+      .eq('month_id', monthId)
+      .order('date', { ascending: false });
+    setTransactions(data || []);
   };
 
-  const loadTodoList = async (budgetId: string) => {
-    const { data, error } = await supabase
-      .from('todo_list')
+  const loadDebts = async (monthId: number) => {
+    const { data } = await supabase
+      .from('monthly_debts_jan')
       .select('*')
-      .eq('monthly_budget_id', budgetId);
-
-    if (!error && data) {
-      setTodoList(data.map(t => ({
-        id: t.id,
-        task_text: t.task_text,
-        is_completed: t.is_completed,
-      })));
-    }
+      .eq('month_id', monthId);
+    setDebts(data || []);
   };
 
-  const saveMonthlyBudget = async () => {
-    if (!monthlyBudgetId) return;
+  const loadWishlist = async (monthId: number) => {
+    const { data } = await supabase
+      .from('monthly_wishlist_jan')
+      .select('*')
+      .eq('month_id', monthId);
+    setWishlist(data || []);
+  };
 
-    try {
-      const totalIncomeEstimated = incomeItems.reduce((sum, item) => sum + item.estimated, 0);
-      const totalIncomeActual = incomeItems.reduce((sum, item) => sum + item.actual, 0);
-      const budgetAllocated = 
-        needsCategories.reduce((sum, c) => sum + c.estimated, 0) +
-        desiresCategories.reduce((sum, c) => sum + c.estimated, 0) +
-        savingsCategories.reduce((sum, c) => sum + c.estimated, 0) +
-        investmentsCategories.reduce((sum, c) => sum + c.estimated, 0);
+  const loadCategories = async () => {
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('is_active', true);
+    setCategories(data || []);
+  };
 
-      // Update monthly budget
+  const loadPaymentMethods = async () => {
+    const { data } = await supabase.from('payment_methods').select('*');
+    setPaymentMethods(data || []);
+  };
+
+  const loadAccounts = async () => {
+    const { data } = await supabase.from('accounts').select('*');
+    setAccounts(data || []);
+  };
+
+  const saveSettings = async () => {
+    const { data: existing } = await supabase
+      .from('monthly_settings_jan')
+      .select('id')
+      .eq('month_id', monthId)
+      .maybeSingle();
+
+    const settingsData: any = {
+      month_id: monthId,
+      user_id: userId,
+      monthly_challenge: challenge,
+      carryover_prev_balance: carryover,
+      budget_mode: budgetMode,
+      unassigned_pool: unassignedPool,
+    };
+
+    if (existing) {
       await supabase
-        .from('monthly_budgets')
-        .update({
-          monthly_goal: monthlyGoal,
-          previous_balance: previousBalance,
-          add_previous_balance: addPreviousBalance,
-          budget_from_scratch: budgetFromScratch,
-          total_income_estimated: totalIncomeEstimated,
-          total_income_actual: totalIncomeActual,
-          debt_contribution: debtContribution,
-          budget_allocated: budgetAllocated,
-        })
-        .eq('id', monthlyBudgetId);
-
-      // Save income items
-      await Promise.all(incomeItems.map(item => {
-        if (item.id) {
-          return supabase
-            .from('income_items')
-            .update({
-              concept: item.concept,
-              estimated: item.estimated,
-              actual: item.actual,
-            })
-            .eq('id', item.id);
-        } else {
-          return supabase
-            .from('income_items')
-            .insert({
-              monthly_budget_id: monthlyBudgetId,
-              concept: item.concept,
-              estimated: item.estimated,
-              actual: item.actual,
-            });
-        }
-      }));
-
-      toast({
-        title: 'Guardado',
-        description: 'Presupuesto mensual guardado exitosamente',
-      });
-    } catch (error) {
-      console.error('Error saving monthly budget:', error);
-      toast({
-        title: 'Error',
-        description: 'Error al guardar el presupuesto mensual',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const addCategory = async (type: string, categoryName: string) => {
-    if (!monthlyBudgetId || !categoryName.trim()) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('budget_categories')
-        .insert({
-          monthly_budget_id: monthlyBudgetId,
-          type,
-          category_name: categoryName,
-          estimated: 0,
-          actual: 0,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      const newCategory: BudgetCategoryItem = {
-        id: data.id,
-        category_name: data.category_name,
-        estimated: 0,
-        actual: 0,
-      };
-
-      switch (type) {
-        case 'needs':
-          setNeedsCategories([...needsCategories, newCategory]);
-          break;
-        case 'desires':
-          setDesiresCategories([...desiresCategories, newCategory]);
-          break;
-        case 'savings':
-          setSavingsCategories([...savingsCategories, newCategory]);
-          break;
-        case 'investments':
-          setInvestmentsCategories([...investmentsCategories, newCategory]);
-          break;
-        case 'debts':
-          setDebtsCategories([...debtsCategories, newCategory]);
-          break;
-      }
-
-      toast({
-        title: 'Categoría agregada',
-        description: 'La categoría se ha agregado exitosamente',
-      });
-    } catch (error) {
-      console.error('Error adding category:', error);
-      toast({
-        title: 'Error',
-        description: 'Error al agregar la categoría',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const updateCategory = async (categoryId: string, field: 'estimated' | 'actual', value: number, type: string) => {
-    try {
+        .from('monthly_settings_jan')
+        .update(settingsData)
+        .eq('id', existing.id);
+    } else {
       await supabase
-        .from('budget_categories')
-        .update({ [field]: value })
-        .eq('id', categoryId);
-
-      const updateFn = (categories: BudgetCategoryItem[]) =>
-        categories.map(c => c.id === categoryId ? { ...c, [field]: value } : c);
-
-      switch (type) {
-        case 'needs':
-          setNeedsCategories(updateFn);
-          break;
-        case 'desires':
-          setDesiresCategories(updateFn);
-          break;
-        case 'savings':
-          setSavingsCategories(updateFn);
-          break;
-        case 'investments':
-          setInvestmentsCategories(updateFn);
-          break;
-        case 'debts':
-          setDebtsCategories(updateFn);
-          break;
-      }
-    } catch (error) {
-      console.error('Error updating category:', error);
+        .from('monthly_settings_jan')
+        .insert([settingsData]);
     }
+
+    toast({ title: 'Guardado', description: 'Configuración guardada' });
   };
 
-  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
-    if (!monthlyBudgetId) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert({
-          monthly_budget_id: monthlyBudgetId,
-          ...transaction,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setTransactions([{
-        id: data.id,
-        category: data.category,
-        amount: Number(data.amount),
-        transaction_date: data.transaction_date,
-        concept: data.concept,
-      }, ...transactions]);
-
-      toast({
-        title: 'Transacción agregada',
-        description: 'La transacción se ha registrado exitosamente',
-      });
-    } catch (error) {
-      console.error('Error adding transaction:', error);
-      toast({
-        title: 'Error',
-        description: 'Error al agregar la transacción',
-        variant: 'destructive',
-      });
-    }
+  const addIncome = async () => {
+    await supabase.from('monthly_income_jan').insert([{
+      month_id: monthId,
+      user_id: userId,
+      source: newIncome.source,
+      amount: newIncome.amount,
+      date: newIncome.date,
+      currency_code: config.currency,
+    }]);
+    setNewIncomeOpen(false);
+    setNewIncome({ source: '', amount: 0, date: '' });
+    loadIncome(monthId);
+    toast({ title: 'Agregado', description: 'Ingreso agregado' });
   };
 
-  const totalIncomeEstimated = incomeItems.reduce((sum, item) => sum + item.estimated, 0);
-  const totalIncomeActual = incomeItems.reduce((sum, item) => sum + item.actual, 0);
-  const totalNeedsEstimated = needsCategories.reduce((sum, c) => sum + c.estimated, 0);
-  const totalNeedsActual = needsCategories.reduce((sum, c) => sum + c.actual, 0);
-  const totalDesiresEstimated = desiresCategories.reduce((sum, c) => sum + c.estimated, 0);
-  const totalDesiresActual = desiresCategories.reduce((sum, c) => sum + c.actual, 0);
-  const totalSavingsEstimated = savingsCategories.reduce((sum, c) => sum + c.estimated, 0);
-  const totalSavingsActual = savingsCategories.reduce((sum, c) => sum + c.actual, 0);
-  const totalInvestmentsEstimated = investmentsCategories.reduce((sum, c) => sum + c.estimated, 0);
-  const totalInvestmentsActual = investmentsCategories.reduce((sum, c) => sum + c.actual, 0);
-  const totalDebtsEstimated = debtsCategories.reduce((sum, c) => sum + c.estimated, 0);
-  const totalDebtsActual = debtsCategories.reduce((sum, c) => sum + c.actual, 0);
+  const deleteIncome = async (id: string) => {
+    await supabase.from('monthly_income_jan').delete().eq('id', id);
+    loadIncome(monthId);
+    toast({ title: 'Eliminado', description: 'Ingreso eliminado' });
+  };
 
-  const budgetAllocated = totalNeedsEstimated + totalDesiresEstimated + totalSavingsEstimated + totalInvestmentsEstimated;
-  const pendingToAllocate = totalIncomeActual - debtContribution - budgetAllocated;
-  const totalSpent = totalNeedsActual + totalDesiresActual;
-  const availableToSpend = budgetAllocated - totalSpent;
+  const updateBudgetItem = async (id: string, field: string, value: number) => {
+    await supabase
+      .from('monthly_budget_jan')
+      .update({ [field]: value })
+      .eq('id', id);
+    loadBudget(monthId);
+  };
 
-  const currencySymbol = config.currency === 'EUR' ? '€' : '$';
-  
-  const monthNames = config.language === 'es' 
-    ? ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
-    : ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  
-  const monthIndex = month ? parseInt(month) - 1 : 0;
-  const yearNumber = year ? parseInt(year) : new Date().getFullYear();
+  const addTransaction = async () => {
+    await supabase.from('monthly_transactions_jan').insert([{
+      month_id: monthId,
+      user_id: userId,
+      category_id: newTxn.category_id,
+      description: newTxn.description,
+      amount: -Math.abs(newTxn.amount), // Negative for expenses
+      date: newTxn.date,
+      direction: 'EXPENSE',
+      currency_code: config.currency,
+      payment_method_id: newTxn.payment_method_id || null,
+      account_id: newTxn.account_id || null,
+    }]);
+    setNewTxnOpen(false);
+    setNewTxn({ category_id: '', description: '', amount: 0, date: '', payment_method_id: '', account_id: '' });
+    loadTransactions(monthId);
+    toast({ title: 'Agregado', description: 'Transacción agregada' });
+  };
+
+  const deleteTransaction = async (id: string) => {
+    await supabase.from('monthly_transactions_jan').delete().eq('id', id);
+    loadTransactions(monthId);
+    toast({ title: 'Eliminado', description: 'Transacción eliminada' });
+  };
+
+  const addDebt = async () => {
+    await supabase.from('monthly_debts_jan').insert([{
+      month_id: monthId,
+      user_id: userId,
+      debt_account_id: newDebt.debt_account_id,
+      starting_balance: newDebt.starting_balance,
+      interest_rate_apr: newDebt.interest_rate_apr,
+      payment_made: newDebt.payment_made,
+      min_payment: newDebt.min_payment,
+    }]);
+    setNewDebtOpen(false);
+    setNewDebt({ debt_account_id: '', starting_balance: 0, interest_rate_apr: 0, payment_made: 0, min_payment: 0 });
+    loadDebts(monthId);
+    toast({ title: 'Agregado', description: 'Deuda agregada' });
+  };
+
+  const deleteDebt = async (id: string) => {
+    await supabase.from('monthly_debts_jan').delete().eq('id', id);
+    loadDebts(monthId);
+    toast({ title: 'Eliminado', description: 'Deuda eliminada' });
+  };
+
+  const addWish = async () => {
+    await supabase.from('monthly_wishlist_jan').insert([{
+      month_id: monthId,
+      user_id: userId,
+      item: newWish.item,
+      estimated_cost: newWish.estimated_cost,
+      priority: String(newWish.priority),
+    }]);
+    setNewWishOpen(false);
+    setNewWish({ item: '', estimated_cost: 0, priority: 1 });
+    loadWishlist(monthId);
+    toast({ title: 'Agregado', description: 'Deseo agregado' });
+  };
+
+  const deleteWish = async (id: string) => {
+    await supabase.from('monthly_wishlist_jan').delete().eq('id', id);
+    loadWishlist(monthId);
+    toast({ title: 'Eliminado', description: 'Deseo eliminado' });
+  };
+
+  const formatCurrency = (amount: number) => {
+    const symbol = config.currency === 'EUR' ? '€' : '$';
+    return `${symbol}${Math.abs(amount).toFixed(2)}`;
+  };
+
+  const totalIncome = incomeItems.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalExpenses = transactions.reduce((sum, txn) => sum + Math.abs(Number(txn.amount || 0)), 0);
+  const netCashFlow = totalIncome - totalExpenses;
+
+  const needsBudget = budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'NEEDS');
+  const wantsBudget = budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'WANTS');
+  const futureBudget = budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'FUTURE');
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <main className="container mx-auto px-4 py-8">
-          <div className="animate-pulse">Loading...</div>
+          <div className="animate-pulse">Cargando...</div>
         </main>
       </div>
     );
@@ -495,524 +369,515 @@ const MonthlyBudget = () => {
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            {monthNames[monthIndex]} {yearNumber}
-          </h1>
-          <p className="text-muted-foreground">{t.monthlyBudget}</p>
+          <h1 className="text-3xl font-bold mb-2">Enero 2025</h1>
+          <p className="text-muted-foreground">Presupuesto mensual detallado</p>
         </div>
 
-        {/* Monthly Goal */}
-        <Card className="mb-6">
+        {/* KPIs */}
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Flujo Neto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                {formatCurrency(netCashFlow)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Settings */}
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="text-lg">{t.myGoalForThisMonth}</CardTitle>
+            <CardTitle>Configuración del Mes</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Textarea
-              value={monthlyGoal}
-              onChange={(e) => setMonthlyGoal(e.target.value)}
-              onBlur={saveMonthlyBudget}
-              placeholder="Escribe tu meta principal para este mes..."
-              className="min-h-[60px]"
-            />
+          <CardContent className="space-y-4">
+            <div>
+              <Label>Mi mayor reto para este mes</Label>
+              <Input 
+                value={challenge} 
+                onChange={(e) => setChallenge(e.target.value)}
+                placeholder="Escribe tu reto..."
+              />
+            </div>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <Label>Saldo del mes anterior</Label>
+                <Input 
+                  type="number" 
+                  value={carryover} 
+                  onChange={(e) => setCarryover(Number(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label>Modo de presupuesto</Label>
+                <Select value={budgetMode} onValueChange={(v: any) => setBudgetMode(v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ZERO_BASED">Desde cero</SelectItem>
+                    <SelectItem value="COPY_PREVIOUS">Copiar del mes anterior</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Monto no asignado</Label>
+                <Input 
+                  type="number" 
+                  value={unassignedPool} 
+                  onChange={(e) => setUnassignedPool(Number(e.target.value))}
+                />
+              </div>
+            </div>
+            <Button onClick={saveSettings}>
+              <Save className="w-4 h-4 mr-2" />
+              Guardar Configuración
+            </Button>
           </CardContent>
         </Card>
 
-        <div className="grid gap-6 md:grid-cols-2 mb-6">
-          {/* Previous Month Balance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t.fromPreviousMonth}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Input
-                  type="number"
-                  value={previousBalance}
-                  onChange={(e) => setPreviousBalance(parseFloat(e.target.value) || 0)}
-                  onBlur={saveMonthlyBudget}
-                  className="flex-1"
-                />
-                <span className="text-muted-foreground">{currencySymbol}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="add-previous"
-                  checked={addPreviousBalance}
-                  onCheckedChange={(checked) => {
-                    setAddPreviousBalance(checked as boolean);
-                    setTimeout(saveMonthlyBudget, 100);
-                  }}
-                />
-                <Label htmlFor="add-previous">{t.addToThisMonth}</Label>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Budget Creation Method */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t.thisMonthBudget}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <RadioGroup
-                value={budgetFromScratch ? 'scratch' : 'copy'}
-                onValueChange={(value) => {
-                  setBudgetFromScratch(value === 'scratch');
-                  setTimeout(saveMonthlyBudget, 100);
-                }}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="scratch" id="scratch" />
-                  <Label htmlFor="scratch">{t.fromScratch}</Label>
+        {/* Income */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Ingresos</CardTitle>
+            <Dialog open={newIncomeOpen} onOpenChange={setNewIncomeOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Ingreso
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nuevo Ingreso</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Fuente</Label>
+                    <Input value={newIncome.source} onChange={(e) => setNewIncome({...newIncome, source: e.target.value})} />
+                  </div>
+                  <div>
+                    <Label>Monto</Label>
+                    <Input type="number" value={newIncome.amount} onChange={(e) => setNewIncome({...newIncome, amount: Number(e.target.value)})} />
+                  </div>
+                  <div>
+                    <Label>Fecha</Label>
+                    <Input type="date" value={newIncome.date} onChange={(e) => setNewIncome({...newIncome, date: e.target.value})} />
+                  </div>
+                  <Button onClick={addIncome}>Agregar</Button>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="copy" id="copy" />
-                  <Label htmlFor="copy">{t.copyPreviousMonth}</Label>
-                </div>
-              </RadioGroup>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Income Section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>{t.myIncome}</CardTitle>
+              </DialogContent>
+            </Dialog>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t.concept}</TableHead>
-                  <TableHead className="text-right">{t.estimated}</TableHead>
-                  <TableHead className="text-right">{t.actual}</TableHead>
+                  <TableHead>Fuente</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead className="text-center">Acción</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {incomeItems.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{item.concept}</TableCell>
-                    <TableCell className="text-right">
-                      <Input
-                        type="number"
-                        value={item.estimated}
-                        onChange={(e) => {
-                          const newItems = [...incomeItems];
-                          newItems[index].estimated = parseFloat(e.target.value) || 0;
-                          setIncomeItems(newItems);
-                        }}
-                        onBlur={saveMonthlyBudget}
-                        className="w-24 ml-auto text-right"
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Input
-                        type="number"
-                        value={item.actual}
-                        onChange={(e) => {
-                          const newItems = [...incomeItems];
-                          newItems[index].actual = parseFloat(e.target.value) || 0;
-                          setIncomeItems(newItems);
-                        }}
-                        onBlur={saveMonthlyBudget}
-                        className="w-24 ml-auto text-right"
-                      />
+                {incomeItems.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.source}</TableCell>
+                    <TableCell>{item.date}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
-                <TableRow className="font-bold">
-                  <TableCell>{t.total}</TableCell>
-                  <TableCell className="text-right">
-                    {currencySymbol} {totalIncomeEstimated.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {currencySymbol} {totalIncomeActual.toFixed(2)}
-                  </TableCell>
-                </TableRow>
               </TableBody>
             </Table>
           </CardContent>
         </Card>
 
-        {/* Budget Summary */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t.totalIncome}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{currencySymbol} {totalIncomeActual.toFixed(2)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t.debtContribution}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Input
-                type="number"
-                value={debtContribution}
-                onChange={(e) => setDebtContribution(parseFloat(e.target.value) || 0)}
-                onBlur={saveMonthlyBudget}
-                className="text-2xl font-bold h-auto p-2"
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t.allocatedForBudget}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{currencySymbol} {budgetAllocated.toFixed(2)}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t.pendingToAllocate}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className={`text-2xl font-bold ${pendingToAllocate < 0 ? 'text-destructive' : 'text-primary'}`}>
-                {currencySymbol} {pendingToAllocate.toFixed(2)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t.availableToSpend}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{currencySymbol} {availableToSpend.toFixed(2)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">{t.spentSoFar}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{currencySymbol} {totalSpent.toFixed(2)}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Budget Categories Tables */}
-        <div className="grid gap-6 md:grid-cols-2 mb-6">
-          {/* Needs */}
-          <CategoryTable
-            title={t.needs}
-            categories={needsCategories}
-            type="needs"
-            currencySymbol={currencySymbol}
-            onUpdate={updateCategory}
-            onAdd={(name) => addCategory('needs', name)}
-            t={t}
-          />
-
-          {/* Desires */}
-          <CategoryTable
-            title={t.desires}
-            categories={desiresCategories}
-            type="desires"
-            currencySymbol={currencySymbol}
-            onUpdate={updateCategory}
-            onAdd={(name) => addCategory('desires', name)}
-            t={t}
-          />
-
-          {/* Savings */}
-          <CategoryTable
-            title={t.savings}
-            categories={savingsCategories}
-            type="savings"
-            currencySymbol={currencySymbol}
-            onUpdate={updateCategory}
-            onAdd={(name) => addCategory('savings', name)}
-            t={t}
-          />
-
-          {/* Investments */}
-          <CategoryTable
-            title={t.investments}
-            categories={investmentsCategories}
-            type="investments"
-            currencySymbol={currencySymbol}
-            onUpdate={updateCategory}
-            onAdd={(name) => addCategory('investments', name)}
-            t={t}
-          />
-
-          {/* Debts */}
-          <CategoryTable
-            title={t.debts}
-            categories={debtsCategories}
-            type="debts"
-            currencySymbol={currencySymbol}
-            onUpdate={updateCategory}
-            onAdd={(name) => addCategory('debts', name)}
-            t={t}
-          />
-        </div>
-
-        {/* Transactions Registry */}
-        <Card className="mb-6">
+        {/* Budget 50/30/20 */}
+        <Card className="mb-8">
           <CardHeader>
-            <CardTitle>{t.transactionRegistry}</CardTitle>
+            <CardTitle>Presupuesto 50/30/20</CardTitle>
           </CardHeader>
-          <CardContent>
-            <TransactionForm onAdd={addTransaction} currencySymbol={currencySymbol} t={t} />
-            <div className="mt-6">
-              {transactions.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">{t.noTransactionsYet}</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t.category}</TableHead>
-                      <TableHead>{t.amount}</TableHead>
-                      <TableHead>{t.date}</TableHead>
-                      <TableHead>{t.concept}</TableHead>
+          <CardContent className="space-y-6">
+            {/* Needs */}
+            <div>
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-needs" />
+                Necesidades (50%)
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Categoría</TableHead>
+                    <TableHead className="text-right">Estimado</TableHead>
+                    <TableHead className="text-right">Asignado</TableHead>
+                    <TableHead className="text-right">Real</TableHead>
+                    <TableHead className="text-right">Varianza</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {needsBudget.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          className="w-24 text-right"
+                          value={item.estimated || 0}
+                          onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          className="w-24 text-right"
+                          value={item.assigned || 0}
+                          onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.actual || 0)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.variance || 0)}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell>{transaction.category}</TableCell>
-                        <TableCell>{currencySymbol} {transaction.amount.toFixed(2)}</TableCell>
-                        <TableCell>{new Date(transaction.transaction_date).toLocaleDateString()}</TableCell>
-                        <TableCell>{transaction.concept}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Wants */}
+            <div>
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-desires" />
+                Deseos (30%)
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Categoría</TableHead>
+                    <TableHead className="text-right">Estimado</TableHead>
+                    <TableHead className="text-right">Asignado</TableHead>
+                    <TableHead className="text-right">Real</TableHead>
+                    <TableHead className="text-right">Varianza</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {wantsBudget.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          className="w-24 text-right"
+                          value={item.estimated || 0}
+                          onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          className="w-24 text-right"
+                          value={item.assigned || 0}
+                          onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.actual || 0)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.variance || 0)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Future */}
+            <div>
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-future" />
+                Futuro (20%)
+              </h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Categoría</TableHead>
+                    <TableHead className="text-right">Estimado</TableHead>
+                    <TableHead className="text-right">Asignado</TableHead>
+                    <TableHead className="text-right">Real</TableHead>
+                    <TableHead className="text-right">Varianza</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {futureBudget.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          className="w-24 text-right"
+                          value={item.estimated || 0}
+                          onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          className="w-24 text-right"
+                          value={item.assigned || 0}
+                          onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.actual || 0)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.variance || 0)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
 
-        {/* Current Budget 50/30/20 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.currentBudget}</CardTitle>
+        {/* Transactions */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Transacciones</CardTitle>
+            <Dialog open={newTxnOpen} onOpenChange={setNewTxnOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Transacción
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nueva Transacción</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Categoría</Label>
+                    <Select value={newTxn.category_id} onValueChange={(v) => setNewTxn({...newTxn, category_id: v})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.emoji} {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Descripción</Label>
+                    <Input value={newTxn.description} onChange={(e) => setNewTxn({...newTxn, description: e.target.value})} />
+                  </div>
+                  <div>
+                    <Label>Monto</Label>
+                    <Input type="number" value={newTxn.amount} onChange={(e) => setNewTxn({...newTxn, amount: Number(e.target.value)})} />
+                  </div>
+                  <div>
+                    <Label>Fecha</Label>
+                    <Input type="date" value={newTxn.date} onChange={(e) => setNewTxn({...newTxn, date: e.target.value})} />
+                  </div>
+                  <Button onClick={addTransaction}>Agregar</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <BudgetProgressRow
-                label={t.needs}
-                used={totalNeedsActual}
-                total={totalIncomeActual}
-                remaining={totalNeedsEstimated - totalNeedsActual}
-                currencySymbol={currencySymbol}
-                color="needs"
-              />
-              <BudgetProgressRow
-                label={t.desires}
-                used={totalDesiresActual}
-                total={totalIncomeActual}
-                remaining={totalDesiresEstimated - totalDesiresActual}
-                currencySymbol={currencySymbol}
-                color="desires"
-              />
-              <BudgetProgressRow
-                label={t.future}
-                used={totalSavingsActual + totalInvestmentsActual}
-                total={totalIncomeActual}
-                remaining={(totalSavingsEstimated + totalInvestmentsEstimated) - (totalSavingsActual + totalInvestmentsActual)}
-                currencySymbol={currencySymbol}
-                color="future"
-              />
-              <BudgetProgressRow
-                label={t.debts}
-                used={totalDebtsActual}
-                total={totalIncomeActual}
-                remaining={debtContribution - totalDebtsActual}
-                currencySymbol={currencySymbol}
-                color="debt"
-              />
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Categoría</TableHead>
+                  <TableHead>Descripción</TableHead>
+                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead className="text-center">Acción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {transactions.map((txn) => (
+                  <TableRow key={txn.id}>
+                    <TableCell>{txn.date}</TableCell>
+                    <TableCell>{txn.categories?.emoji} {txn.categories?.name}</TableCell>
+                    <TableCell>{txn.description}</TableCell>
+                    <TableCell className="text-right text-destructive">{formatCurrency(txn.amount)}</TableCell>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Debts */}
+        <Card className="mb-8">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Deudas</CardTitle>
+            <Dialog open={newDebtOpen} onOpenChange={setNewDebtOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Deuda
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nueva Deuda</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Cuenta de deuda</Label>
+                    <Select value={newDebt.debt_account_id} onValueChange={(v) => setNewDebt({...newDebt, debt_account_id: v})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar cuenta" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => (
+                          <SelectItem key={acc.id} value={acc.id}>
+                            {acc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Saldo inicial</Label>
+                    <Input type="number" value={newDebt.starting_balance} onChange={(e) => setNewDebt({...newDebt, starting_balance: Number(e.target.value)})} />
+                  </div>
+                  <div>
+                    <Label>Tasa de interés (APR %)</Label>
+                    <Input type="number" value={newDebt.interest_rate_apr} onChange={(e) => setNewDebt({...newDebt, interest_rate_apr: Number(e.target.value)})} />
+                  </div>
+                  <div>
+                    <Label>Pago mínimo</Label>
+                    <Input type="number" value={newDebt.min_payment} onChange={(e) => setNewDebt({...newDebt, min_payment: Number(e.target.value)})} />
+                  </div>
+                  <div>
+                    <Label>Pago realizado</Label>
+                    <Input type="number" value={newDebt.payment_made} onChange={(e) => setNewDebt({...newDebt, payment_made: Number(e.target.value)})} />
+                  </div>
+                  <Button onClick={addDebt}>Agregar</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Cuenta</TableHead>
+                  <TableHead className="text-right">Saldo Inicial</TableHead>
+                  <TableHead className="text-right">Interés APR</TableHead>
+                  <TableHead className="text-right">Pago</TableHead>
+                  <TableHead className="text-right">Saldo Final</TableHead>
+                  <TableHead className="text-center">Acción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {debts.map((debt) => (
+                  <TableRow key={debt.id}>
+                    <TableCell>{accounts.find(a => a.id === debt.debt_account_id)?.name}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(debt.starting_balance)}</TableCell>
+                    <TableCell className="text-right">{debt.interest_rate_apr}%</TableCell>
+                    <TableCell className="text-right">{formatCurrency(debt.payment_made)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(debt.ending_balance)}</TableCell>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="ghost" onClick={() => deleteDebt(debt.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Wishlist */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Lista de Deseos</CardTitle>
+            <Dialog open={newWishOpen} onOpenChange={setNewWishOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Deseo
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nuevo Deseo</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Artículo</Label>
+                    <Input value={newWish.item} onChange={(e) => setNewWish({...newWish, item: e.target.value})} />
+                  </div>
+                  <div>
+                    <Label>Costo estimado</Label>
+                    <Input type="number" value={newWish.estimated_cost} onChange={(e) => setNewWish({...newWish, estimated_cost: Number(e.target.value)})} />
+                  </div>
+                  <div>
+                    <Label>Prioridad (1-5)</Label>
+                    <Input type="number" min={1} max={5} value={newWish.priority} onChange={(e) => setNewWish({...newWish, priority: Number(e.target.value)})} />
+                  </div>
+                  <Button onClick={addWish}>Agregar</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Artículo</TableHead>
+                  <TableHead className="text-right">Costo Estimado</TableHead>
+                  <TableHead className="text-center">Prioridad</TableHead>
+                  <TableHead className="text-center">Acción</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {wishlist.map((wish) => (
+                  <TableRow key={wish.id}>
+                    <TableCell>{wish.item}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(wish.estimated_cost)}</TableCell>
+                    <TableCell className="text-center">{wish.priority}</TableCell>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="ghost" onClick={() => deleteWish(wish.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </main>
-    </div>
-  );
-};
-
-// Helper Components
-const CategoryTable = ({ 
-  title, 
-  categories, 
-  type, 
-  currencySymbol, 
-  onUpdate, 
-  onAdd,
-  t 
-}: { 
-  title: string; 
-  categories: BudgetCategoryItem[]; 
-  type: string; 
-  currencySymbol: string;
-  onUpdate: (id: string, field: 'estimated' | 'actual', value: number, type: string) => void;
-  onAdd: (name: string) => void;
-  t: any;
-}) => {
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const totalEstimated = categories.reduce((sum, c) => sum + c.estimated, 0);
-  const totalActual = categories.reduce((sum, c) => sum + c.actual, 0);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t.category}</TableHead>
-              <TableHead className="text-right">{t.estimated}</TableHead>
-              <TableHead className="text-right">{t.actual}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.map((category) => (
-              <TableRow key={category.id}>
-                <TableCell>{category.category_name}</TableCell>
-                <TableCell className="text-right">
-                  <Input
-                    type="number"
-                    value={category.estimated}
-                    onChange={(e) => onUpdate(category.id!, 'estimated', parseFloat(e.target.value) || 0, type)}
-                    className="w-24 ml-auto text-right"
-                  />
-                </TableCell>
-                <TableCell className="text-right">
-                  <Input
-                    type="number"
-                    value={category.actual}
-                    onChange={(e) => onUpdate(category.id!, 'actual', parseFloat(e.target.value) || 0, type)}
-                    className="w-24 ml-auto text-right"
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
-            <TableRow className="font-bold">
-              <TableCell>{t.total}</TableCell>
-              <TableCell className="text-right">{currencySymbol} {totalEstimated.toFixed(2)}</TableCell>
-              <TableCell className="text-right">{currencySymbol} {totalActual.toFixed(2)}</TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-        <div className="flex gap-2 mt-4">
-          <Input
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-            placeholder="Nueva categoría..."
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && newCategoryName.trim()) {
-                onAdd(newCategoryName);
-                setNewCategoryName('');
-              }
-            }}
-          />
-          <Button
-            size="sm"
-            onClick={() => {
-              if (newCategoryName.trim()) {
-                onAdd(newCategoryName);
-                setNewCategoryName('');
-              }
-            }}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const TransactionForm = ({ onAdd, currencySymbol, t }: { onAdd: (transaction: Omit<Transaction, 'id'>) => void; currencySymbol: string; t: any }) => {
-  const [category, setCategory] = useState('');
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [concept, setConcept] = useState('');
-
-  const handleSubmit = () => {
-    if (!category || !amount || !date || !concept) return;
-
-    onAdd({
-      category,
-      amount: parseFloat(amount),
-      transaction_date: date,
-      concept,
-    });
-
-    setCategory('');
-    setAmount('');
-    setDate(new Date().toISOString().split('T')[0]);
-    setConcept('');
-  };
-
-  return (
-    <div className="grid gap-4 md:grid-cols-5">
-      <Input
-        placeholder={t.category}
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-      />
-      <Input
-        type="number"
-        placeholder={t.amount}
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-      />
-      <Input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
-      <Input
-        placeholder={t.concept}
-        value={concept}
-        onChange={(e) => setConcept(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
-      />
-      <Button onClick={handleSubmit} className="w-full">
-        <Plus className="h-4 w-4 mr-2" /> {t.add}
-      </Button>
-    </div>
-  );
-};
-
-const BudgetProgressRow = ({
-  label,
-  used,
-  total,
-  remaining,
-  currencySymbol,
-  color,
-}: {
-  label: string;
-  used: number;
-  total: number;
-  remaining: number;
-  currencySymbol: string;
-  color: string;
-}) => {
-  const percentage = total > 0 ? (used / total) * 100 : 0;
-
-  return (
-    <div>
-      <div className="flex justify-between mb-2">
-        <span className="font-medium">{label}</span>
-        <span className="text-sm text-muted-foreground">{percentage.toFixed(1)}%</span>
-      </div>
-      <Progress value={percentage} className={`bg-${color}/20`} />
-      <div className="flex justify-between mt-1 text-sm">
-        <span>{currencySymbol} {used.toFixed(2)}</span>
-        <span className="text-muted-foreground">{currencySymbol} {remaining.toFixed(2)} restante</span>
-      </div>
     </div>
   );
 };
