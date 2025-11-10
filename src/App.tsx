@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "./contexts/AppContext";
 import Dashboard from "./pages/Dashboard";
 import MonthlyBudget from "./pages/MonthlyBudget";
+import Budget from "./pages/Budget";
 import Catalog from "./pages/Catalog";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -23,6 +24,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/budget" element={<Budget />} />
             <Route path="/budget/:year/:month" element={<MonthlyBudget />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/settings" element={<Settings />} />
