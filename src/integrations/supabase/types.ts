@@ -453,6 +453,13 @@ export type Database = {
             referencedRelation: "months"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "monthly_budget_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "view_monthly_summary"
+            referencedColumns: ["month_id"]
+          },
         ]
       }
       monthly_budget_jul: {
@@ -1023,6 +1030,13 @@ export type Database = {
             referencedRelation: "months"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "monthly_debts_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "view_monthly_summary"
+            referencedColumns: ["month_id"]
+          },
         ]
       }
       monthly_debts_jul: {
@@ -1534,6 +1548,13 @@ export type Database = {
             referencedRelation: "months"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "monthly_income_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "view_monthly_summary"
+            referencedColumns: ["month_id"]
+          },
         ]
       }
       monthly_income_jul: {
@@ -1994,6 +2015,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "months"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_settings_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "view_monthly_summary"
+            referencedColumns: ["month_id"]
           },
         ]
       }
@@ -2515,6 +2543,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "months"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_transactions_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "view_monthly_summary"
+            referencedColumns: ["month_id"]
           },
           {
             foreignKeyName: "monthly_transactions_jan_payment_method_id_fkey"
@@ -3054,6 +3089,13 @@ export type Database = {
             referencedRelation: "months"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "monthly_wishlist_jan_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "view_monthly_summary"
+            referencedColumns: ["month_id"]
+          },
         ]
       }
       monthly_wishlist_jul: {
@@ -3463,7 +3505,148 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      view_annual_summary: {
+        Row: {
+          annual_debt_payments: number | null
+          annual_expenses: number | null
+          annual_future_actual: number | null
+          annual_future_assigned: number | null
+          annual_income: number | null
+          annual_needs_actual: number | null
+          annual_needs_assigned: number | null
+          annual_net_cash_flow: number | null
+          annual_wants_actual: number | null
+          annual_wants_assigned: number | null
+          annual_wishlist_cost: number | null
+          avg_monthly_expenses: number | null
+          avg_monthly_income: number | null
+          avg_monthly_net_cash_flow: number | null
+          total_wishlist_items: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      view_budget_all: {
+        Row: {
+          actual: number | null
+          assigned: number | null
+          bucket_50_30_20: string | null
+          category_id: string | null
+          created_at: string | null
+          estimated: number | null
+          id: string | null
+          month_abbr: string | null
+          month_id: number | null
+          updated_at: string | null
+          user_id: string | null
+          variance: number | null
+        }
+        Relationships: []
+      }
+      view_debts_all: {
+        Row: {
+          created_at: string | null
+          debt_account_id: string | null
+          due_day: number | null
+          ending_balance: number | null
+          id: string | null
+          interest_rate_apr: number | null
+          min_payment: number | null
+          month_abbr: string | null
+          month_id: number | null
+          payment_made: number | null
+          starting_balance: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      view_income_all: {
+        Row: {
+          account_id: string | null
+          amount: number | null
+          created_at: string | null
+          currency_code: string | null
+          date: string | null
+          id: string | null
+          month_abbr: string | null
+          month_id: number | null
+          notes: string | null
+          source: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      view_monthly_summary: {
+        Row: {
+          debt_payments: number | null
+          end_date: string | null
+          future_actual: number | null
+          future_assigned: number | null
+          month_id: number | null
+          month_name: string | null
+          needs_actual: number | null
+          needs_assigned: number | null
+          net_cash_flow: number | null
+          start_date: string | null
+          total_expenses: number | null
+          total_income: number | null
+          user_id: string | null
+          wants_actual: number | null
+          wants_assigned: number | null
+          wishlist_item_count: number | null
+          wishlist_total_cost: number | null
+        }
+        Relationships: []
+      }
+      view_settings_all: {
+        Row: {
+          budget_mode: string | null
+          carryover_prev_balance: number | null
+          created_at: string | null
+          id: string | null
+          month_abbr: string | null
+          month_id: number | null
+          monthly_challenge: string | null
+          unassigned_pool: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      view_transactions_all: {
+        Row: {
+          account_id: string | null
+          amount: number | null
+          category_id: string | null
+          created_at: string | null
+          currency_code: string | null
+          date: string | null
+          description: string | null
+          direction: string | null
+          id: string | null
+          month_abbr: string | null
+          month_id: number | null
+          notes: string | null
+          payment_method_id: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      view_wishlist_all: {
+        Row: {
+          acquired: boolean | null
+          category_id: string | null
+          created_at: string | null
+          estimated_cost: number | null
+          id: string | null
+          item: string | null
+          month_abbr: string | null
+          month_id: number | null
+          priority: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
