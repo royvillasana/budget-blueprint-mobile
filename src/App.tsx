@@ -7,6 +7,7 @@ import { AppProvider } from "./contexts/AppContext";
 import Dashboard from "./pages/Dashboard";
 import Budget from "./pages/Budget";
 import MonthlyBudget from "./pages/MonthlyBudget";
+import Catalog from "./pages/Catalog";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/budget/:year/:month" element={<MonthlyBudget />} />
+            <Route path="/catalog" element={<Catalog />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

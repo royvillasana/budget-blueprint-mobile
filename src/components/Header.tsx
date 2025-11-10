@@ -41,6 +41,14 @@ export const Header = () => {
               {t.budget}
             </Link>
             <Link
+              to="/catalog"
+              className={`text-sm font-medium transition-colors hover:text-primary ${
+                isActive('/catalog') ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              Catalog
+            </Link>
+            <Link
               to="/settings"
               className={`text-sm font-medium transition-colors hover:text-primary ${
                 isActive('/settings') ? 'text-primary' : 'text-muted-foreground'
