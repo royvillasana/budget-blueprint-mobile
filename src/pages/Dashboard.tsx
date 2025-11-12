@@ -48,7 +48,7 @@ const Dashboard = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/');
+        navigate('/auth');
         return;
       }
 

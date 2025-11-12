@@ -1,10 +1,21 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Wallet, BookOpen, Settings } from 'lucide-react';
+import { LayoutDashboard, Wallet, BookOpen, Settings, LogIn } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to dashboard if already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate('/dashboard');
+      }
+    });
+  }, [navigate]);
 
   const features = [
     {
@@ -83,9 +94,18 @@ const Index = () => {
           <CardHeader>
             <CardTitle>¿Comenzando?</CardTitle>
             <CardDescription>
-              Empieza configurando tus categorías y cuentas en el Catálogo, luego navega al Dashboard para ver tu panorama financiero anual.
+              Primero inicia sesión o crea una cuenta para acceder a tu controlador financiero.
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full"
+              onClick={() => navigate('/auth')}
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              Iniciar Sesión / Registrarse
+            </Button>
+          </CardContent>
         </Card>
       </div>
     </div>

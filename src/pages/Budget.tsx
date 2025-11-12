@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,18 +11,34 @@ import { getMonthName, MONTH_INFO } from '@/utils/monthUtils';
 const Budget = () => {
   const navigate = useNavigate();
   const { config } = useApp();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Auto-redirect to current month
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1; // 1-12
-    const currentYear = now.getFullYear();
-    
-    // Only redirect if it's 2025, otherwise show month selector
-    if (currentYear === 2025) {
-      navigate(`/budget/2025/${currentMonth}`, { replace: true });
-    }
+    // Check authentication
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/auth');
+        return;
+      }
+      setLoading(false);
+      
+      // Auto-redirect to current month
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1; // 1-12
+      const currentYear = now.getFullYear();
+      
+      // Only redirect if it's 2025, otherwise show month selector
+      if (currentYear === 2025) {
+        navigate(`/budget/2025/${currentMonth}`, { replace: true });
+      }
+    });
   }, [navigate]);
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center">
+      <p>Cargando...</p>
+    </div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -101,7 +101,7 @@ const MonthlyBudget = () => {
       const user = userResponse.data?.user;
       
       if (!user) {
-        navigate('/');
+        navigate('/auth');
         return;
       }
       

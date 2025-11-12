@@ -11,6 +11,7 @@ import Catalog from "./pages/Catalog";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/budget/:year/:month" element={<MonthlyBudget />} />

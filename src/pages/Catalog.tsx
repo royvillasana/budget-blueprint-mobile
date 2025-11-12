@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ type Account = {
 };
 
 const Catalog = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -85,6 +87,14 @@ const Catalog = () => {
 
   const loadData = async () => {
     setLoading(true);
+    
+    // Check authentication
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    
     await Promise.all([loadCategories(), loadPaymentMethods(), loadAccounts()]);
     setLoading(false);
   };
