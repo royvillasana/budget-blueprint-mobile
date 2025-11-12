@@ -17,7 +17,7 @@ type Category = {
   id: string;
   name: string;
   emoji: string;
-  bucket_50_30_20: 'NEEDS' | 'WANTS' | 'FUTURE';
+  bucket_50_30_20: 'NEEDS' | 'WANTS' | 'FUTURE' | 'INVESTMENTS' | 'DEBT_PAYMENTS';
   is_active: boolean;
 };
 
@@ -48,7 +48,7 @@ const Catalog = () => {
   const [categoryForm, setCategoryForm] = useState<{
     name: string;
     emoji: string;
-    bucket_50_30_20: 'NEEDS' | 'WANTS' | 'FUTURE';
+    bucket_50_30_20: 'NEEDS' | 'WANTS' | 'FUTURE' | 'INVESTMENTS' | 'DEBT_PAYMENTS';
     is_active: boolean;
   }>({
     name: '',
@@ -302,6 +302,8 @@ const Catalog = () => {
       NEEDS: 'bg-needs text-needs-foreground',
       WANTS: 'bg-desires text-desires-foreground',
       FUTURE: 'bg-future text-future-foreground',
+      INVESTMENTS: 'bg-primary text-primary-foreground',
+      DEBT_PAYMENTS: 'bg-destructive text-destructive-foreground',
     };
     return colors[bucket as keyof typeof colors] || 'bg-muted';
   };
@@ -378,7 +380,7 @@ const Catalog = () => {
                         <Label htmlFor="cat-bucket">50/30/20 Bucket</Label>
                         <Select
                           value={categoryForm.bucket_50_30_20}
-                          onValueChange={(value) => setCategoryForm({ ...categoryForm, bucket_50_30_20: value as 'NEEDS' | 'WANTS' | 'FUTURE' })}
+                          onValueChange={(value) => setCategoryForm({ ...categoryForm, bucket_50_30_20: value as 'NEEDS' | 'WANTS' | 'FUTURE' | 'INVESTMENTS' | 'DEBT_PAYMENTS' })}
                         >
                           <SelectTrigger id="cat-bucket">
                             <SelectValue />
@@ -387,6 +389,8 @@ const Catalog = () => {
                             <SelectItem value="NEEDS">Needs (50%)</SelectItem>
                             <SelectItem value="WANTS">Wants (30%)</SelectItem>
                             <SelectItem value="FUTURE">Future (20%)</SelectItem>
+                            <SelectItem value="INVESTMENTS">Investments</SelectItem>
+                            <SelectItem value="DEBT_PAYMENTS">Debt Payments</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
