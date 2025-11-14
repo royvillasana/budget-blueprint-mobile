@@ -100,9 +100,13 @@ const Catalog = () => {
   };
 
   const loadCategories = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
     const { data, error } = await supabase
       .from('categories')
       .select('*')
+      .eq('user_id', user.id)
       .order('name');
     
     if (error) {
@@ -113,9 +117,13 @@ const Catalog = () => {
   };
 
   const loadPaymentMethods = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
     const { data, error } = await supabase
       .from('payment_methods')
       .select('*')
+      .eq('user_id', user.id)
       .order('name');
     
     if (error) {
@@ -126,9 +134,13 @@ const Catalog = () => {
   };
 
   const loadAccounts = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
     const { data, error } = await supabase
       .from('accounts')
       .select('*')
+      .eq('user_id', user.id)
       .order('name');
     
     if (error) {

@@ -216,20 +216,36 @@ const MonthlyBudget = () => {
   };
 
   const loadCategories = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
     const { data } = await supabase
       .from('categories')
       .select('*')
+      .eq('user_id', user.id)
       .eq('is_active', true);
     setCategories(data || []);
   };
 
   const loadPaymentMethods = async () => {
-    const { data } = await supabase.from('payment_methods').select('*');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('payment_methods')
+      .select('*')
+      .eq('user_id', user.id);
     setPaymentMethods(data || []);
   };
 
   const loadAccounts = async () => {
-    const { data } = await supabase.from('accounts').select('*');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('user_id', user.id);
     setAccounts(data || []);
   };
 
