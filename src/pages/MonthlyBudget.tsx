@@ -124,13 +124,13 @@ const MonthlyBudget = () => {
 
       setMonthId(monthData.id);
 
-      // Load all data for January (month 1)
+      // Load all data for the month
       await Promise.all([
         loadSettings(monthData.id),
         loadIncome(monthData.id),
         loadBudget(monthData.id),
-        loadTransactions(monthData.id),
-        loadDebts(monthData.id),
+        loadTransactions(monthData.id, user.id),
+        loadDebts(monthData.id, user.id),
         loadWishlist(monthData.id),
         loadCategories(),
         loadPaymentMethods(),
@@ -182,7 +182,7 @@ const MonthlyBudget = () => {
     setBudgetItems(data || []);
   };
 
-  const loadTransactions = async (monthId: number) => {
+  const loadTransactions = async (monthId: number, uid: string) => {
     const tableName = getTableName('monthly_transactions', currentMonth) as any;
     const { data } = await supabase
       .from(tableName)
@@ -193,16 +193,21 @@ const MonthlyBudget = () => {
         accounts(name)
       `)
       .eq('month_id', monthId)
+      .eq('user_id', uid)
       .order('date', { ascending: false });
     setTransactions(data || []);
   };
 
-  const loadDebts = async (monthId: number) => {
+  const loadDebts = async (monthId: number, uid: string) => {
     const tableName = getTableName('monthly_debts', currentMonth) as any;
     const { data } = await supabase
       .from(tableName)
-      .select('*')
-      .eq('month_id', monthId);
+      .select(`
+        *,
+        accounts(name)
+      `)
+      .eq('month_id', monthId)
+      .eq('user_id', uid);
     setDebts(data || []);
   };
 
@@ -328,14 +333,14 @@ const MonthlyBudget = () => {
     }]);
     setNewTxnOpen(false);
     setNewTxn({ category_id: '', description: '', amount: 0, date: '', payment_method_id: '', account_id: '' });
-    loadTransactions(monthId);
+    loadTransactions(monthId, userId);
     toast({ title: 'Agregado', description: 'Transacción agregada' });
   };
 
   const deleteTransaction = async (id: string) => {
     const tableName = getTableName('monthly_transactions', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
-    loadTransactions(monthId);
+    loadTransactions(monthId, userId);
     toast({ title: 'Eliminado', description: 'Transacción eliminada' });
   };
 
@@ -352,14 +357,14 @@ const MonthlyBudget = () => {
     }]);
     setNewDebtOpen(false);
     setNewDebt({ debt_account_id: '', starting_balance: 0, interest_rate_apr: 0, payment_made: 0, min_payment: 0 });
-    loadDebts(monthId);
+    loadDebts(monthId, userId);
     toast({ title: 'Agregado', description: 'Deuda agregada' });
   };
 
   const deleteDebt = async (id: string) => {
     const tableName = getTableName('monthly_debts', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
-    loadDebts(monthId);
+    loadDebts(monthId, userId);
     toast({ title: 'Eliminado', description: 'Deuda eliminada' });
   };
 
