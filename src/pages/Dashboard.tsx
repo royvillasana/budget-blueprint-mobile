@@ -56,7 +56,7 @@ const Dashboard = () => {
       const { data: monthlyData, error: monthlyError } = await supabase
         .from('view_monthly_summary')
         .select('*')
-        .order('month_num', { ascending: true });
+        .order('month_id', { ascending: true });
 
       if (monthlyError) throw monthlyError;
       setMonthlySummaries(monthlyData || []);
