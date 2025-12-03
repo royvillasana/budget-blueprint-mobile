@@ -107,12 +107,12 @@ const MonthlyBudget = () => {
       
       setUserId(user.id);
 
-      // Get month record
+      // Get month record - use id directly since months table has id = 1-12 for each month
+      const monthId = parseInt(month || '1');
       const monthResponse = await (supabase as any)
         .from('months')
-        .select('id')
-        .eq('year', parseInt(year || '2025'))
-        .eq('month_number', parseInt(month || '1'))
+        .select('id, name, year')
+        .eq('id', monthId)
         .single();
       
       const monthData = monthResponse.data;
