@@ -61,11 +61,12 @@ const Dashboard = () => {
       if (monthlyError) throw monthlyError;
       setMonthlySummaries(monthlyData || []);
 
-      // Load annual summary view
+      // Load annual summary view - filter by user_id
       const { data: annualData, error: annualError } = await supabase
         .from('view_annual_summary')
         .select('*')
-        .single();
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       if (annualError) throw annualError;
       setAnnualSummary(annualData);
