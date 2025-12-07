@@ -327,7 +327,7 @@ export const AIChat = () => {
                                         {msg.attachments && msg.attachments.length > 0 && (
                                             <MessageAttachments>
                                                 {msg.attachments.map((att, idx) => (
-                                                    <MessageAttachment key={idx} data={{ url: att.url, mediaType: 'image/png' }} />
+                                                    <MessageAttachment key={idx} data={{ type: 'file', url: att.url, mediaType: 'image/png' }} />
                                                 ))}
                                             </MessageAttachments>
                                         )}
@@ -440,7 +440,7 @@ export const AIChat = () => {
                             </Button>
                         </div>
                         <PromptInput
-                            onSubmit={handleSend}
+                            onSubmit={(msg) => handleSend(msg)}
                             className="w-full"
                             accept="image/*"
                             maxFiles={3}
