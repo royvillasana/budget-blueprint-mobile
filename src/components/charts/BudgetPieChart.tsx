@@ -140,7 +140,7 @@ export function BudgetPieChart({
                 <span className="text-muted-foreground">
                   {formatValue(item.value)}
                 </span>
-                <span className={`font-medium ${getStatusColor(item.percent, item.target)}`}>
+                <span className="font-medium text-foreground">
                   {masked ? '••%' : `${item.percent.toFixed(1)}%`} / {item.target}%
                 </span>
               </div>
