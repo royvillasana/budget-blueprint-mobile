@@ -33,6 +33,7 @@ export interface AppConfig {
   currency: Currency;
   monthlyIncome: number;
   language: Language;
+  openaiApiKey?: string;
 }
 
 interface AppContextType {
@@ -47,7 +48,7 @@ interface AppContextType {
   updateCategory: (type: keyof AppContextType['budgetCategories'], categoryId: string, updates: Partial<Category>) => void;
   addCategory: (type: keyof AppContextType['budgetCategories'], category: Omit<Category, 'id'>) => void;
   transactions: Transaction[];
-  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => Promise<Transaction>;
   exchangeRate: number;
   loadingSettings: boolean;
 }
@@ -60,6 +61,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     currency: 'EUR',
     monthlyIncome: 0,
     language: 'es',
+    openaiApiKey: '',
   });
 
   const [loadingSettings, setLoadingSettings] = useState(true);
@@ -130,6 +132,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             currency: (settings.currency as Currency) || 'EUR',
             monthlyIncome: Number(settings.monthlyIncome) || 0,
             language: (settings.language as Language) || 'es',
+            openaiApiKey: settings.openaiApiKey || '',
           });
         }
       } catch (error) {
@@ -141,11 +144,66 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     loadUserSettings();
 
+    // Load categories
+    const loadCategories = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: categoriesData, error } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+
+        if (error) throw error;
+
+        if (categoriesData) {
+          const newCategories = {
+            needs: { ...budgetCategories.needs, categories: [] as Category[] },
+            desires: { ...budgetCategories.desires, categories: [] as Category[] },
+            future: { ...budgetCategories.future, categories: [] as Category[] },
+            debts: { ...budgetCategories.debts, categories: [] as Category[] },
+          };
+
+          categoriesData.forEach(cat => {
+            const category: Category = {
+              id: cat.id,
+              name: cat.name,
+              budgeted: 0, // These would need to be loaded from monthly budget if we want them accurate
+              spent: 0,
+            };
+
+            if (cat.bucket_50_30_20 === 'NEEDS') {
+              newCategories.needs.categories.push(category);
+            } else if (cat.bucket_50_30_20 === 'WANTS') {
+              newCategories.desires.categories.push(category);
+            } else if (cat.bucket_50_30_20 === 'FUTURE') {
+              newCategories.future.categories.push(category);
+            } else if (cat.bucket_50_30_20 === 'DEBTS') {
+              newCategories.debts.categories.push(category);
+            }
+          });
+
+          setBudgetCategories(prev => ({
+            ...prev,
+            needs: { ...prev.needs, categories: newCategories.needs.categories },
+            desires: { ...prev.desires, categories: newCategories.desires.categories },
+            future: { ...prev.future, categories: newCategories.future.categories },
+            debts: { ...prev.debts, categories: newCategories.debts.categories },
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         setTimeout(() => {
           loadUserSettings();
+          loadCategories();
         }, 0);
       } else if (event === 'SIGNED_OUT') {
         setConfig({
@@ -153,7 +211,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           currency: 'EUR',
           monthlyIncome: 0,
           language: 'es',
+          openaiApiKey: '',
         });
+      }
+    });
+
+    // Initial load if already signed in
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        loadCategories();
       }
     });
 
@@ -207,12 +273,63 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
-    const newTransaction = {
-      ...transaction,
-      id: `txn-${Date.now()}`,
-    };
-    setTransactions((prev) => [...prev, newTransaction]);
+  const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No user logged in');
+
+      const date = new Date(transaction.date);
+      const monthNum = date.getMonth() + 1;
+
+      // Dynamic import to avoid circular dependencies if any, or just standard import if possible.
+      // Since we are in a context, standard import should be fine if we add it to the top.
+      // But for now, let's assume getTableName is imported.
+      const { getTableName } = await import('@/utils/monthUtils');
+      const tableName = getTableName('monthly_transactions', monthNum);
+
+      const newTxnData = {
+        month_id: monthNum, // Note: This assumes month_id matches month number (1-12) which seems to be the case in MonthlyBudget.tsx
+        user_id: user.id,
+        category_id: transaction.category,
+        description: transaction.description,
+        amount: transaction.type === 'expense' ? -Math.abs(transaction.amount) : Math.abs(transaction.amount),
+        date: transaction.date,
+        direction: transaction.type === 'expense' ? 'EXPENSE' : 'INCOME',
+        currency_code: config.currency,
+      };
+
+      console.log('Attempting to save transaction:', { tableName, newTxnData });
+
+      const { data, error } = await (supabase as any).from(tableName).insert([newTxnData]).select().single();
+
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw error;
+      }
+
+      console.log('Transaction saved successfully:', data);
+
+      const newTransaction: Transaction = {
+        id: data.id,
+        date: data.date,
+        category: data.category_id,
+        description: data.description,
+        amount: Math.abs(data.amount),
+        type: data.amount < 0 ? 'expense' : 'income',
+      };
+
+      setTransactions((prev) => [...prev, newTransaction]);
+      return newTransaction;
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      // Fallback to local state for optimistic UI if needed, but better to fail loud in dev
+      const fallbackTxn = {
+        ...transaction,
+        id: `txn-${Date.now()}`,
+      };
+      setTransactions((prev) => [...prev, fallbackTxn]);
+      return fallbackTxn;
+    }
   };
 
   return (

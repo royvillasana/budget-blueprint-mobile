@@ -112,6 +112,29 @@ const MonthlyBudget = () => {
     setCurrentMonth(monthNum);
     setCurrentYear(yearNum);
     loadMonthData();
+
+    const handleBudgetUpdate = (event: Event) => {
+      loadMonthData();
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.transactionId) {
+        // Wait for data to reload then scroll and highlight
+        setTimeout(() => {
+          const element = document.getElementById(`txn-${customEvent.detail.transactionId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            element.classList.add('bg-yellow-100', 'dark:bg-yellow-900/30', 'transition-colors', 'duration-1000');
+            setTimeout(() => {
+              element.classList.remove('bg-yellow-100', 'dark:bg-yellow-900/30');
+            }, 3000);
+          }
+        }, 1000); // Delay to allow fetch and render
+      }
+    };
+
+    window.addEventListener('budget-update', handleBudgetUpdate);
+    return () => {
+      window.removeEventListener('budget-update', handleBudgetUpdate);
+    };
   }, [year, month]);
   const loadMonthData = async () => {
     try {
@@ -488,678 +511,678 @@ const MonthlyBudget = () => {
   const futureActual = futureBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);
   if (loading) {
     return <div className="min-h-screen bg-background">
-        <Header />
-        <main className="container mx-auto px-4 py-8">
-          <div className="animate-pulse">Cargando...</div>
-        </main>
-      </div>;
+      <Header />
+      <main className="container mx-auto px-4 py-8">
+        <div className="animate-pulse">Cargando...</div>
+      </main>
+    </div>;
   }
   return <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">
-              {getMonthName(currentMonth, config.language)} {currentYear}
-            </h1>
-            <p className="text-muted-foreground">Presupuesto mensual detallado</p>
-          </div>
-          <Button variant="ghost" size="icon" onClick={() => setDataMasked(!dataMasked)} className="h-10 w-10" title={dataMasked ? 'Mostrar datos' : 'Ocultar datos'}>
-            {dataMasked ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-          </Button>
+    <Header />
+    <main className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">
+            {getMonthName(currentMonth, config.language)} {currentYear}
+          </h1>
+          <p className="text-muted-foreground">Presupuesto mensual detallado</p>
         </div>
+        <Button variant="ghost" size="icon" onClick={() => setDataMasked(!dataMasked)} className="h-10 w-10" title={dataMasked ? 'Mostrar datos' : 'Ocultar datos'}>
+          {dataMasked ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </Button>
+      </div>
 
-        {/* KPIs */}
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Suma de todos los ingresos registrados para este mes, incluyendo salario, bonos y otras fuentes.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{formatCurrency(totalIncome)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Suma de todas las transacciones de gasto registradas en este mes.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-accent">{formatCurrency(totalExpenses)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-medium">Flujo Neto</CardTitle>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">Diferencia entre ingresos y gastos. Un valor positivo indica ahorro, negativo indica déficit.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary-dark">{formatCurrency(netCashFlow)}</div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* KPIs */}
+      <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Suma de todos los ingresos registrados para este mes, incluyendo salario, bonos y otras fuentes.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary">{formatCurrency(totalIncome)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Suma de todas las transacciones de gasto registradas en este mes.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-accent">{formatCurrency(totalExpenses)}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-medium">Flujo Neto</CardTitle>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">Diferencia entre ingresos y gastos. Un valor positivo indica ahorro, negativo indica déficit.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-primary-dark">{formatCurrency(netCashFlow)}</div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Charts */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <IncomeExpenseChart income={totalIncome} expenses={totalExpenses} currency={config.currency} language={config.language} masked={dataMasked} incomeItems={incomeItems.map(item => ({
+      {/* Charts */}
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <IncomeExpenseChart income={totalIncome} expenses={totalExpenses} currency={config.currency} language={config.language} masked={dataMasked} incomeItems={incomeItems.map(item => ({
           date: item.date,
           amount: item.amount
         }))} transactionItems={transactions.map(txn => ({
           date: txn.date,
           amount: txn.amount
         }))} />
-          <BudgetPieChart needsActual={needsActual} wantsActual={wantsActual} futureActual={futureActual} totalIncome={totalIncome} currency={config.currency} language={config.language} masked={dataMasked} />
-        </div>
+        <BudgetPieChart needsActual={needsActual} wantsActual={wantsActual} futureActual={futureActual} totalIncome={totalIncome} currency={config.currency} language={config.language} masked={dataMasked} />
+      </div>
 
-        {/* Settings */}
-        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen} className="mb-8">
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle>Configuración del Mes</CardTitle>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Define tu reto mensual, saldo inicial del mes anterior, modo de presupuesto y monto no asignado.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
+      {/* Settings */}
+      <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen} className="mb-8">
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Configuración del Mes</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Define tu reto mensual, saldo inicial del mes anterior, modo de presupuesto y monto no asignado.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Mi mayor reto para este mes</Label>
-                  <Input value={challenge} onChange={e => setChallenge(e.target.value)} placeholder="Escribe tu reto..." />
-                </div>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <Label>Saldo del mes anterior</Label>
-                    <Input type="number" value={carryover} onChange={e => setCarryover(Number(e.target.value))} />
-                  </div>
-                  <div>
-                    <Label>Modo de presupuesto</Label>
-                    <Select value={budgetMode} onValueChange={(v: any) => setBudgetMode(v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ZERO_BASED">Desde cero</SelectItem>
-                        <SelectItem value="COPY_PREVIOUS">Copiar del mes anterior</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Monto no asignado</Label>
-                    <Input type="number" value={unassignedPool} onChange={e => setUnassignedPool(Number(e.target.value))} />
-                  </div>
-                </div>
-                <Button onClick={saveSettings}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Guardar Configuración
-                </Button>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Budget 50/30/20 */}
-        <Collapsible open={budgetOpen} onOpenChange={setBudgetOpen} className="mb-8">
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle>Presupuesto 50/30/20</CardTitle>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Metodología de presupuesto: 50% para necesidades, 30% para deseos y 20% para ahorro/futuro. Define montos estimados y compara con gastos reales.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${budgetOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <Tabs defaultValue="needs" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-4">
-                    <TabsTrigger value="needs" className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-needs" />
-                      Necesidades
-                    </TabsTrigger>
-                    <TabsTrigger value="wants" className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-desires" />
-                      Deseos
-                    </TabsTrigger>
-                    <TabsTrigger value="future" className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-future" />
-                      Futuro
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="needs">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-center">Categoría</TableHead>
-                          <TableHead className="text-center">Estimado</TableHead>
-                          <TableHead className="text-center">Real</TableHead>
-                          <TableHead className="text-center">Diferencia</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {needsBudget.map(item => <TableRow key={item.id}>
-                            <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
-                            <TableCell className="text-center">
-                              <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
-                            </TableCell>
-                            <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                            <TableCell className="text-center text-primary">
-                              {formatCurrency(item.calculatedDifference || 0)}
-                            </TableCell>
-                          </TableRow>)}
-                      </TableBody>
-                    </Table>
-                  </TabsContent>
-
-                  <TabsContent value="wants">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-center">Categoría</TableHead>
-                          <TableHead className="text-center">Estimado</TableHead>
-                          <TableHead className="text-center">Real</TableHead>
-                          <TableHead className="text-center">Diferencia</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {wantsBudget.map(item => <TableRow key={item.id}>
-                            <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
-                            <TableCell className="text-center">
-                              <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
-                            </TableCell>
-                            <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                            <TableCell className="text-center text-primary">
-                              {formatCurrency(item.calculatedDifference || 0)}
-                            </TableCell>
-                          </TableRow>)}
-                      </TableBody>
-                    </Table>
-                  </TabsContent>
-
-                  <TabsContent value="future">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-center">Categoría</TableHead>
-                          <TableHead className="text-center">Estimado</TableHead>
-                          <TableHead className="text-center">Real</TableHead>
-                          <TableHead className="text-center">Diferencia</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {futureBudget.map(item => <TableRow key={item.id}>
-                            <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
-                            <TableCell className="text-center">
-                              <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
-                            </TableCell>
-                            <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                            <TableCell className="text-center text-primary">
-                              {formatCurrency(item.calculatedDifference || 0)}
-                            </TableCell>
-                          </TableRow>)}
-                      </TableBody>
-                    </Table>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Income */}
-        <Collapsible open={incomeOpen} onOpenChange={setIncomeOpen} className="mb-8">
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle>Ingresos</CardTitle>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Registra todas tus fuentes de ingreso del mes: salario, freelance, inversiones, etc.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${incomeOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fuente</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
-                      <TableHead className="text-center">Acción</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {incomeItems.map(item => <TableRow key={item.id}>
-                        <TableCell>{item.source}</TableCell>
-                        <TableCell>{item.date}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
-                        <TableCell className="text-center">
-                          <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>)}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Transactions */}
-        <Collapsible open={transactionsOpen} onOpenChange={setTransactionsOpen} className="mb-8">
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle>Transacciones</CardTitle>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Registro detallado de todos tus gastos del mes. Cada transacción se asigna a una categoría para el análisis.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${transactionsOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead>Descripción</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
-                      <TableHead className="text-center">Acción</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map(txn => <TableRow key={txn.id}>
-                        <TableCell>{txn.date}</TableCell>
-                        <TableCell><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{txn.categories?.emoji} {txn.categories?.name}</span></TableCell>
-                        <TableCell>{txn.description}</TableCell>
-                        <TableCell className="text-right text-desires">{formatCurrency(txn.amount)}</TableCell>
-                        <TableCell className="text-center">
-                          <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>)}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Debts */}
-        <Collapsible open={debtsOpen} onOpenChange={setDebtsOpen} className="mb-8">
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle>Deudas</CardTitle>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Seguimiento de préstamos y deudas. Registra pagos realizados para ver el progreso en la reducción de saldos.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${debtsOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Cuenta</TableHead>
-                      <TableHead className="text-right">Saldo Inicial</TableHead>
-                      <TableHead className="text-right">Interés APR</TableHead>
-                      <TableHead className="text-right">Pago</TableHead>
-                      <TableHead className="text-right">Saldo Final</TableHead>
-                      <TableHead className="text-center">Acción</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {debts.map(debt => <TableRow key={debt.id}>
-                        <TableCell>{accounts.find(a => a.id === debt.debt_account_id)?.name}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(debt.starting_balance)}</TableCell>
-                        <TableCell className="text-right">{debt.interest_rate_apr}%</TableCell>
-                        <TableCell className="text-right">{formatCurrency(debt.payment_made)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(debt.ending_balance)}</TableCell>
-                        <TableCell className="text-center">
-                          <Button size="sm" variant="ghost" onClick={() => deleteDebt(debt.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>)}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
-        {/* Wishlist */}
-        <Collapsible open={wishlistOpen} onOpenChange={setWishlistOpen} className="mb-8">
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CardTitle>Lista de Deseos</CardTitle>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">Artículos o experiencias que deseas adquirir. Prioriza y planifica tus compras futuras.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <ChevronDown className={`h-5 w-5 transition-transform ${wishlistOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Artículo</TableHead>
-                      <TableHead className="text-right">Costo Estimado</TableHead>
-                      <TableHead className="text-center">Prioridad</TableHead>
-                      <TableHead className="text-center">Acción</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {wishlist.map(wish => <TableRow key={wish.id}>
-                        <TableCell>{wish.item}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(wish.estimated_cost)}</TableCell>
-                        <TableCell className="text-center">{wish.priority}</TableCell>
-                        <TableCell className="text-center">
-                          <Button size="sm" variant="ghost" onClick={() => deleteWish(wish.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>)}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-      </main>
-
-      {/* FAB Button */}
-      <Button onClick={() => setFabDialogOpen(true)} className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg z-50">
-        <Plus className="w-6 h-6 text-primary-foreground" />
-      </Button>
-
-      {/* Unified Add Dialog */}
-      <Dialog open={fabDialogOpen} onOpenChange={open => {
-      if (!open) resetFabDialog();else setFabDialogOpen(true);
-    }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {!selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nueva Transacción' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
-            </DialogTitle>
-          </DialogHeader>
-
-          {!selectedAddType ? <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('income')}>
-                <span className="text-2xl">💰</span>
-                <span>Ingreso</span>
-              </Button>
-              <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('transaction')}>
-                <span className="text-2xl">💸</span>
-                <span>Transacción</span>
-              </Button>
-              <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('debt')}>
-                <span className="text-2xl">💳</span>
-                <span>Deuda</span>
-              </Button>
-              <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('wishlist')}>
-                <span className="text-2xl">⭐</span>
-                <span>Lista de Deseos</span>
-              </Button>
-            </div> : selectedAddType === 'income' ? <div className="space-y-4">
+                <ChevronDown className={`h-5 w-5 transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
               <div>
-                <Label>Fuente</Label>
-                <Input value={newIncome.source} onChange={e => setNewIncome({
+                <Label>Mi mayor reto para este mes</Label>
+                <Input value={challenge} onChange={e => setChallenge(e.target.value)} placeholder="Escribe tu reto..." />
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Saldo del mes anterior</Label>
+                  <Input type="number" value={carryover} onChange={e => setCarryover(Number(e.target.value))} />
+                </div>
+                <div>
+                  <Label>Modo de presupuesto</Label>
+                  <Select value={budgetMode} onValueChange={(v: any) => setBudgetMode(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ZERO_BASED">Desde cero</SelectItem>
+                      <SelectItem value="COPY_PREVIOUS">Copiar del mes anterior</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Monto no asignado</Label>
+                  <Input type="number" value={unassignedPool} onChange={e => setUnassignedPool(Number(e.target.value))} />
+                </div>
+              </div>
+              <Button onClick={saveSettings}>
+                <Save className="w-4 h-4 mr-2" />
+                Guardar Configuración
+              </Button>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Budget 50/30/20 */}
+      <Collapsible open={budgetOpen} onOpenChange={setBudgetOpen} className="mb-8">
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Presupuesto 50/30/20</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Metodología de presupuesto: 50% para necesidades, 30% para deseos y 20% para ahorro/futuro. Define montos estimados y compara con gastos reales.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${budgetOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              <Tabs defaultValue="needs" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-4">
+                  <TabsTrigger value="needs" className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-needs" />
+                    Necesidades
+                  </TabsTrigger>
+                  <TabsTrigger value="wants" className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-desires" />
+                    Deseos
+                  </TabsTrigger>
+                  <TabsTrigger value="future" className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-future" />
+                    Futuro
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="needs">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-center">Categoría</TableHead>
+                        <TableHead className="text-center">Estimado</TableHead>
+                        <TableHead className="text-center">Real</TableHead>
+                        <TableHead className="text-center">Diferencia</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {needsBudget.map(item => <TableRow key={item.id}>
+                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
+                        <TableCell className="text-center">
+                          <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
+                        </TableCell>
+                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className="text-center text-primary">
+                          {formatCurrency(item.calculatedDifference || 0)}
+                        </TableCell>
+                      </TableRow>)}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
+
+                <TabsContent value="wants">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-center">Categoría</TableHead>
+                        <TableHead className="text-center">Estimado</TableHead>
+                        <TableHead className="text-center">Real</TableHead>
+                        <TableHead className="text-center">Diferencia</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {wantsBudget.map(item => <TableRow key={item.id}>
+                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
+                        <TableCell className="text-center">
+                          <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
+                        </TableCell>
+                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className="text-center text-primary">
+                          {formatCurrency(item.calculatedDifference || 0)}
+                        </TableCell>
+                      </TableRow>)}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
+
+                <TabsContent value="future">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-center">Categoría</TableHead>
+                        <TableHead className="text-center">Estimado</TableHead>
+                        <TableHead className="text-center">Real</TableHead>
+                        <TableHead className="text-center">Diferencia</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {futureBudget.map(item => <TableRow key={item.id}>
+                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
+                        <TableCell className="text-center">
+                          <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
+                        </TableCell>
+                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className="text-center text-primary">
+                          {formatCurrency(item.calculatedDifference || 0)}
+                        </TableCell>
+                      </TableRow>)}
+                    </TableBody>
+                  </Table>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Income */}
+      <Collapsible open={incomeOpen} onOpenChange={setIncomeOpen} className="mb-8">
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Ingresos</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Registra todas tus fuentes de ingreso del mes: salario, freelance, inversiones, etc.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${incomeOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fuente</TableHead>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead className="text-center">Acción</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {incomeItems.map(item => <TableRow key={item.id}>
+                    <TableCell>{item.source}</TableCell>
+                    <TableCell>{item.date}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>)}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Transactions */}
+      <Collapsible open={transactionsOpen} onOpenChange={setTransactionsOpen} className="mb-8">
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Transacciones</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Registro detallado de todos tus gastos del mes. Cada transacción se asigna a una categoría para el análisis.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${transactionsOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Categoría</TableHead>
+                    <TableHead>Descripción</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead className="text-center">Acción</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map(txn => <TableRow key={txn.id} id={`txn-${txn.id}`}>
+                    <TableCell>{txn.date}</TableCell>
+                    <TableCell><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{txn.categories?.emoji} {txn.categories?.name}</span></TableCell>
+                    <TableCell>{txn.description}</TableCell>
+                    <TableCell className="text-right text-desires">{formatCurrency(txn.amount)}</TableCell>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>)}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Debts */}
+      <Collapsible open={debtsOpen} onOpenChange={setDebtsOpen} className="mb-8">
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Deudas</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Seguimiento de préstamos y deudas. Registra pagos realizados para ver el progreso en la reducción de saldos.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${debtsOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Cuenta</TableHead>
+                    <TableHead className="text-right">Saldo Inicial</TableHead>
+                    <TableHead className="text-right">Interés APR</TableHead>
+                    <TableHead className="text-right">Pago</TableHead>
+                    <TableHead className="text-right">Saldo Final</TableHead>
+                    <TableHead className="text-center">Acción</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {debts.map(debt => <TableRow key={debt.id}>
+                    <TableCell>{accounts.find(a => a.id === debt.debt_account_id)?.name}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(debt.starting_balance)}</TableCell>
+                    <TableCell className="text-right">{debt.interest_rate_apr}%</TableCell>
+                    <TableCell className="text-right">{formatCurrency(debt.payment_made)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(debt.ending_balance)}</TableCell>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="ghost" onClick={() => deleteDebt(debt.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>)}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Wishlist */}
+      <Collapsible open={wishlistOpen} onOpenChange={setWishlistOpen} className="mb-8">
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Lista de Deseos</CardTitle>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">Artículos o experiencias que deseas adquirir. Prioriza y planifica tus compras futuras.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${wishlistOpen ? 'rotate-180' : ''}`} />
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Artículo</TableHead>
+                    <TableHead className="text-right">Costo Estimado</TableHead>
+                    <TableHead className="text-center">Prioridad</TableHead>
+                    <TableHead className="text-center">Acción</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {wishlist.map(wish => <TableRow key={wish.id}>
+                    <TableCell>{wish.item}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(wish.estimated_cost)}</TableCell>
+                    <TableCell className="text-center">{wish.priority}</TableCell>
+                    <TableCell className="text-center">
+                      <Button size="sm" variant="ghost" onClick={() => deleteWish(wish.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>)}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    </main>
+
+    {/* FAB Button */}
+    <Button onClick={() => setFabDialogOpen(true)} className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg z-50">
+      <Plus className="w-6 h-6 text-primary-foreground" />
+    </Button>
+
+    {/* Unified Add Dialog */}
+    <Dialog open={fabDialogOpen} onOpenChange={open => {
+      if (!open) resetFabDialog(); else setFabDialogOpen(true);
+    }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {!selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nueva Transacción' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
+          </DialogTitle>
+        </DialogHeader>
+
+        {!selectedAddType ? <div className="grid grid-cols-2 gap-4">
+          <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('income')}>
+            <span className="text-2xl">💰</span>
+            <span>Ingreso</span>
+          </Button>
+          <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('transaction')}>
+            <span className="text-2xl">💸</span>
+            <span>Transacción</span>
+          </Button>
+          <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('debt')}>
+            <span className="text-2xl">💳</span>
+            <span>Deuda</span>
+          </Button>
+          <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('wishlist')}>
+            <span className="text-2xl">⭐</span>
+            <span>Lista de Deseos</span>
+          </Button>
+        </div> : selectedAddType === 'income' ? <div className="space-y-4">
+          <div>
+            <Label>Fuente</Label>
+            <Input value={newIncome.source} onChange={e => setNewIncome({
               ...newIncome,
               source: e.target.value
             })} />
-              </div>
-              <div>
-                <Label>Monto</Label>
-                <Input type="number" value={newIncome.amount} onChange={e => setNewIncome({
+          </div>
+          <div>
+            <Label>Monto</Label>
+            <Input type="number" value={newIncome.amount} onChange={e => setNewIncome({
               ...newIncome,
               amount: Number(e.target.value)
             })} />
-              </div>
-              <div>
-                <Label>Fecha</Label>
-                <Input type="date" value={newIncome.date} onChange={e => setNewIncome({
+          </div>
+          <div>
+            <Label>Fecha</Label>
+            <Input type="date" value={newIncome.date} onChange={e => setNewIncome({
               ...newIncome,
               date: e.target.value
             })} />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-                <Button className="flex-1" onClick={addIncome}>Agregar</Button>
-              </div>
-            </div> : selectedAddType === 'transaction' ? <div className="space-y-4">
-              <div>
-                <Label>Categoría</Label>
-                <Select value={newTxn.category_id} onValueChange={v => setNewTxn({
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
+            <Button className="flex-1" onClick={addIncome}>Agregar</Button>
+          </div>
+        </div> : selectedAddType === 'transaction' ? <div className="space-y-4">
+          <div>
+            <Label>Categoría</Label>
+            <Select value={newTxn.category_id} onValueChange={v => setNewTxn({
               ...newTxn,
               category_id: v
             })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>
-                        {cat.emoji} {cat.name}
-                      </SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Descripción</Label>
-                <Input value={newTxn.description} onChange={e => setNewTxn({
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>
+                  {cat.emoji} {cat.name}
+                </SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Descripción</Label>
+            <Input value={newTxn.description} onChange={e => setNewTxn({
               ...newTxn,
               description: e.target.value
             })} />
-              </div>
-              <div>
-                <Label>Monto</Label>
-                <Input type="number" value={newTxn.amount} onChange={e => setNewTxn({
+          </div>
+          <div>
+            <Label>Monto</Label>
+            <Input type="number" value={newTxn.amount} onChange={e => setNewTxn({
               ...newTxn,
               amount: Number(e.target.value)
             })} />
-              </div>
-              <div>
-                <Label>Fecha</Label>
-                <Input type="date" value={newTxn.date} onChange={e => setNewTxn({
+          </div>
+          <div>
+            <Label>Fecha</Label>
+            <Input type="date" value={newTxn.date} onChange={e => setNewTxn({
               ...newTxn,
               date: e.target.value
             })} />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-                <Button className="flex-1" onClick={addTransaction}>Agregar</Button>
-              </div>
-            </div> : selectedAddType === 'debt' ? <div className="space-y-4">
-              <div>
-                <Label>Cuenta de deuda</Label>
-                <Select value={newDebt.debt_account_id} onValueChange={v => setNewDebt({
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
+            <Button className="flex-1" onClick={addTransaction}>Agregar</Button>
+          </div>
+        </div> : selectedAddType === 'debt' ? <div className="space-y-4">
+          <div>
+            <Label>Cuenta de deuda</Label>
+            <Select value={newDebt.debt_account_id} onValueChange={v => setNewDebt({
               ...newDebt,
               debt_account_id: v
             })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar cuenta" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => <SelectItem key={acc.id} value={acc.id}>
-                        {acc.name}
-                      </SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Saldo inicial</Label>
-                <Input type="number" value={newDebt.starting_balance} onChange={e => setNewDebt({
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar cuenta" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => <SelectItem key={acc.id} value={acc.id}>
+                  {acc.name}
+                </SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Saldo inicial</Label>
+            <Input type="number" value={newDebt.starting_balance} onChange={e => setNewDebt({
               ...newDebt,
               starting_balance: Number(e.target.value)
             })} />
-              </div>
-              <div>
-                <Label>Tasa de interés (APR %)</Label>
-                <Input type="number" value={newDebt.interest_rate_apr} onChange={e => setNewDebt({
+          </div>
+          <div>
+            <Label>Tasa de interés (APR %)</Label>
+            <Input type="number" value={newDebt.interest_rate_apr} onChange={e => setNewDebt({
               ...newDebt,
               interest_rate_apr: Number(e.target.value)
             })} />
-              </div>
-              <div>
-                <Label>Pago mínimo</Label>
-                <Input type="number" value={newDebt.min_payment} onChange={e => setNewDebt({
+          </div>
+          <div>
+            <Label>Pago mínimo</Label>
+            <Input type="number" value={newDebt.min_payment} onChange={e => setNewDebt({
               ...newDebt,
               min_payment: Number(e.target.value)
             })} />
-              </div>
-              <div>
-                <Label>Pago realizado</Label>
-                <Input type="number" value={newDebt.payment_made} onChange={e => setNewDebt({
+          </div>
+          <div>
+            <Label>Pago realizado</Label>
+            <Input type="number" value={newDebt.payment_made} onChange={e => setNewDebt({
               ...newDebt,
               payment_made: Number(e.target.value)
             })} />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-                <Button className="flex-1" onClick={addDebt}>Agregar</Button>
-              </div>
-            </div> : <div className="space-y-4">
-              <div>
-                <Label>Artículo</Label>
-                <Input value={newWish.item} onChange={e => setNewWish({
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
+            <Button className="flex-1" onClick={addDebt}>Agregar</Button>
+          </div>
+        </div> : <div className="space-y-4">
+          <div>
+            <Label>Artículo</Label>
+            <Input value={newWish.item} onChange={e => setNewWish({
               ...newWish,
               item: e.target.value
             })} />
-              </div>
-              <div>
-                <Label>Costo estimado</Label>
-                <Input type="number" value={newWish.estimated_cost} onChange={e => setNewWish({
+          </div>
+          <div>
+            <Label>Costo estimado</Label>
+            <Input type="number" value={newWish.estimated_cost} onChange={e => setNewWish({
               ...newWish,
               estimated_cost: Number(e.target.value)
             })} />
-              </div>
-              <div>
-                <Label>Prioridad (1-5)</Label>
-                <Input type="number" min={1} max={5} value={newWish.priority} onChange={e => setNewWish({
+          </div>
+          <div>
+            <Label>Prioridad (1-5)</Label>
+            <Input type="number" min={1} max={5} value={newWish.priority} onChange={e => setNewWish({
               ...newWish,
               priority: Number(e.target.value)
             })} />
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-                <Button className="flex-1" onClick={addWish}>Agregar</Button>
-              </div>
-            </div>}
-        </DialogContent>
-      </Dialog>
-    </div>;
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
+            <Button className="flex-1" onClick={addWish}>Agregar</Button>
+          </div>
+        </div>}
+      </DialogContent>
+    </Dialog>
+  </div>;
 };
 export default MonthlyBudget;

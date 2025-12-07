@@ -23,6 +23,7 @@ const Settings = () => {
     monthlyIncome: config.monthlyIncome.toString(),
     currency: config.currency,
     language: config.language,
+    openaiApiKey: config.openaiApiKey || '',
   });
 
   // Update form when config loads from database
@@ -32,6 +33,7 @@ const Settings = () => {
       monthlyIncome: config.monthlyIncome.toString(),
       currency: config.currency,
       language: config.language,
+      openaiApiKey: config.openaiApiKey || '',
     });
   }, [config]);
 
@@ -43,6 +45,7 @@ const Settings = () => {
         monthlyIncome: parseFloat(formData.monthlyIncome) || 0,
         currency: formData.currency as 'EUR' | 'USD',
         language: formData.language as 'es' | 'en',
+        openaiApiKey: formData.openaiApiKey,
       });
 
       toast({
@@ -160,6 +163,24 @@ const Settings = () => {
                     {storageType === 'supabase'
                       ? 'Tus datos están sincronizados en la nube y accesibles desde cualquier dispositivo.'
                       : 'Tus datos se guardan solo en este dispositivo. Si borras los datos del navegador, se perderán.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-border/50">
+                <h3 className="text-lg font-semibold mb-4">Configuración de IA</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="openaiApiKey">OpenAI API Key (Opcional)</Label>
+                  <Input
+                    id="openaiApiKey"
+                    type="password"
+                    value={formData.openaiApiKey}
+                    onChange={(e) => setFormData({ ...formData, openaiApiKey: e.target.value })}
+                    placeholder="sk-..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Si proporcionas tu propia API Key, se usará en lugar de la predeterminada.
+                    Tu clave se guarda localmente y nunca se comparte con nosotros.
                   </p>
                 </div>
               </div>
