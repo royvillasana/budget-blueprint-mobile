@@ -191,10 +191,6 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{t.dashboard}</h1>
-          <p className="text-muted-foreground">{t.annualSummary} - 2025</p>
-        </div>
 
         {/* Annual Income vs Expenses Chart + KPI Cards */}
         <div className="grid gap-6 lg:grid-cols-3 mb-8">
