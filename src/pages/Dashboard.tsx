@@ -5,11 +5,12 @@ import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/i18n/translations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, CreditCard, Calendar, DollarSign, Receipt, Landmark } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, CreditCard, Calendar, DollarSign, Receipt, Landmark, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { getMonthName, getTableName, MONTH_INFO } from '@/utils/monthUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label } from 'recharts';
 import {
   ChartConfig,
@@ -687,47 +688,56 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Monthly Breakdown Table */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>{t.monthlyBreakdown}</CardTitle>
-            <Calendar className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mes</TableHead>
-                  <TableHead className="text-right">Ingresos</TableHead>
-                  <TableHead className="text-right">Gastos</TableHead>
-                  <TableHead className="text-right">Flujo Neto</TableHead>
-                  <TableHead className="text-center">Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {monthlySummaries.map((month) => (
-                  <TableRow key={month.month_id}>
-                    <TableCell className="font-medium">{getLocalizedMonthName(month.month_name || '')}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(month.total_income)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(month.total_expenses)}</TableCell>
-                    <TableCell className={`text-right ${(month.net_cash_flow || 0) >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                      {formatCurrency(month.net_cash_flow)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => navigate(`/budget/2025/${month.month_id}`)}
-                      >
-                        Ver
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        {/* Monthly Breakdown Table - Collapsible */}
+        <Collapsible defaultOpen className="mb-8">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="flex flex-row items-center justify-between cursor-pointer hover:bg-muted/50 transition-colors">
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  {t.monthlyBreakdown}
+                </CardTitle>
+                <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{config.language === 'es' ? 'Mes' : 'Month'}</TableHead>
+                      <TableHead className="text-right">{config.language === 'es' ? 'Ingresos' : 'Income'}</TableHead>
+                      <TableHead className="text-right">{config.language === 'es' ? 'Gastos' : 'Expenses'}</TableHead>
+                      <TableHead className="text-right">{config.language === 'es' ? 'Flujo Neto' : 'Net Flow'}</TableHead>
+                      <TableHead className="text-center">{config.language === 'es' ? 'Acción' : 'Action'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {monthlySummaries.map((month) => (
+                      <TableRow key={month.month_id}>
+                        <TableCell className="font-medium">{getLocalizedMonthName(month.month_name || '')}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(month.total_income)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(month.total_expenses)}</TableCell>
+                        <TableCell className={`text-right ${(month.net_cash_flow || 0) >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                          {formatCurrency(month.net_cash_flow)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => navigate(`/budget/2025/${month.month_id}`)}
+                          >
+                            {config.language === 'es' ? 'Ver' : 'View'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </main>
     </div>
   );
