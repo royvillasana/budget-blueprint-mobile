@@ -128,71 +128,81 @@ export const Header = () => {
               <span className="font-semibold text-foreground hidden sm:block">Budget Pro</span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex gap-2 items-center">
-              <NavLinks />
-            </nav>
+            {/* Desktop Navigation - Only show if logged in */}
+            {userEmail && (
+              <nav className="hidden md:flex gap-2 items-center">
+                <NavLinks />
+              </nav>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="" alt={userEmail || ''} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {userEmail ? userEmail.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                {userEmail && (
-                  <>
-                    <div className="flex items-center justify-start gap-2 p-2">
-                      <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium text-sm leading-none">{userEmail}</p>
-                      </div>
-                    </div>
+            {userEmail ? (
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src="" alt={userEmail || ''} />
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {userEmail ? userEmail.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    {userEmail && (
+                      <>
+                        <div className="flex items-center justify-start gap-2 p-2">
+                          <div className="flex flex-col space-y-1 leading-none">
+                            <p className="font-medium text-sm leading-none">{userEmail}</p>
+                          </div>
+                        </div>
+                        <div className="h-px bg-muted my-1" />
+                      </>
+                    )}
+                    <DropdownMenuItem onClick={() => navigate('/settings')}>
+                      <SettingsIcon className="mr-2 h-4 w-4" />
+                      <span>{t.settings}</span>
+                    </DropdownMenuItem>
                     <div className="h-px bg-muted my-1" />
-                  </>
-                )}
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <SettingsIcon className="mr-2 h-4 w-4" />
-                  <span>{t.settings}</span>
-                </DropdownMenuItem>
-                <div className="h-px bg-muted my-1" />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>{config.language === 'es' ? 'Cerrar Sesión' : 'Log Out'}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>{config.language === 'es' ? 'Cerrar Sesión' : 'Log Out'}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-            {/* Mobile Menu */}
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[280px] sm:w-[320px]">
-                <nav className="flex flex-col gap-2 mt-8">
-                  <NavLinks mobile onClose={() => setMobileMenuOpen(false)} />
-                  <Button
-                    variant="ghost"
-                    className="justify-start px-3"
-                    onClick={() => {
-                      handleLogout();
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {config.language === 'es' ? 'Cerrar Sesión' : 'Log Out'}
-                  </Button>
-                </nav>
-              </SheetContent>
-            </Sheet>
+                {/* Mobile Menu */}
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="md:hidden">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[280px] sm:w-[320px]">
+                    <nav className="flex flex-col gap-2 mt-8">
+                      <NavLinks mobile onClose={() => setMobileMenuOpen(false)} />
+                      <Button
+                        variant="ghost"
+                        className="justify-start px-3"
+                        onClick={() => {
+                          handleLogout();
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        {config.language === 'es' ? 'Cerrar Sesión' : 'Log Out'}
+                      </Button>
+                    </nav>
+                  </SheetContent>
+                </Sheet>
+              </>
+            ) : (
+              <Button onClick={() => navigate('/auth')} variant="default" size="sm">
+                {config.language === 'es' ? 'Iniciar Sesión' : 'Sign In'}
+              </Button>
+            )}
           </div>
         </div>
       </div>

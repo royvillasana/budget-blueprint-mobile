@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutDashboard, Wallet, Shield, Globe, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Header } from '@/components/Header';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <Header />
       {/* Hero Section */}
       <section className="relative py-20 px-4 md:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 -z-10" />
