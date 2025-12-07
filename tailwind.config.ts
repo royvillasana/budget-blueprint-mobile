@@ -61,6 +61,10 @@ export default {
         desires: "hsl(var(--desires))",
         future: "hsl(var(--future))",
         debt: "hsl(var(--debt))",
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

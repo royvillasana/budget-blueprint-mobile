@@ -152,10 +152,18 @@ const Dashboard = () => {
     setCurrentDebts((debtsData as DebtItem[]) || []);
   };
 
-  const formatCurrency = (amount: number | null) => {
+  const formatCurrency = (amount: number | null, compact = false) => {
     const value = amount || 0;
     const symbol = config.currency === 'EUR' ? '€' : '$';
-    return `${symbol}${Math.abs(value).toFixed(2)}`;
+    if (compact && Math.abs(value) >= 1000) {
+      return `${symbol}${(Math.abs(value) / 1000).toFixed(1)}K`;
+    }
+    return `${symbol}${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formatPercentage = (value: number) => {
+    const sign = value >= 0 ? '+' : '';
+    return `${sign}${value.toFixed(1)}%`;
   };
 
   const getLocalizedMonthName = (monthName: string) => {
@@ -176,6 +184,14 @@ const Dashboard = () => {
     return monthMap[monthName] || monthName;
   };
 
+  // Calculate income rate (mock calculation - you can adjust)
+  const incomeGrowthRate = annualSummary?.annual_income 
+    ? ((annualSummary.annual_income / 12) / ((annualSummary.annual_income / 12) || 1) * 100 - 100) 
+    : 0;
+  const savingsRate = annualSummary?.annual_income 
+    ? (Math.abs(annualSummary.annual_future_actual || 0) / annualSummary.annual_income * 100) 
+    : 0;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -190,17 +206,133 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        
+        {/* Welcome Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">
+              {config.language === 'es' ? 'Bienvenido' : 'Welcome back'}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {config.language === 'es' 
+                ? 'Controla tus finanzas y alcanza tus metas' 
+                : 'Track your finances and reach your goals'}
+            </p>
+          </div>
+          <Button variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            {config.language === 'es' ? 'Ver reportes' : 'View reports'}
+          </Button>
+        </div>
 
-        {/* Annual Income vs Expenses Chart + KPI Cards */}
-        <div className="grid gap-6 lg:grid-cols-3 mb-8">
+        {/* KPI Cards Row */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Income KPI */}
+          <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/80">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary" />
+                {t.income}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_income, true)}</span>
+                <span className="badge-success text-xs">
+                  <TrendingUp className="h-3 w-3" />
+                  {config.language === 'es' ? 'Anual' : 'Annual'}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Expenses KPI */}
+          <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/80">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-accent" />
+                {t.expenses}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_expenses, true)}</span>
+                <span className="badge-destructive text-xs">
+                  <TrendingDown className="h-3 w-3" />
+                  {config.language === 'es' ? 'Gastos' : 'Spent'}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Savings KPI */}
+          <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/80">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-success/50 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-success" />
+                {t.future}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_future_actual, true)}</span>
+                <span className="badge-success text-xs">
+                  {savingsRate.toFixed(1)}%
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Debts KPI */}
+          <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/80">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-chart-4/50 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: 'hsl(var(--chart-4))' }} />
+                {t.debts}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_debt_payments, true)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {config.language === 'es' ? 'Pagado' : 'Paid'}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Chart + Side Stats */}
+        <div className="grid gap-6 lg:grid-cols-3">
           {/* Chart - Takes 2 columns */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>{config.language === 'es' ? 'Ingresos vs Gastos Anuales' : 'Annual Income vs Expenses'}</CardTitle>
-              <CardDescription>
-                {config.language === 'es' ? 'Visualización mensual del año 2025' : 'Monthly visualization for 2025'}
-              </CardDescription>
+          <Card className="lg:col-span-2 border-border/50 bg-gradient-to-br from-card to-card/80">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">
+                  {config.language === 'es' ? 'Ingresos totales' : 'Total revenue'}
+                </CardTitle>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <span className="text-3xl font-bold">{formatCurrency(annualSummary?.annual_income, true)}</span>
+                  <span className="badge-success text-xs">
+                    <TrendingUp className="h-3 w-3" />
+                    {config.language === 'es' ? 'vs año anterior' : 'vs last year'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--chart-1))' }} />
+                  <span className="text-muted-foreground">{config.language === 'es' ? 'Ingresos' : 'Revenue'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--chart-2))' }} />
+                  <span className="text-muted-foreground">{config.language === 'es' ? 'Gastos' : 'Expenses'}</span>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <ChartContainer 
@@ -214,7 +346,7 @@ const Dashboard = () => {
                     color: 'hsl(var(--chart-2))',
                   },
                 } satisfies ChartConfig}
-                className="h-[350px] w-full"
+                className="h-[300px] w-full"
               >
                 <AreaChart
                   accessibilityLayer
@@ -230,136 +362,130 @@ const Dashboard = () => {
                     bottom: 12,
                   }}
                 >
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis
                     dataKey="month"
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
                     tickFormatter={(value) => value.slice(0, 3)}
+                    stroke="hsl(var(--muted-foreground))"
                   />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    tickFormatter={(value) => `${config.currency === 'EUR' ? '€' : '$'}${value}`}
+                    tickFormatter={(value) => `${config.currency === 'EUR' ? '€' : '$'}${(value / 1000).toFixed(0)}K`}
+                    stroke="hsl(var(--muted-foreground))"
                   />
                   <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                   <defs>
                     <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="var(--color-income)"
-                        stopOpacity={0.8}
+                        stopColor="hsl(var(--chart-1))"
+                        stopOpacity={0.6}
                       />
                       <stop
                         offset="95%"
-                        stopColor="var(--color-income)"
-                        stopOpacity={0.1}
+                        stopColor="hsl(var(--chart-1))"
+                        stopOpacity={0.05}
                       />
                     </linearGradient>
                     <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="5%"
-                        stopColor="var(--color-expenses)"
-                        stopOpacity={0.8}
+                        stopColor="hsl(var(--chart-2))"
+                        stopOpacity={0.6}
                       />
                       <stop
                         offset="95%"
-                        stopColor="var(--color-expenses)"
-                        stopOpacity={0.1}
+                        stopColor="hsl(var(--chart-2))"
+                        stopOpacity={0.05}
                       />
                     </linearGradient>
                   </defs>
                   <Area
                     dataKey="income"
-                    type="natural"
+                    type="monotone"
                     fill="url(#fillIncome)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-income)"
+                    stroke="hsl(var(--chart-1))"
                     strokeWidth={2}
-                    stackId="a"
                   />
                   <Area
                     dataKey="expenses"
-                    type="natural"
+                    type="monotone"
                     fill="url(#fillExpenses)"
-                    fillOpacity={0.4}
-                    stroke="var(--color-expenses)"
+                    stroke="hsl(var(--chart-2))"
                     strokeWidth={2}
-                    stackId="b"
                   />
                 </AreaChart>
               </ChartContainer>
-              <div className="flex justify-center gap-8 mt-4 pt-4 border-t">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-1))' }} />
-                  <span className="text-sm font-medium">
-                    {config.language === 'es' ? 'Ingresos' : 'Income'}: {formatCurrency(annualSummary?.annual_income)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-2))' }} />
-                  <span className="text-sm font-medium">
-                    {config.language === 'es' ? 'Gastos' : 'Expenses'}: {formatCurrency(annualSummary?.annual_expenses)}
-                  </span>
-                </div>
-              </div>
             </CardContent>
           </Card>
 
-          {/* KPI Cards - Right side */}
+          {/* Side Stats Cards */}
           <div className="flex flex-col gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t.income}</CardTitle>
-                <Wallet className="h-4 w-4 text-muted-foreground" />
+            {/* Net Cash Flow Card */}
+            <Card className="flex-1 border-border/50 bg-gradient-to-br from-card to-card/80">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-success" />
+                  {config.language === 'es' ? 'Flujo neto' : 'Net cash flow'}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_income)}</div>
-                <p className="text-xs text-muted-foreground">{config.language === 'es' ? 'Anual' : 'Annual'}</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_net_cash_flow, true)}</span>
+                  <span className="badge-success text-xs">
+                    <TrendingUp className="h-3 w-3" />
+                    {config.language === 'es' ? 'Positivo' : 'Positive'}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {config.language === 'es' ? 'Últimos 12 meses' : 'Last 12 months'}
+                </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t.expenses}</CardTitle>
-                <TrendingDown className="h-4 w-4 text-destructive" />
+            {/* Needs Card */}
+            <Card className="flex-1 border-border/50 bg-gradient-to-br from-card to-card/80">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-primary" />
+                  {t.needs}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_expenses)}</div>
-                <p className="text-xs text-muted-foreground">{config.language === 'es' ? 'Anual' : 'Annual'}</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_needs_actual, true)}</span>
+                  <span className="text-xs text-muted-foreground">50%</span>
+                </div>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t.future}</CardTitle>
-                <PiggyBank className="h-4 w-4 text-green-600" />
+            {/* Wants Card */}
+            <Card className="flex-1 border-border/50 bg-gradient-to-br from-card to-card/80">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-accent" />
+                  {t.desires}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_future_actual)}</div>
-                <p className="text-xs text-muted-foreground">{config.language === 'es' ? 'Ahorros + Inversiones' : 'Savings + Investments'}</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{t.debts}</CardTitle>
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_debt_payments)}</div>
-                <p className="text-xs text-muted-foreground">{config.language === 'es' ? 'Pagos de deudas' : 'Debt Payments'}</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_wants_actual, true)}</span>
+                  <span className="text-xs text-muted-foreground">30%</span>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
 
         {/* 50/30/20 Summary with Stacked Radial Charts */}
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
+        <div className="grid gap-6 md:grid-cols-3">
           {/* Needs Card */}
-          <Card className="flex flex-col">
+          <Card className="flex flex-col border-border/50 bg-gradient-to-br from-card to-card/80">
             <CardHeader className="items-center pb-0">
               <CardTitle>{t.needs}</CardTitle>
               <CardDescription>50% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
@@ -451,7 +577,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Wants Card */}
-          <Card className="flex flex-col">
+          <Card className="flex flex-col border-border/50 bg-gradient-to-br from-card to-card/80">
             <CardHeader className="items-center pb-0">
               <CardTitle>{t.desires}</CardTitle>
               <CardDescription>30% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
@@ -541,7 +667,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Future Card */}
-          <Card className="flex flex-col">
+          <Card className="flex flex-col border-border/50 bg-gradient-to-br from-card to-card/80">
             <CardHeader className="items-center pb-0">
               <CardTitle>{t.future}</CardTitle>
               <CardDescription>20% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
@@ -632,16 +758,16 @@ const Dashboard = () => {
         </div>
 
         {/* Current Month Dynamic Tables */}
-        <Card className="mb-8">
+        <Card className="border-border/50 bg-gradient-to-br from-card to-card/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
+              <Calendar className="h-5 w-5 text-primary" />
               {config.language === 'es' ? 'Datos del Mes Actual' : 'Current Month Data'} - {getMonthName(currentMonth, config.language)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="income" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-3 bg-muted/50">
                 <TabsTrigger value="income" className="flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
                   {config.language === 'es' ? 'Ingresos' : 'Income'}
@@ -671,7 +797,7 @@ const Dashboard = () => {
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.source}</TableCell>
                           <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right text-green-600">{formatCurrency(item.amount)}</TableCell>
+                          <TableCell className="text-right text-success">{formatCurrency(item.amount)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -730,7 +856,7 @@ const Dashboard = () => {
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.accounts?.name || '-'}</TableCell>
                           <TableCell className="text-right">{formatCurrency(item.starting_balance)}</TableCell>
-                          <TableCell className="text-right text-green-600">{formatCurrency(item.payment_made || 0)}</TableCell>
+                          <TableCell className="text-right text-success">{formatCurrency(item.payment_made || 0)}</TableCell>
                           <TableCell className="text-right text-destructive">{formatCurrency(item.ending_balance || item.starting_balance)}</TableCell>
                         </TableRow>
                       ))}
