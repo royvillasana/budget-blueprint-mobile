@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { getMonthName, getTableName, MONTH_INFO } from '@/utils/monthUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarRadiusAxis, Label } from 'recharts';
 import {
   ChartConfig,
   ChartContainer,
@@ -356,7 +356,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 50/30/20 Summary with Radial Charts */}
+        {/* 50/30/20 Summary with Stacked Radial Charts */}
         <div className="grid gap-6 md:grid-cols-3 mb-8">
           {/* Needs Card */}
           <Card className="flex flex-col">
@@ -364,56 +364,54 @@ const Dashboard = () => {
               <CardTitle>{t.needs}</CardTitle>
               <CardDescription>50% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
+            <CardContent className="flex flex-1 items-center pb-0">
               <ChartContainer
                 config={{
-                  needs: {
-                    label: t.needs,
+                  actual: {
+                    label: config.language === 'es' ? 'Real' : 'Actual',
                     color: 'hsl(var(--chart-1))',
                   },
+                  target: {
+                    label: config.language === 'es' ? 'Objetivo' : 'Target',
+                    color: 'hsl(var(--chart-4))',
+                  },
                 }}
-                className="mx-auto aspect-square max-h-[200px]"
+                className="mx-auto aspect-square w-full max-w-[250px]"
               >
                 <RadialBarChart
                   data={[{ 
                     category: 'needs', 
-                    value: Math.abs(annualSummary?.annual_needs_actual || 0), 
-                    fill: 'var(--color-needs)' 
+                    actual: Math.abs(annualSummary?.annual_needs_actual || 0),
+                    target: (annualSummary?.annual_income || 0) * 0.5
                   }]}
-                  endAngle={Math.min(360, ((Math.abs(annualSummary?.annual_needs_actual || 0) / (annualSummary?.annual_income || 1)) * 100 / 50) * 180)}
-                  innerRadius={60}
-                  outerRadius={100}
+                  endAngle={180}
+                  innerRadius={80}
+                  outerRadius={130}
                 >
-                  <PolarGrid
-                    gridType="circle"
-                    radialLines={false}
-                    stroke="none"
-                    className="first:fill-muted last:fill-background"
-                    polarRadius={[66, 54]}
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
                   />
-                  <RadialBar dataKey="value" background cornerRadius={10} />
                   <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
                     <Label
                       content={({ viewBox }) => {
                         if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          const actual = Math.abs(annualSummary?.annual_needs_actual || 0);
+                          const target = (annualSummary?.annual_income || 0) * 0.5;
+                          const total = actual + target;
                           return (
-                            <text
-                              x={viewBox.cx}
-                              y={viewBox.cy}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                            >
+                            <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
                               <tspan
                                 x={viewBox.cx}
-                                y={viewBox.cy}
+                                y={(viewBox.cy || 0) - 16}
                                 className="fill-foreground text-2xl font-bold"
                               >
-                                {formatCurrency(annualSummary?.annual_needs_actual)}
+                                {formatCurrency(actual)}
                               </tspan>
                               <tspan
                                 x={viewBox.cx}
-                                y={(viewBox.cy || 0) + 20}
-                                className="fill-muted-foreground text-xs"
+                                y={(viewBox.cy || 0) + 4}
+                                className="fill-muted-foreground"
                               >
                                 {t.needs}
                               </tspan>
@@ -423,9 +421,33 @@ const Dashboard = () => {
                       }}
                     />
                   </PolarRadiusAxis>
+                  <RadialBar
+                    dataKey="actual"
+                    stackId="a"
+                    cornerRadius={5}
+                    fill="var(--color-actual)"
+                    className="stroke-transparent stroke-2"
+                  />
+                  <RadialBar
+                    dataKey="target"
+                    fill="var(--color-target)"
+                    stackId="a"
+                    cornerRadius={5}
+                    className="stroke-transparent stroke-2"
+                  />
                 </RadialBarChart>
               </ChartContainer>
             </CardContent>
+            <div className="flex justify-center gap-4 pb-4 text-sm">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-1))' }} />
+                <span className="text-muted-foreground">{config.language === 'es' ? 'Real' : 'Actual'}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-4))' }} />
+                <span className="text-muted-foreground">{config.language === 'es' ? 'Objetivo' : 'Target'}</span>
+              </div>
+            </div>
           </Card>
 
           {/* Wants Card */}
@@ -434,56 +456,52 @@ const Dashboard = () => {
               <CardTitle>{t.desires}</CardTitle>
               <CardDescription>30% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
+            <CardContent className="flex flex-1 items-center pb-0">
               <ChartContainer
                 config={{
-                  wants: {
-                    label: t.desires,
+                  actual: {
+                    label: config.language === 'es' ? 'Real' : 'Actual',
                     color: 'hsl(var(--chart-2))',
                   },
+                  target: {
+                    label: config.language === 'es' ? 'Objetivo' : 'Target',
+                    color: 'hsl(var(--chart-5))',
+                  },
                 }}
-                className="mx-auto aspect-square max-h-[200px]"
+                className="mx-auto aspect-square w-full max-w-[250px]"
               >
                 <RadialBarChart
                   data={[{ 
                     category: 'wants', 
-                    value: Math.abs(annualSummary?.annual_wants_actual || 0), 
-                    fill: 'var(--color-wants)' 
+                    actual: Math.abs(annualSummary?.annual_wants_actual || 0),
+                    target: (annualSummary?.annual_income || 0) * 0.3
                   }]}
-                  endAngle={Math.min(360, ((Math.abs(annualSummary?.annual_wants_actual || 0) / (annualSummary?.annual_income || 1)) * 100 / 30) * 180)}
-                  innerRadius={60}
-                  outerRadius={100}
+                  endAngle={180}
+                  innerRadius={80}
+                  outerRadius={130}
                 >
-                  <PolarGrid
-                    gridType="circle"
-                    radialLines={false}
-                    stroke="none"
-                    className="first:fill-muted last:fill-background"
-                    polarRadius={[66, 54]}
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
                   />
-                  <RadialBar dataKey="value" background cornerRadius={10} />
                   <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
                     <Label
                       content={({ viewBox }) => {
                         if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          const actual = Math.abs(annualSummary?.annual_wants_actual || 0);
                           return (
-                            <text
-                              x={viewBox.cx}
-                              y={viewBox.cy}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                            >
+                            <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
                               <tspan
                                 x={viewBox.cx}
-                                y={viewBox.cy}
+                                y={(viewBox.cy || 0) - 16}
                                 className="fill-foreground text-2xl font-bold"
                               >
-                                {formatCurrency(annualSummary?.annual_wants_actual)}
+                                {formatCurrency(actual)}
                               </tspan>
                               <tspan
                                 x={viewBox.cx}
-                                y={(viewBox.cy || 0) + 20}
-                                className="fill-muted-foreground text-xs"
+                                y={(viewBox.cy || 0) + 4}
+                                className="fill-muted-foreground"
                               >
                                 {t.desires}
                               </tspan>
@@ -493,9 +511,33 @@ const Dashboard = () => {
                       }}
                     />
                   </PolarRadiusAxis>
+                  <RadialBar
+                    dataKey="actual"
+                    stackId="a"
+                    cornerRadius={5}
+                    fill="var(--color-actual)"
+                    className="stroke-transparent stroke-2"
+                  />
+                  <RadialBar
+                    dataKey="target"
+                    fill="var(--color-target)"
+                    stackId="a"
+                    cornerRadius={5}
+                    className="stroke-transparent stroke-2"
+                  />
                 </RadialBarChart>
               </ChartContainer>
             </CardContent>
+            <div className="flex justify-center gap-4 pb-4 text-sm">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-2))' }} />
+                <span className="text-muted-foreground">{config.language === 'es' ? 'Real' : 'Actual'}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-5))' }} />
+                <span className="text-muted-foreground">{config.language === 'es' ? 'Objetivo' : 'Target'}</span>
+              </div>
+            </div>
           </Card>
 
           {/* Future Card */}
@@ -504,56 +546,52 @@ const Dashboard = () => {
               <CardTitle>{t.future}</CardTitle>
               <CardDescription>20% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
+            <CardContent className="flex flex-1 items-center pb-0">
               <ChartContainer
                 config={{
-                  future: {
-                    label: t.future,
+                  actual: {
+                    label: config.language === 'es' ? 'Real' : 'Actual',
                     color: 'hsl(var(--chart-3))',
                   },
+                  target: {
+                    label: config.language === 'es' ? 'Objetivo' : 'Target',
+                    color: 'hsl(var(--chart-4))',
+                  },
                 }}
-                className="mx-auto aspect-square max-h-[200px]"
+                className="mx-auto aspect-square w-full max-w-[250px]"
               >
                 <RadialBarChart
                   data={[{ 
                     category: 'future', 
-                    value: Math.abs(annualSummary?.annual_future_actual || 0), 
-                    fill: 'var(--color-future)' 
+                    actual: Math.abs(annualSummary?.annual_future_actual || 0),
+                    target: (annualSummary?.annual_income || 0) * 0.2
                   }]}
-                  endAngle={Math.min(360, ((Math.abs(annualSummary?.annual_future_actual || 0) / (annualSummary?.annual_income || 1)) * 100 / 20) * 180)}
-                  innerRadius={60}
-                  outerRadius={100}
+                  endAngle={180}
+                  innerRadius={80}
+                  outerRadius={130}
                 >
-                  <PolarGrid
-                    gridType="circle"
-                    radialLines={false}
-                    stroke="none"
-                    className="first:fill-muted last:fill-background"
-                    polarRadius={[66, 54]}
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
                   />
-                  <RadialBar dataKey="value" background cornerRadius={10} />
                   <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
                     <Label
                       content={({ viewBox }) => {
                         if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          const actual = Math.abs(annualSummary?.annual_future_actual || 0);
                           return (
-                            <text
-                              x={viewBox.cx}
-                              y={viewBox.cy}
-                              textAnchor="middle"
-                              dominantBaseline="middle"
-                            >
+                            <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle">
                               <tspan
                                 x={viewBox.cx}
-                                y={viewBox.cy}
+                                y={(viewBox.cy || 0) - 16}
                                 className="fill-foreground text-2xl font-bold"
                               >
-                                {formatCurrency(annualSummary?.annual_future_actual)}
+                                {formatCurrency(actual)}
                               </tspan>
                               <tspan
                                 x={viewBox.cx}
-                                y={(viewBox.cy || 0) + 20}
-                                className="fill-muted-foreground text-xs"
+                                y={(viewBox.cy || 0) + 4}
+                                className="fill-muted-foreground"
                               >
                                 {t.future}
                               </tspan>
@@ -563,9 +601,33 @@ const Dashboard = () => {
                       }}
                     />
                   </PolarRadiusAxis>
+                  <RadialBar
+                    dataKey="actual"
+                    stackId="a"
+                    cornerRadius={5}
+                    fill="var(--color-actual)"
+                    className="stroke-transparent stroke-2"
+                  />
+                  <RadialBar
+                    dataKey="target"
+                    fill="var(--color-target)"
+                    stackId="a"
+                    cornerRadius={5}
+                    className="stroke-transparent stroke-2"
+                  />
                 </RadialBarChart>
               </ChartContainer>
             </CardContent>
+            <div className="flex justify-center gap-4 pb-4 text-sm">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-3))' }} />
+                <span className="text-muted-foreground">{config.language === 'es' ? 'Real' : 'Actual'}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-4))' }} />
+                <span className="text-muted-foreground">{config.language === 'es' ? 'Objetivo' : 'Target'}</span>
+              </div>
+            </div>
           </Card>
         </div>
 
