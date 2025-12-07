@@ -654,10 +654,10 @@ const MonthlyBudget = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead className="text-right">Estimado</TableHead>
-                      <TableHead className="text-right">Real</TableHead>
-                      <TableHead className="text-right">Diferencia</TableHead>
+                      <TableHead className="text-center">Categoría</TableHead>
+                      <TableHead className="text-center">Estimado</TableHead>
+                      <TableHead className="text-center">Real</TableHead>
+                      <TableHead className="text-center">Diferencia</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -686,10 +686,10 @@ const MonthlyBudget = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead className="text-right">Estimado</TableHead>
-                      <TableHead className="text-right">Real</TableHead>
-                      <TableHead className="text-right">Diferencia</TableHead>
+                      <TableHead className="text-center">Categoría</TableHead>
+                      <TableHead className="text-center">Estimado</TableHead>
+                      <TableHead className="text-center">Real</TableHead>
+                      <TableHead className="text-center">Diferencia</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -718,10 +718,10 @@ const MonthlyBudget = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Categoría</TableHead>
-                      <TableHead className="text-right">Estimado</TableHead>
-                      <TableHead className="text-right">Real</TableHead>
-                      <TableHead className="text-right">Diferencia</TableHead>
+                      <TableHead className="text-center">Categoría</TableHead>
+                      <TableHead className="text-center">Estimado</TableHead>
+                      <TableHead className="text-center">Real</TableHead>
+                      <TableHead className="text-center">Diferencia</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
