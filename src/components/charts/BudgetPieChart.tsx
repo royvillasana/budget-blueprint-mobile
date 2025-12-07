@@ -152,7 +152,7 @@ export function BudgetPieChart({
           {chartData.map((item) => (
             <div key={`status-${item.name}`} className="flex justify-between text-xs">
               <span className="text-muted-foreground">{item.name}:</span>
-              <span className={getStatusColor(item.percent, item.target)}>
+              <span className="text-foreground">
                 {getStatusText(item.percent, item.target, language)}
               </span>
             </div>
