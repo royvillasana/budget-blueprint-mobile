@@ -5,10 +5,11 @@ import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/i18n/translations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, CreditCard, Calendar, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, CreditCard, Calendar, ArrowRight, DollarSign, Receipt, Landmark } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { getMonthName, MONTH_INFO } from '@/utils/monthUtils';
+import { getMonthName, getTableName, MONTH_INFO } from '@/utils/monthUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface MonthlySummary {
   month_name: string | null;
@@ -32,6 +33,29 @@ interface AnnualSummary {
   annual_debt_payments: number | null;
 }
 
+interface IncomeItem {
+  id: string;
+  source: string;
+  amount: number;
+  date: string;
+}
+
+interface TransactionItem {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  categories?: { name: string; emoji: string } | null;
+}
+
+interface DebtItem {
+  id: string;
+  starting_balance: number;
+  payment_made: number;
+  ending_balance: number;
+  accounts?: { name: string } | null;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { config } = useApp();
@@ -39,6 +63,12 @@ const Dashboard = () => {
   const [monthlySummaries, setMonthlySummaries] = useState<MonthlySummary[]>([]);
   const [annualSummary, setAnnualSummary] = useState<AnnualSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Current month data
+  const currentMonth = new Date().getMonth() + 1;
+  const [recentIncome, setRecentIncome] = useState<IncomeItem[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<TransactionItem[]>([]);
+  const [currentDebts, setCurrentDebts] = useState<DebtItem[]>([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -70,11 +100,48 @@ const Dashboard = () => {
 
       if (annualError) throw annualError;
       setAnnualSummary(annualData);
+
+      // Load current month data
+      await loadCurrentMonthData(user.id);
     } catch (error) {
       console.error('Error loading dashboard:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadCurrentMonthData = async (userId: string) => {
+    const incomeTable = getTableName('monthly_income', currentMonth) as any;
+    const transactionsTable = getTableName('monthly_transactions', currentMonth) as any;
+    const debtsTable = getTableName('monthly_debts', currentMonth) as any;
+
+    // Load recent income
+    const { data: incomeData } = await (supabase as any)
+      .from(incomeTable)
+      .select('id, source, amount, date')
+      .eq('user_id', userId)
+      .eq('month_id', currentMonth)
+      .order('date', { ascending: false })
+      .limit(5);
+    setRecentIncome((incomeData as IncomeItem[]) || []);
+
+    // Load recent transactions
+    const { data: transactionsData } = await (supabase as any)
+      .from(transactionsTable)
+      .select('id, description, amount, date, categories(name, emoji)')
+      .eq('user_id', userId)
+      .eq('month_id', currentMonth)
+      .order('date', { ascending: false })
+      .limit(5);
+    setRecentTransactions((transactionsData as TransactionItem[]) || []);
+
+    // Load current debts
+    const { data: debtsData } = await (supabase as any)
+      .from(debtsTable)
+      .select('id, starting_balance, payment_made, ending_balance, accounts(name)')
+      .eq('user_id', userId)
+      .eq('month_id', currentMonth);
+    setCurrentDebts((debtsData as DebtItem[]) || []);
   };
 
   const formatCurrency = (amount: number | null) => {
@@ -225,6 +292,121 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Current Month Dynamic Tables */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              {config.language === 'es' ? 'Datos del Mes Actual' : 'Current Month Data'} - {getMonthName(currentMonth, config.language)}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="income" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="income" className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  {config.language === 'es' ? 'Ingresos' : 'Income'}
+                </TabsTrigger>
+                <TabsTrigger value="expenses" className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  {config.language === 'es' ? 'Gastos' : 'Expenses'}
+                </TabsTrigger>
+                <TabsTrigger value="debts" className="flex items-center gap-2">
+                  <Landmark className="h-4 w-4" />
+                  {config.language === 'es' ? 'Deudas' : 'Debts'}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="income" className="mt-4">
+                {recentIncome.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{config.language === 'es' ? 'Fuente' : 'Source'}</TableHead>
+                        <TableHead>{config.language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                        <TableHead className="text-right">{config.language === 'es' ? 'Monto' : 'Amount'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentIncome.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.source}</TableCell>
+                          <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right text-green-600">{formatCurrency(item.amount)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    {config.language === 'es' ? 'No hay ingresos registrados este mes' : 'No income recorded this month'}
+                  </p>
+                )}
+              </TabsContent>
+
+              <TabsContent value="expenses" className="mt-4">
+                {recentTransactions.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{config.language === 'es' ? 'Descripción' : 'Description'}</TableHead>
+                        <TableHead>{config.language === 'es' ? 'Categoría' : 'Category'}</TableHead>
+                        <TableHead>{config.language === 'es' ? 'Fecha' : 'Date'}</TableHead>
+                        <TableHead className="text-right">{config.language === 'es' ? 'Monto' : 'Amount'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {recentTransactions.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.description}</TableCell>
+                          <TableCell>
+                            {item.categories?.emoji} {item.categories?.name || '-'}
+                          </TableCell>
+                          <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right text-destructive">{formatCurrency(Math.abs(item.amount))}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    {config.language === 'es' ? 'No hay gastos registrados este mes' : 'No expenses recorded this month'}
+                  </p>
+                )}
+              </TabsContent>
+
+              <TabsContent value="debts" className="mt-4">
+                {currentDebts.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{config.language === 'es' ? 'Cuenta' : 'Account'}</TableHead>
+                        <TableHead className="text-right">{config.language === 'es' ? 'Saldo Inicial' : 'Starting Balance'}</TableHead>
+                        <TableHead className="text-right">{config.language === 'es' ? 'Pago Realizado' : 'Payment Made'}</TableHead>
+                        <TableHead className="text-right">{config.language === 'es' ? 'Saldo Final' : 'Ending Balance'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentDebts.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.accounts?.name || '-'}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.starting_balance)}</TableCell>
+                          <TableCell className="text-right text-green-600">{formatCurrency(item.payment_made || 0)}</TableCell>
+                          <TableCell className="text-right text-destructive">{formatCurrency(item.ending_balance || item.starting_balance)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    {config.language === 'es' ? 'No hay deudas registradas este mes' : 'No debts recorded this month'}
+                  </p>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
