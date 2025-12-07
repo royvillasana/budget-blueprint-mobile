@@ -20,6 +20,7 @@ interface BudgetPieChartProps {
   totalIncome: number;
   currency: string;
   language: string;
+  masked?: boolean;
 }
 
 const chartConfig = {
@@ -43,9 +44,11 @@ export function BudgetPieChart({
   futureActual, 
   totalIncome,
   currency, 
-  language 
+  language,
+  masked = false
 }: BudgetPieChartProps) {
   const symbol = currency === 'EUR' ? '€' : '$';
+  const formatValue = (value: number) => masked ? '••••••' : `${symbol}${value.toFixed(2)}`;
   const total = needsActual + wantsActual + futureActual;
   
   // Calculate percentages based on actual spending vs total income
@@ -135,10 +138,10 @@ export function BudgetPieChart({
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-muted-foreground">
-                  {symbol}{item.value.toFixed(2)}
+                  {formatValue(item.value)}
                 </span>
                 <span className={`font-medium ${getStatusColor(item.percent, item.target)}`}>
-                  {item.percent.toFixed(1)}% / {item.target}%
+                  {masked ? '••%' : `${item.percent.toFixed(1)}%`} / {item.target}%
                 </span>
               </div>
             </div>

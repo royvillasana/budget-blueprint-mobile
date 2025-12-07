@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Save, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -96,6 +96,9 @@ const MonthlyBudget = () => {
 
   // FAB Dialog state
   const [fabDialogOpen, setFabDialogOpen] = useState(false);
+
+  // Data masking state
+  const [dataMasked, setDataMasked] = useState(false);
   const [selectedAddType, setSelectedAddType] = useState<'income' | 'transaction' | 'debt' | 'wishlist' | null>(null);
 
   useEffect(() => {
@@ -448,6 +451,9 @@ const MonthlyBudget = () => {
   };
 
   const formatCurrency = (amount: number) => {
+    if (dataMasked) {
+      return '••••••';
+    }
     const symbol = config.currency === 'EUR' ? '€' : '$';
     return `${symbol}${Math.abs(amount).toFixed(2)}`;
   };
@@ -499,11 +505,22 @@ const MonthlyBudget = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            {getMonthName(currentMonth, config.language)} {currentYear}
-          </h1>
-          <p className="text-muted-foreground">Presupuesto mensual detallado</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">
+              {getMonthName(currentMonth, config.language)} {currentYear}
+            </h1>
+            <p className="text-muted-foreground">Presupuesto mensual detallado</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDataMasked(!dataMasked)}
+            className="h-10 w-10"
+            title={dataMasked ? 'Mostrar datos' : 'Ocultar datos'}
+          >
+            {dataMasked ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </Button>
         </div>
 
         {/* KPIs */}
@@ -543,6 +560,7 @@ const MonthlyBudget = () => {
             expenses={totalExpenses} 
             currency={config.currency}
             language={config.language}
+            masked={dataMasked}
           />
           <BudgetPieChart 
             needsActual={needsActual}
@@ -551,6 +569,7 @@ const MonthlyBudget = () => {
             totalIncome={totalIncome}
             currency={config.currency}
             language={config.language}
+            masked={dataMasked}
           />
         </div>
 

@@ -18,6 +18,7 @@ interface IncomeExpenseChartProps {
   expenses: number;
   currency: string;
   language: string;
+  masked?: boolean;
 }
 
 const chartConfig = {
@@ -31,8 +32,9 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function IncomeExpenseChart({ income, expenses, currency, language }: IncomeExpenseChartProps) {
+export function IncomeExpenseChart({ income, expenses, currency, language, masked = false }: IncomeExpenseChartProps) {
   const symbol = currency === 'EUR' ? '€' : '$';
+  const formatValue = (value: number) => masked ? '••••••' : `${symbol}${value.toFixed(2)}`;
   
   const chartData = [
     { category: language === 'es' ? "Ingresos" : "Income", value: income, fill: "var(--color-income)" },
@@ -132,13 +134,13 @@ export function IncomeExpenseChart({ income, expenses, currency, language }: Inc
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-1))' }} />
             <span className="text-sm text-muted-foreground">
-              {language === 'es' ? 'Ingresos' : 'Income'}: {symbol}{income.toFixed(2)}
+              {language === 'es' ? 'Ingresos' : 'Income'}: {formatValue(income)}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-2))' }} />
             <span className="text-sm text-muted-foreground">
-              {language === 'es' ? 'Gastos' : 'Expenses'}: {symbol}{expenses.toFixed(2)}
+              {language === 'es' ? 'Gastos' : 'Expenses'}: {formatValue(expenses)}
             </span>
           </div>
         </div>
