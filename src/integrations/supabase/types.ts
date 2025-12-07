@@ -3928,18 +3928,11 @@ export type Database = {
           annual_debt_payments: number | null
           annual_expenses: number | null
           annual_future_actual: number | null
-          annual_future_assigned: number | null
           annual_income: number | null
           annual_needs_actual: number | null
-          annual_needs_assigned: number | null
           annual_net_cash_flow: number | null
           annual_wants_actual: number | null
-          annual_wants_assigned: number | null
-          annual_wishlist_cost: number | null
-          avg_monthly_expenses: number | null
-          avg_monthly_income: number | null
-          avg_monthly_net_cash_flow: number | null
-          total_wishlist_items: number | null
+          annual_wishlist_total_cost: number | null
           user_id: string | null
         }
         Relationships: []
