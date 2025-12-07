@@ -44,6 +44,13 @@ All colors MUST be HSL.
     --future: 221 83% 53%;
     --debt: 0 84% 60%;
 
+    /* Chart Colors */
+    --chart-1: 142 76% 36%;
+    --chart-2: 0 84% 60%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 221 83% 53%;
+    --chart-5: 38 92% 50%;
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -103,6 +110,13 @@ All colors MUST be HSL.
     --desires: 262 80% 65%;
     --future: 221 80% 60%;
     --debt: 0 72% 50%;
+
+    /* Chart Colors - Dark Mode */
+    --chart-1: 142 70% 45%;
+    --chart-2: 0 72% 50%;
+    --chart-3: 262 80% 65%;
+    --chart-4: 221 80% 60%;
+    --chart-5: 38 85% 55%;
   }
 }
 

@@ -27,6 +27,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getMonthName, getTableName } from '@/utils/monthUtils';
+import { IncomeExpenseChart } from '@/components/charts/IncomeExpenseChart';
+import { BudgetPieChart } from '@/components/charts/BudgetPieChart';
 
 const MonthlyBudget = () => {
   const { year, month } = useParams<{ year: string; month: string }>();
@@ -477,6 +479,11 @@ const MonthlyBudget = () => {
   const wantsBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'WANTS'));
   const futureBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'FUTURE'));
 
+  // Calculate totals for charts
+  const needsActual = needsBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);
+  const wantsActual = wantsBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);
+  const futureActual = futureBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -524,7 +531,25 @@ const MonthlyBudget = () => {
             <CardContent>
               <div className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                 {formatCurrency(netCashFlow)}
-              </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          <IncomeExpenseChart 
+            income={totalIncome} 
+            expenses={totalExpenses} 
+            currency={config.currency}
+            language={config.language}
+          />
+          <BudgetPieChart 
+            needsActual={needsActual}
+            wantsActual={wantsActual}
+            futureActual={futureActual}
+            totalIncome={totalIncome}
+            currency={config.currency}
+            language={config.language}
+          />
+        </div>
             </CardContent>
           </Card>
         </div>
