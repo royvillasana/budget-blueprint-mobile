@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/i18n/translations';
@@ -8,11 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const Settings = () => {
-  const { config, updateConfig } = useApp();
+  const { config, updateConfig, loadingSettings } = useApp();
   const { toast } = useToast();
   const t = translations[config.language];
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     ownerName: config.ownerName,
@@ -21,21 +23,55 @@ const Settings = () => {
     language: config.language,
   });
 
-  const handleSave = () => {
-    updateConfig({
-      ownerName: formData.ownerName,
-      monthlyIncome: parseFloat(formData.monthlyIncome) || 0,
-      currency: formData.currency as 'EUR' | 'USD',
-      language: formData.language as 'es' | 'en',
+  // Update form when config loads from database
+  useEffect(() => {
+    setFormData({
+      ownerName: config.ownerName,
+      monthlyIncome: config.monthlyIncome.toString(),
+      currency: config.currency,
+      language: config.language,
     });
+  }, [config]);
 
-    toast({
-      title: config.language === 'es' ? 'Configuración guardada' : 'Settings saved',
-      description: config.language === 'es' 
-        ? 'Tus cambios han sido guardados exitosamente.' 
-        : 'Your changes have been saved successfully.',
-    });
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await updateConfig({
+        ownerName: formData.ownerName,
+        monthlyIncome: parseFloat(formData.monthlyIncome) || 0,
+        currency: formData.currency as 'EUR' | 'USD',
+        language: formData.language as 'es' | 'en',
+      });
+
+      toast({
+        title: config.language === 'es' ? 'Configuración guardada' : 'Settings saved',
+        description: config.language === 'es' 
+          ? 'Tus cambios han sido guardados exitosamente.' 
+          : 'Your changes have been saved successfully.',
+      });
+    } catch (error) {
+      toast({
+        title: config.language === 'es' ? 'Error' : 'Error',
+        description: config.language === 'es' 
+          ? 'No se pudieron guardar los cambios.' 
+          : 'Could not save changes.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loadingSettings) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto px-4 py-8 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,7 +138,8 @@ const Settings = () => {
                 </Select>
               </div>
 
-              <Button onClick={handleSave} className="w-full">
+              <Button onClick={handleSave} className="w-full" disabled={saving}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t.save}
               </Button>
             </CardContent>
