@@ -19,6 +19,7 @@ Modern dark dashboard theme inspired by Dashdark X
     --popover-foreground: 220 30% 10%;
 
     --primary: 174 84% 42%;
+    --primary-dark: 200 80% 35%;
     --primary-foreground: 220 30% 10%;
 
     --secondary: 220 20% 94%;
@@ -77,6 +78,7 @@ Modern dark dashboard theme inspired by Dashdark X
     --popover-foreground: 210 40% 96%;
 
     --primary: 174 84% 50%;
+    --primary-dark: 200 80% 40%;
     --primary-foreground: 225 25% 8%;
 
     --secondary: 225 25% 16%;
