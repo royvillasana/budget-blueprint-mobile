@@ -101,17 +101,6 @@ export const Header = () => {
       >
         {config.language === 'es' ? 'Catálogo' : 'Catalog'}
       </Link>
-      <Link
-        to="/settings"
-        onClick={onClose}
-        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${mobile ? 'block w-full' : ''
-          } ${isActive('/settings')
-            ? 'text-primary bg-primary/10'
-            : 'text-muted-foreground hover:bg-muted/50'
-          }`}
-      >
-        {t.settings}
-      </Link>
     </>
   );
 
