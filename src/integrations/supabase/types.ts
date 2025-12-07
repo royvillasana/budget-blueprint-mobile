@@ -270,7 +270,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_apr_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_aug: {
         Row: {
@@ -312,7 +320,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_aug_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_dec: {
         Row: {
@@ -354,7 +370,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_dec_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_feb: {
         Row: {
@@ -396,7 +420,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_feb_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_jan: {
         Row: {
@@ -502,7 +534,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_jul_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_jun: {
         Row: {
@@ -544,7 +584,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_jun_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_mar: {
         Row: {
@@ -586,7 +634,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_mar_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_may: {
         Row: {
@@ -628,7 +684,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_may_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_nov: {
         Row: {
@@ -670,7 +734,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_nov_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_oct: {
         Row: {
@@ -712,7 +784,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_oct_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budget_sep: {
         Row: {
@@ -754,7 +834,15 @@ export type Database = {
           user_id?: string
           variance?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_budget_sep_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_budgets: {
         Row: {
@@ -847,7 +935,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_apr_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_aug: {
         Row: {
@@ -889,7 +985,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_aug_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_dec: {
         Row: {
@@ -931,7 +1035,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_dec_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_feb: {
         Row: {
@@ -973,7 +1085,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_feb_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_jan: {
         Row: {
@@ -1079,7 +1199,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_jul_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_jun: {
         Row: {
@@ -1121,7 +1249,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_jun_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_mar: {
         Row: {
@@ -1163,7 +1299,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_mar_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_may: {
         Row: {
@@ -1205,7 +1349,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_may_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_nov: {
         Row: {
@@ -1247,7 +1399,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_nov_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_oct: {
         Row: {
@@ -1289,7 +1449,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_oct_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_debts_sep: {
         Row: {
@@ -1331,7 +1499,15 @@ export type Database = {
           starting_balance?: number
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "monthly_debts_sep_debt_account_id_fkey"
+            columns: ["debt_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monthly_income_apr: {
         Row: {

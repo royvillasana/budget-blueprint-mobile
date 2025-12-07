@@ -130,7 +130,7 @@ const MonthlyBudget = () => {
       await Promise.all([
         loadSettings(monthData.id, monthNum),
         loadIncome(monthData.id, monthNum),
-        loadBudget(monthData.id, monthNum),
+        loadBudget(monthData.id, monthNum, user.id),
         loadTransactions(monthData.id, user.id, monthNum),
         loadDebts(monthData.id, user.id, monthNum),
         loadWishlist(monthData.id, monthNum),
@@ -172,7 +172,7 @@ const MonthlyBudget = () => {
     setIncomeItems(data || []);
   };
 
-  const loadBudget = async (monthId: number, monthNum: number) => {
+  const loadBudget = async (monthId: number, monthNum: number, uid?: string) => {
     const tableName = getTableName('monthly_budget', monthNum) as any;
     const { data } = await supabase
       .from(tableName)
@@ -181,6 +181,45 @@ const MonthlyBudget = () => {
         categories(name, emoji, bucket_50_30_20)
       `)
       .eq('month_id', monthId);
+    
+    // If no budget items exist, create them from user's categories
+    if (!data || data.length === 0) {
+      const userIdToUse = uid || userId;
+      if (userIdToUse) {
+        const { data: userCategories } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('user_id', userIdToUse)
+          .eq('is_active', true);
+        
+        if (userCategories && userCategories.length > 0) {
+          const budgetEntries = userCategories.map(cat => ({
+            month_id: monthId,
+            user_id: userIdToUse,
+            category_id: cat.id,
+            bucket_50_30_20: cat.bucket_50_30_20,
+            estimated: 0,
+            assigned: 0,
+            actual: 0,
+            variance: 0
+          }));
+          
+          await supabase.from(tableName).insert(budgetEntries);
+          
+          // Reload after inserting
+          const { data: newData } = await supabase
+            .from(tableName)
+            .select(`
+              *,
+              categories(name, emoji, bucket_50_30_20)
+            `)
+            .eq('month_id', monthId);
+          setBudgetItems(newData || []);
+          return;
+        }
+      }
+    }
+    
     setBudgetItems(data || []);
   };
 
