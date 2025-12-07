@@ -523,7 +523,7 @@ const MonthlyBudget = () => {
               <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</div>
+              <div className="text-2xl font-bold text-accent">{formatCurrency(totalExpenses)}</div>
             </CardContent>
           </Card>
           <Card>
