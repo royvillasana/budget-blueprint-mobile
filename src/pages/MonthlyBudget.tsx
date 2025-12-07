@@ -773,7 +773,7 @@ const MonthlyBudget = () => {
                         <TableCell>{txn.date}</TableCell>
                         <TableCell>{txn.categories?.emoji} {txn.categories?.name}</TableCell>
                         <TableCell>{txn.description}</TableCell>
-                        <TableCell className="text-right text-destructive">{formatCurrency(txn.amount)}</TableCell>
+                        <TableCell className="text-right text-desires">{formatCurrency(txn.amount)}</TableCell>
                         <TableCell className="text-center">
                           <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
                             <Trash2 className="w-4 h-4" />
