@@ -531,6 +531,9 @@ const MonthlyBudget = () => {
             <CardContent>
               <div className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                 {formatCurrency(netCashFlow)}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Charts */}
@@ -549,9 +552,6 @@ const MonthlyBudget = () => {
             currency={config.currency}
             language={config.language}
           />
-        </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Settings */}
