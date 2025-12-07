@@ -637,7 +637,7 @@ const MonthlyBudget = () => {
                       </TableHeader>
                       <TableBody>
                         {needsBudget.map(item => <TableRow key={item.id}>
-                            <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                            <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
                             <TableCell className="text-center">
                               <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
@@ -662,7 +662,7 @@ const MonthlyBudget = () => {
                       </TableHeader>
                       <TableBody>
                         {wantsBudget.map(item => <TableRow key={item.id}>
-                            <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                            <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
                             <TableCell className="text-center">
                               <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
@@ -687,7 +687,7 @@ const MonthlyBudget = () => {
                       </TableHeader>
                       <TableBody>
                         {futureBudget.map(item => <TableRow key={item.id}>
-                            <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                            <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
                             <TableCell className="text-center">
                               <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
@@ -771,7 +771,7 @@ const MonthlyBudget = () => {
                   <TableBody>
                     {transactions.map(txn => <TableRow key={txn.id}>
                         <TableCell>{txn.date}</TableCell>
-                        <TableCell>{txn.categories?.emoji} {txn.categories?.name}</TableCell>
+                        <TableCell><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{txn.categories?.emoji} {txn.categories?.name}</span></TableCell>
                         <TableCell>{txn.description}</TableCell>
                         <TableCell className="text-right text-desires">{formatCurrency(txn.amount)}</TableCell>
                         <TableCell className="text-center">
