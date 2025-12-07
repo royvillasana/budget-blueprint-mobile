@@ -663,17 +663,17 @@ const MonthlyBudget = () => {
                   <TableBody>
                     {needsBudget.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                        <TableCell className="text-center">
                           <Input
                             type="number"
-                            className="w-24 text-right"
+                            className="w-24 text-center mx-auto"
                             value={item.estimated || 0}
                             onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
                           />
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                        <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
                           {formatCurrency(item.calculatedDifference || 0)}
                         </TableCell>
                       </TableRow>
@@ -695,17 +695,17 @@ const MonthlyBudget = () => {
                   <TableBody>
                     {wantsBudget.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                        <TableCell className="text-center">
                           <Input
                             type="number"
-                            className="w-24 text-right"
+                            className="w-24 text-center mx-auto"
                             value={item.estimated || 0}
                             onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
                           />
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                        <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
                           {formatCurrency(item.calculatedDifference || 0)}
                         </TableCell>
                       </TableRow>
@@ -727,17 +727,17 @@ const MonthlyBudget = () => {
                   <TableBody>
                     {futureBudget.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                        <TableCell className="text-center">
                           <Input
                             type="number"
-                            className="w-24 text-right"
+                            className="w-24 text-center mx-auto"
                             value={item.estimated || 0}
                             onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
                           />
                         </TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                        <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
                           {formatCurrency(item.calculatedDifference || 0)}
                         </TableCell>
                       </TableRow>
