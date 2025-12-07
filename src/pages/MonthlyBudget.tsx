@@ -531,7 +531,7 @@ const MonthlyBudget = () => {
               <CardTitle className="text-sm font-medium">Flujo Neto</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+              <div className="">
                 {formatCurrency(netCashFlow)}
               </div>
             </CardContent>
