@@ -212,7 +212,26 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              {config.language === 'es' ? 'Bienvenido' : 'Welcome back'}
+              {(() => {
+                const firstName = config.ownerName?.split(' ')[0] || '';
+                const greetingsEs = [
+                  `Hola ${firstName}`,
+                  `Bienvenido de vuelta ${firstName}`,
+                  `Vas bien ${firstName}`,
+                  `Qué tal ${firstName}`,
+                  `Buenos días ${firstName}`,
+                ];
+                const greetingsEn = [
+                  `Hello ${firstName}`,
+                  `Welcome back ${firstName}`,
+                  `You're doing great ${firstName}`,
+                  `How's it going ${firstName}`,
+                  `Good to see you ${firstName}`,
+                ];
+                const greetings = config.language === 'es' ? greetingsEs : greetingsEn;
+                const randomIndex = Math.floor(Date.now() / 60000) % greetings.length;
+                return `${greetings[randomIndex]} 👋`;
+              })()}
             </h1>
             <p className="text-muted-foreground mt-1">
               {config.language === 'es' 
