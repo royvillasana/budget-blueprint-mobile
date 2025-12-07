@@ -4,7 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useStorage } from '@/contexts/StorageContext';
 import { translations } from '@/i18n/translations';
 import { Button } from './ui/button';
-import { Globe, DollarSign, Euro, Calendar, Menu, X, Cloud, Smartphone, LogOut, User } from 'lucide-react';
+import { Calendar, Menu, LogOut, User, Settings as SettingsIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -13,11 +13,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMonthName, MONTH_INFO } from '@/utils/monthUtils';
 
 export const Header = () => {
-  const { config, updateConfig } = useApp();
-  const { storageType, setStorageType } = useStorage();
+  const { config } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
@@ -38,13 +38,7 @@ export const Header = () => {
 
   const currentMonth = params.month ? parseInt(params.month) : null;
 
-  const toggleLanguage = () => {
-    updateConfig({ language: config.language === 'es' ? 'en' : 'es' });
-  };
 
-  const toggleCurrency = () => {
-    updateConfig({ currency: config.currency === 'EUR' ? 'USD' : 'EUR' });
-  };
 
   const isActive = (path: string) => location.pathname === path;
   const isBudgetRoute = location.pathname.startsWith('/budget');
@@ -141,53 +135,39 @@ export const Header = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleLanguage}
-              title={config.language === 'es' ? 'Switch to English' : 'Cambiar a Español'}
-            >
-              <Globe className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleCurrency}
-              title={config.currency === 'EUR' ? 'Switch to USD' : 'Cambiar a EUR'}
-            >
-              {config.currency === 'EUR' ? (
-                <Euro className="h-4 w-4" />
-              ) : (
-                <DollarSign className="h-4 w-4" />
-              )}
-            </Button>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" title={storageType === 'supabase' ? 'Cloud Storage' : 'Local Storage'}>
-                  {storageType === 'supabase' ? <Cloud className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="" alt={userEmail || ''} />
+                    <AvatarFallback className="bg-primary/10 text-primary">
+                      {userEmail ? userEmail.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setStorageType('supabase')}>
-                  <Cloud className="mr-2 h-4 w-4" />
-                  <span>Cloud (Supabase)</span>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                {userEmail && (
+                  <>
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium text-sm leading-none">{userEmail}</p>
+                      </div>
+                    </div>
+                    <div className="h-px bg-muted my-1" />
+                  </>
+                )}
+                <DropdownMenuItem onClick={() => navigate('/settings')}>
+                  <SettingsIcon className="mr-2 h-4 w-4" />
+                  <span>{t.settings}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStorageType('local')}>
-                  <Smartphone className="mr-2 h-4 w-4" />
-                  <span>Local (Device)</span>
+                <div className="h-px bg-muted my-1" />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>{config.language === 'es' ? 'Cerrar Sesión' : 'Log Out'}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              title="Cerrar Sesión"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
 
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>

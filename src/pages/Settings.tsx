@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { useApp } from '@/contexts/AppContext';
+import { useStorage } from '@/contexts/StorageContext';
 import { translations } from '@/i18n/translations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 
 const Settings = () => {
   const { config, updateConfig, loadingSettings } = useApp();
+  const { storageType, setStorageType } = useStorage();
   const { toast } = useToast();
   const t = translations[config.language];
   const [saving, setSaving] = useState(false);
@@ -45,15 +47,15 @@ const Settings = () => {
 
       toast({
         title: config.language === 'es' ? 'Configuración guardada' : 'Settings saved',
-        description: config.language === 'es' 
-          ? 'Tus cambios han sido guardados exitosamente.' 
+        description: config.language === 'es'
+          ? 'Tus cambios han sido guardados exitosamente.'
           : 'Your changes have been saved successfully.',
       });
     } catch (error) {
       toast({
         title: config.language === 'es' ? 'Error' : 'Error',
-        description: config.language === 'es' 
-          ? 'No se pudieron guardar los cambios.' 
+        description: config.language === 'es'
+          ? 'No se pudieron guardar los cambios.'
           : 'Could not save changes.',
         variant: 'destructive',
       });
@@ -136,6 +138,30 @@ const Settings = () => {
                     <SelectItem value="en">English</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="pt-4 border-t border-border/50">
+                <h3 className="text-lg font-semibold mb-4">Datos y Almacenamiento</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="storage">Ubicación de Datos</Label>
+                  <Select
+                    value={storageType}
+                    onValueChange={(value) => setStorageType(value as 'supabase' | 'local')}
+                  >
+                    <SelectTrigger id="storage">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="supabase">Nube (Supabase)</SelectItem>
+                      <SelectItem value="local">Local (Dispositivo)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {storageType === 'supabase'
+                      ? 'Tus datos están sincronizados en la nube y accesibles desde cualquier dispositivo.'
+                      : 'Tus datos se guardan solo en este dispositivo. Si borras los datos del navegador, se perderán.'}
+                  </p>
+                </div>
               </div>
 
               <Button onClick={handleSave} className="w-full" disabled={saving}>
