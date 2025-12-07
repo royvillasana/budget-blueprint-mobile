@@ -401,9 +401,25 @@ const MonthlyBudget = () => {
   const totalExpenses = transactions.reduce((sum, txn) => sum + Math.abs(Number(txn.amount || 0)), 0);
   const netCashFlow = totalIncome - totalExpenses;
 
-  const needsBudget = budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'NEEDS');
-  const wantsBudget = budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'WANTS');
-  const futureBudget = budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'FUTURE');
+  // Calculate actual spending per category from transactions
+  const getActualByCategory = (categoryId: string) => {
+    return transactions
+      .filter(txn => txn.category_id === categoryId)
+      .reduce((sum, txn) => sum + Math.abs(Number(txn.amount || 0)), 0);
+  };
+
+  // Enrich budget items with calculated actual values
+  const enrichBudgetItems = (items: any[]) => {
+    return items.map(item => ({
+      ...item,
+      calculatedActual: getActualByCategory(item.category_id),
+      calculatedVariance: (item.assigned || 0) - getActualByCategory(item.category_id)
+    }));
+  };
+
+  const needsBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'NEEDS'));
+  const wantsBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'WANTS'));
+  const futureBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'FUTURE'));
 
   if (loading) {
     return (
@@ -611,8 +627,10 @@ const MonthlyBudget = () => {
                           onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
                         />
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.actual || 0)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.variance || 0)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                      <TableCell className={`text-right ${(item.calculatedVariance || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        {formatCurrency(item.calculatedVariance || 0)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -655,8 +673,10 @@ const MonthlyBudget = () => {
                           onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
                         />
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.actual || 0)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.variance || 0)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                      <TableCell className={`text-right ${(item.calculatedVariance || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        {formatCurrency(item.calculatedVariance || 0)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -699,8 +719,10 @@ const MonthlyBudget = () => {
                           onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
                         />
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.actual || 0)}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.variance || 0)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                      <TableCell className={`text-right ${(item.calculatedVariance || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        {formatCurrency(item.calculatedVariance || 0)}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
