@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { getMonthName, getTableName, MONTH_INFO } from '@/utils/monthUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarRadiusAxis, Label } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarRadiusAxis, PolarGrid, Label } from 'recharts';
 import {
   ChartConfig,
   ChartContainer,
@@ -594,62 +594,98 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Side Stats Cards */}
-          <div className="flex flex-col gap-4">
-            {/* Net Cash Flow Card */}
-            <Card className="flex-1 border-border/50 bg-gradient-to-br from-card to-card/80">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-success" />
-                  {config.language === 'es' ? 'Flujo neto' : 'Net cash flow'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_net_cash_flow, true)}</span>
-                  <span className="badge-success text-xs">
-                    <TrendingUp className="h-3 w-3" />
-                    {config.language === 'es' ? 'Positivo' : 'Positive'}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {config.language === 'es' ? 'Últimos 12 meses' : 'Last 12 months'}
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Needs Card */}
-            <Card className="flex-1 border-border/50 bg-gradient-to-br from-card to-card/80">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-primary" />
-                  {t.needs}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_needs_actual, true)}</span>
-                  <span className="text-xs text-muted-foreground">50%</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Wants Card */}
-            <Card className="flex-1 border-border/50 bg-gradient-to-br from-card to-card/80">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Wallet className="h-4 w-4 text-accent" />
-                  {t.desires}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">{formatCurrency(annualSummary?.annual_wants_actual, true)}</span>
-                  <span className="text-xs text-muted-foreground">30%</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Side Stats - Net Cash Flow Card with Radial Chart */}
+          <Card className="border-border/50 bg-gradient-to-br from-card to-card/80">
+            <CardHeader className="items-center pb-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-success" />
+                {config.language === 'es' ? 'Flujo neto' : 'Net cash flow'}
+              </CardTitle>
+              <CardDescription>
+                {config.language === 'es' ? 'Últimos 12 meses' : 'Last 12 months'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+              <ChartContainer
+                config={{
+                  netFlow: {
+                    label: config.language === 'es' ? 'Flujo neto' : 'Net flow',
+                    color: 'hsl(var(--success))',
+                  },
+                }}
+                className="mx-auto aspect-square max-h-[250px]"
+              >
+                <RadialBarChart
+                  data={[{ 
+                    netFlow: Math.max(annualSummary?.annual_net_cash_flow || 0, 0), 
+                    fill: 'var(--color-netFlow)' 
+                  }]}
+                  startAngle={0}
+                  endAngle={(() => {
+                    const income = annualSummary?.annual_income || 1;
+                    const netFlow = annualSummary?.annual_net_cash_flow || 0;
+                    const percentage = Math.min((netFlow / income) * 100, 100);
+                    return (percentage / 100) * 360;
+                  })()}
+                  innerRadius={80}
+                  outerRadius={110}
+                >
+                  <PolarGrid
+                    gridType="circle"
+                    radialLines={false}
+                    stroke="none"
+                    className="first:fill-muted last:fill-background"
+                    polarRadius={[86, 74]}
+                  />
+                  <RadialBar dataKey="netFlow" background cornerRadius={10} />
+                  <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                    <Label
+                      content={({ viewBox }) => {
+                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          return (
+                            <text
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                            >
+                              <tspan
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                className="fill-foreground text-3xl font-bold"
+                              >
+                                {formatCurrency(annualSummary?.annual_net_cash_flow, true)}
+                              </tspan>
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) + 24}
+                                className="fill-muted-foreground text-sm"
+                              >
+                                {config.language === 'es' ? 'Positivo' : 'Positive'}
+                              </tspan>
+                            </text>
+                          )
+                        }
+                      }}
+                    />
+                  </PolarRadiusAxis>
+                </RadialBarChart>
+              </ChartContainer>
+            </CardContent>
+            <div className="flex flex-col gap-2 text-sm p-6 pt-0">
+              <div className="flex items-center justify-center gap-2 leading-none font-medium text-success">
+                <TrendingUp className="h-4 w-4" />
+                {(() => {
+                  const income = annualSummary?.annual_income || 1;
+                  const netFlow = annualSummary?.annual_net_cash_flow || 0;
+                  return `${((netFlow / income) * 100).toFixed(1)}% ${config.language === 'es' ? 'de ingresos ahorrados' : 'of income saved'}`;
+                })()}
+              </div>
+              <div className="text-muted-foreground leading-none text-center">
+                {config.language === 'es' ? 'Ingresos - Gastos' : 'Income - Expenses'}
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* 50/30/20 Summary with Stacked Radial Charts */}
