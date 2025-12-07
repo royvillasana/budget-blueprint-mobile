@@ -561,6 +561,8 @@ const MonthlyBudget = () => {
             currency={config.currency}
             language={config.language}
             masked={dataMasked}
+            incomeItems={incomeItems.map(item => ({ date: item.date, amount: item.amount }))}
+            transactionItems={transactions.map(txn => ({ date: txn.date, amount: txn.amount }))}
           />
           <BudgetPieChart 
             needsActual={needsActual}
