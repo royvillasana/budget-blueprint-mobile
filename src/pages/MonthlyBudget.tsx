@@ -107,12 +107,14 @@ const MonthlyBudget = () => {
       
       setUserId(user.id);
 
+      // Get month number from URL params
+      const monthNum = parseInt(month || '1');
+      
       // Get month record - use id directly since months table has id = 1-12 for each month
-      const monthId = parseInt(month || '1');
       const monthResponse = await (supabase as any)
         .from('months')
         .select('id, name, year')
-        .eq('id', monthId)
+        .eq('id', monthNum)
         .single();
       
       const monthData = monthResponse.data;
@@ -124,14 +126,14 @@ const MonthlyBudget = () => {
 
       setMonthId(monthData.id);
 
-      // Load all data for the month
+      // Load all data for the month - pass monthNum directly instead of using state
       await Promise.all([
-        loadSettings(monthData.id),
-        loadIncome(monthData.id),
-        loadBudget(monthData.id),
-        loadTransactions(monthData.id, user.id),
-        loadDebts(monthData.id, user.id),
-        loadWishlist(monthData.id),
+        loadSettings(monthData.id, monthNum),
+        loadIncome(monthData.id, monthNum),
+        loadBudget(monthData.id, monthNum),
+        loadTransactions(monthData.id, user.id, monthNum),
+        loadDebts(monthData.id, user.id, monthNum),
+        loadWishlist(monthData.id, monthNum),
         loadCategories(),
         loadPaymentMethods(),
         loadAccounts(),
@@ -144,8 +146,8 @@ const MonthlyBudget = () => {
     }
   };
 
-  const loadSettings = async (monthId: number) => {
-    const tableName = getTableName('monthly_settings', currentMonth) as any;
+  const loadSettings = async (monthId: number, monthNum: number) => {
+    const tableName = getTableName('monthly_settings', monthNum) as any;
     const { data } = await (supabase as any)
       .from(tableName)
       .select('*')
@@ -160,8 +162,8 @@ const MonthlyBudget = () => {
     }
   };
 
-  const loadIncome = async (monthId: number) => {
-    const tableName = getTableName('monthly_income', currentMonth) as any;
+  const loadIncome = async (monthId: number, monthNum: number) => {
+    const tableName = getTableName('monthly_income', monthNum) as any;
     const { data } = await supabase
       .from(tableName)
       .select('*')
@@ -170,8 +172,8 @@ const MonthlyBudget = () => {
     setIncomeItems(data || []);
   };
 
-  const loadBudget = async (monthId: number) => {
-    const tableName = getTableName('monthly_budget', currentMonth) as any;
+  const loadBudget = async (monthId: number, monthNum: number) => {
+    const tableName = getTableName('monthly_budget', monthNum) as any;
     const { data } = await supabase
       .from(tableName)
       .select(`
@@ -182,8 +184,8 @@ const MonthlyBudget = () => {
     setBudgetItems(data || []);
   };
 
-  const loadTransactions = async (monthId: number, uid: string) => {
-    const tableName = getTableName('monthly_transactions', currentMonth) as any;
+  const loadTransactions = async (monthId: number, uid: string, monthNum: number) => {
+    const tableName = getTableName('monthly_transactions', monthNum) as any;
     const { data } = await supabase
       .from(tableName)
       .select(`
@@ -198,8 +200,8 @@ const MonthlyBudget = () => {
     setTransactions(data || []);
   };
 
-  const loadDebts = async (monthId: number, uid: string) => {
-    const tableName = getTableName('monthly_debts', currentMonth) as any;
+  const loadDebts = async (monthId: number, uid: string, monthNum: number) => {
+    const tableName = getTableName('monthly_debts', monthNum) as any;
     const { data } = await supabase
       .from(tableName)
       .select(`
@@ -211,8 +213,8 @@ const MonthlyBudget = () => {
     setDebts(data || []);
   };
 
-  const loadWishlist = async (monthId: number) => {
-    const tableName = getTableName('monthly_wishlist', currentMonth) as any;
+  const loadWishlist = async (monthId: number, monthNum: number) => {
+    const tableName = getTableName('monthly_wishlist', monthNum) as any;
     const { data } = await supabase
       .from(tableName)
       .select('*')
@@ -297,14 +299,14 @@ const MonthlyBudget = () => {
     }]);
     setNewIncomeOpen(false);
     setNewIncome({ source: '', amount: 0, date: '' });
-    loadIncome(monthId);
+    loadIncome(monthId, currentMonth);
     toast({ title: 'Agregado', description: 'Ingreso agregado' });
   };
 
   const deleteIncome = async (id: string) => {
     const tableName = getTableName('monthly_income', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
-    loadIncome(monthId);
+    loadIncome(monthId, currentMonth);
     toast({ title: 'Eliminado', description: 'Ingreso eliminado' });
   };
 
@@ -314,7 +316,7 @@ const MonthlyBudget = () => {
       .from(tableName)
       .update({ [field]: value })
       .eq('id', id);
-    loadBudget(monthId);
+    loadBudget(monthId, currentMonth);
   };
 
   const addTransaction = async () => {
@@ -333,14 +335,14 @@ const MonthlyBudget = () => {
     }]);
     setNewTxnOpen(false);
     setNewTxn({ category_id: '', description: '', amount: 0, date: '', payment_method_id: '', account_id: '' });
-    loadTransactions(monthId, userId);
+    loadTransactions(monthId, userId, currentMonth);
     toast({ title: 'Agregado', description: 'Transacción agregada' });
   };
 
   const deleteTransaction = async (id: string) => {
     const tableName = getTableName('monthly_transactions', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
-    loadTransactions(monthId, userId);
+    loadTransactions(monthId, userId, currentMonth);
     toast({ title: 'Eliminado', description: 'Transacción eliminada' });
   };
 
@@ -357,14 +359,14 @@ const MonthlyBudget = () => {
     }]);
     setNewDebtOpen(false);
     setNewDebt({ debt_account_id: '', starting_balance: 0, interest_rate_apr: 0, payment_made: 0, min_payment: 0 });
-    loadDebts(monthId, userId);
+    loadDebts(monthId, userId, currentMonth);
     toast({ title: 'Agregado', description: 'Deuda agregada' });
   };
 
   const deleteDebt = async (id: string) => {
     const tableName = getTableName('monthly_debts', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
-    loadDebts(monthId, userId);
+    loadDebts(monthId, userId, currentMonth);
     toast({ title: 'Eliminado', description: 'Deuda eliminada' });
   };
 
@@ -379,14 +381,14 @@ const MonthlyBudget = () => {
     }]);
     setNewWishOpen(false);
     setNewWish({ item: '', estimated_cost: 0, priority: 1 });
-    loadWishlist(monthId);
+    loadWishlist(monthId, currentMonth);
     toast({ title: 'Agregado', description: 'Deseo agregado' });
   };
 
   const deleteWish = async (id: string) => {
     const tableName = getTableName('monthly_wishlist', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
-    loadWishlist(monthId);
+    loadWishlist(monthId, currentMonth);
     toast({ title: 'Eliminado', description: 'Deseo eliminado' });
   };
 
