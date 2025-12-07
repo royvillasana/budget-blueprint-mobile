@@ -759,7 +759,7 @@ const MonthlyBudget = () => {
           </Collapsible>
           <Dialog open={newIncomeOpen} onOpenChange={setNewIncomeOpen}>
             <DialogTrigger asChild>
-              <Button className="h-auto bg-foreground hover:bg-foreground/90 p-6">
+              <Button className="self-start bg-foreground hover:bg-foreground/90 p-6">
                 <Plus className="w-5 h-5" />
               </Button>
             </DialogTrigger>
@@ -832,7 +832,7 @@ const MonthlyBudget = () => {
           </Collapsible>
           <Dialog open={newTxnOpen} onOpenChange={setNewTxnOpen}>
             <DialogTrigger asChild>
-              <Button className="h-auto bg-foreground hover:bg-foreground/90 p-6">
+              <Button className="self-start bg-foreground hover:bg-foreground/90 p-6">
                 <Plus className="w-5 h-5" />
               </Button>
             </DialogTrigger>
@@ -922,7 +922,7 @@ const MonthlyBudget = () => {
           </Collapsible>
           <Dialog open={newDebtOpen} onOpenChange={setNewDebtOpen}>
             <DialogTrigger asChild>
-              <Button className="h-auto bg-foreground hover:bg-foreground/90 p-6">
+              <Button className="self-start bg-foreground hover:bg-foreground/90 p-6">
                 <Plus className="w-5 h-5" />
               </Button>
             </DialogTrigger>
@@ -1012,7 +1012,7 @@ const MonthlyBudget = () => {
           </Collapsible>
           <Dialog open={newWishOpen} onOpenChange={setNewWishOpen}>
             <DialogTrigger asChild>
-              <Button className="h-auto bg-foreground hover:bg-foreground/90 p-6">
+              <Button className="self-start bg-foreground hover:bg-foreground/90 p-6">
                 <Plus className="w-5 h-5" />
               </Button>
             </DialogTrigger>
