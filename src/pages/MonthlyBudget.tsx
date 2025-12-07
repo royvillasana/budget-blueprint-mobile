@@ -982,8 +982,8 @@ const MonthlyBudget = () => {
       </main>
 
       {/* FAB Button */}
-      <Button onClick={() => setFabDialogOpen(true)} className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-foreground hover:bg-foreground/90 shadow-lg z-50">
-        <Plus className="w-6 h-6" />
+      <Button onClick={() => setFabDialogOpen(true)} className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg z-50">
+        <Plus className="w-6 h-6 text-primary-foreground" />
       </Button>
 
       {/* Unified Add Dialog */}
