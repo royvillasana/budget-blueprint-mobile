@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Save, ChevronDown, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -512,7 +513,19 @@ const MonthlyBudget = () => {
         <div className="grid gap-6 md:grid-cols-3 mb-8">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Suma de todos los ingresos registrados para este mes, incluyendo salario, bonos y otras fuentes.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">{formatCurrency(totalIncome)}</div>
@@ -520,7 +533,19 @@ const MonthlyBudget = () => {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium">Gastos Totales</CardTitle>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Suma de todas las transacciones de gasto registradas en este mes.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-accent">{formatCurrency(totalExpenses)}</div>
@@ -528,7 +553,19 @@ const MonthlyBudget = () => {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm font-medium">Flujo Neto</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium">Flujo Neto</CardTitle>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">Diferencia entre ingresos y gastos. Un valor positivo indica ahorro, negativo indica déficit.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary-dark">{formatCurrency(netCashFlow)}</div>
@@ -554,7 +591,19 @@ const MonthlyBudget = () => {
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Configuración del Mes</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Configuración del Mes</CardTitle>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Define tu reto mensual, saldo inicial del mes anterior, modo de presupuesto y monto no asignado.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <ChevronDown className={`h-5 w-5 transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
                 </div>
               </CardHeader>
@@ -602,7 +651,19 @@ const MonthlyBudget = () => {
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Presupuesto 50/30/20</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Presupuesto 50/30/20</CardTitle>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Metodología de presupuesto: 50% para necesidades, 30% para deseos y 20% para ahorro/futuro. Define montos estimados y compara con gastos reales.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <ChevronDown className={`h-5 w-5 transition-transform ${budgetOpen ? 'rotate-180' : ''}`} />
                 </div>
               </CardHeader>
@@ -711,7 +772,19 @@ const MonthlyBudget = () => {
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Ingresos</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Ingresos</CardTitle>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Registra todas tus fuentes de ingreso del mes: salario, freelance, inversiones, etc.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <ChevronDown className={`h-5 w-5 transition-transform ${incomeOpen ? 'rotate-180' : ''}`} />
                 </div>
               </CardHeader>
@@ -751,7 +824,19 @@ const MonthlyBudget = () => {
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Transacciones</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Transacciones</CardTitle>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Registro detallado de todos tus gastos del mes. Cada transacción se asigna a una categoría para el análisis.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <ChevronDown className={`h-5 w-5 transition-transform ${transactionsOpen ? 'rotate-180' : ''}`} />
                 </div>
               </CardHeader>
@@ -793,7 +878,19 @@ const MonthlyBudget = () => {
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Deudas</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Deudas</CardTitle>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Seguimiento de préstamos y deudas. Registra pagos realizados para ver el progreso en la reducción de saldos.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <ChevronDown className={`h-5 w-5 transition-transform ${debtsOpen ? 'rotate-180' : ''}`} />
                 </div>
               </CardHeader>
@@ -837,7 +934,19 @@ const MonthlyBudget = () => {
             <CollapsibleTrigger asChild>
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
-                  <CardTitle>Lista de Deseos</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Lista de Deseos</CardTitle>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Artículos o experiencias que deseas adquirir. Prioriza y planifica tus compras futuras.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <ChevronDown className={`h-5 w-5 transition-transform ${wishlistOpen ? 'rotate-180' : ''}`} />
                 </div>
               </CardHeader>
