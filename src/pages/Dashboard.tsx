@@ -3,13 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/i18n/translations';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, CreditCard, Calendar, ArrowRight, DollarSign, Receipt, Landmark } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, CreditCard, Calendar, DollarSign, Receipt, Landmark } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { getMonthName, getTableName, MONTH_INFO } from '@/utils/monthUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 
 interface MonthlySummary {
   month_name: string | null;
@@ -188,24 +195,122 @@ const Dashboard = () => {
           <p className="text-muted-foreground">{t.annualSummary} - 2025</p>
         </div>
 
-        {/* Quick Month Navigation */}
+        {/* Annual Income vs Expenses Chart */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Navegación Rápida de Meses</CardTitle>
+            <CardTitle>{config.language === 'es' ? 'Ingresos vs Gastos Anuales' : 'Annual Income vs Expenses'}</CardTitle>
+            <CardDescription>
+              {config.language === 'es' ? 'Visualización mensual del año 2025' : 'Monthly visualization for 2025'}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {Object.entries(MONTH_INFO).map(([num, info]) => (
-                <Button
-                  key={num}
-                  variant="outline"
-                  className="flex items-center justify-between"
-                  onClick={() => navigate(`/budget/2025/${num}`)}
-                >
-                  <span>{getMonthName(parseInt(num), config.language)}</span>
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              ))}
+            <ChartContainer 
+              config={{
+                income: {
+                  label: config.language === 'es' ? 'Ingresos' : 'Income',
+                  color: 'hsl(var(--chart-1))',
+                },
+                expenses: {
+                  label: config.language === 'es' ? 'Gastos' : 'Expenses',
+                  color: 'hsl(var(--chart-2))',
+                },
+              } satisfies ChartConfig}
+              className="h-[350px] w-full"
+            >
+              <AreaChart
+                accessibilityLayer
+                data={monthlySummaries.map(m => ({
+                  month: getMonthName(m.month_id || 1, config.language),
+                  income: m.total_income || 0,
+                  expenses: Math.abs(m.total_expenses || 0),
+                }))}
+                margin={{
+                  left: 12,
+                  right: 12,
+                  top: 12,
+                  bottom: 12,
+                }}
+              >
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => value.slice(0, 3)}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickFormatter={(value) => `${config.currency === 'EUR' ? '€' : '$'}${value}`}
+                />
+                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                <defs>
+                  <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-income)"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-income)"
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                  <linearGradient id="fillExpenses" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-expenses)"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-expenses)"
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                </defs>
+                <Area
+                  dataKey="income"
+                  type="natural"
+                  fill="url(#fillIncome)"
+                  fillOpacity={0.4}
+                  stroke="var(--color-income)"
+                  strokeWidth={2}
+                  stackId="a"
+                />
+                <Area
+                  dataKey="expenses"
+                  type="natural"
+                  fill="url(#fillExpenses)"
+                  fillOpacity={0.4}
+                  stroke="var(--color-expenses)"
+                  strokeWidth={2}
+                  stackId="b"
+                />
+              </AreaChart>
+            </ChartContainer>
+            <div className="flex justify-center gap-8 mt-4 pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-1))' }} />
+                <span className="text-sm font-medium">
+                  {config.language === 'es' ? 'Ingresos' : 'Income'}: {formatCurrency(annualSummary?.annual_income)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'hsl(var(--chart-2))' }} />
+                <span className="text-sm font-medium">
+                  {config.language === 'es' ? 'Gastos' : 'Expenses'}: {formatCurrency(annualSummary?.annual_expenses)}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">
+                  {config.language === 'es' ? 'Flujo Neto' : 'Net Flow'}: {formatCurrency(annualSummary?.annual_net_cash_flow)}
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
