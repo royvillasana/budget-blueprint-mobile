@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMonthName, getTableName } from '@/utils/monthUtils';
 
 const MonthlyBudget = () => {
@@ -632,117 +633,119 @@ const MonthlyBudget = () => {
           <CardHeader>
             <CardTitle>Presupuesto 50/30/20</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Needs */}
-            <div>
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-needs" />
-                Necesidades (50%)
-              </h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead className="text-right">Estimado</TableHead>
-                    <TableHead className="text-right">Real</TableHead>
-                    <TableHead className="text-right">Diferencia</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {needsBudget.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-24 text-right"
-                          value={item.estimated || 0}
-                          onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                      <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {formatCurrency(item.calculatedDifference || 0)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+          <CardContent>
+            <Tabs defaultValue="needs" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="needs" className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-needs" />
+                  Necesidades
+                </TabsTrigger>
+                <TabsTrigger value="wants" className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-desires" />
+                  Deseos
+                </TabsTrigger>
+                <TabsTrigger value="future" className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-future" />
+                  Futuro
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Wants */}
-            <div>
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-desires" />
-                Deseos (30%)
-              </h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead className="text-right">Estimado</TableHead>
-                    <TableHead className="text-right">Real</TableHead>
-                    <TableHead className="text-right">Diferencia</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {wantsBudget.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-24 text-right"
-                          value={item.estimated || 0}
-                          onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                      <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {formatCurrency(item.calculatedDifference || 0)}
-                      </TableCell>
+              <TabsContent value="needs">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead className="text-right">Estimado</TableHead>
+                      <TableHead className="text-right">Real</TableHead>
+                      <TableHead className="text-right">Diferencia</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {needsBudget.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            className="w-24 text-right"
+                            value={item.estimated || 0}
+                            onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                          {formatCurrency(item.calculatedDifference || 0)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
 
-            {/* Future */}
-            <div>
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-future" />
-                Futuro (20%)
-              </h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead className="text-right">Estimado</TableHead>
-                    <TableHead className="text-right">Real</TableHead>
-                    <TableHead className="text-right">Diferencia</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {futureBudget.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-24 text-right"
-                          value={item.estimated || 0}
-                          onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                      <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {formatCurrency(item.calculatedDifference || 0)}
-                      </TableCell>
+              <TabsContent value="wants">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead className="text-right">Estimado</TableHead>
+                      <TableHead className="text-right">Real</TableHead>
+                      <TableHead className="text-right">Diferencia</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {wantsBudget.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            className="w-24 text-right"
+                            value={item.estimated || 0}
+                            onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                          {formatCurrency(item.calculatedDifference || 0)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+
+              <TabsContent value="future">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead className="text-right">Estimado</TableHead>
+                      <TableHead className="text-right">Real</TableHead>
+                      <TableHead className="text-right">Diferencia</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {futureBudget.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.categories?.emoji} {item.categories?.name}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            className="w-24 text-right"
+                            value={item.estimated || 0}
+                            onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                        <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                          {formatCurrency(item.calculatedDifference || 0)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
