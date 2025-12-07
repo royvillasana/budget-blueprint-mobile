@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export type Currency = 'EUR' | 'USD';
 export type Language = 'es' | 'en';
@@ -47,6 +48,7 @@ interface AppContextType {
   transactions: Transaction[];
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   exchangeRate: number;
+  loadingSettings: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -59,6 +61,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     language: 'es',
   });
 
+  const [loadingSettings, setLoadingSettings] = useState(true);
   const [exchangeRate] = useState(1.09); // EUR to USD rate
 
   const [budgetCategories, setBudgetCategories] = useState({
@@ -106,8 +109,89 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const updateConfig = (newConfig: Partial<AppConfig>) => {
-    setConfig((prev) => ({ ...prev, ...newConfig }));
+  // Load user settings from database
+  useEffect(() => {
+    const loadUserSettings = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setLoadingSettings(false);
+          return;
+        }
+
+        const { data: settings, error } = await supabase
+          .from('user_settings')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error loading settings:', error);
+        }
+
+        if (settings) {
+          setConfig({
+            ownerName: settings.owner_name || '',
+            currency: (settings.currency as Currency) || 'EUR',
+            monthlyIncome: Number(settings.monthly_income) || 0,
+            language: (settings.language as Language) || 'es',
+          });
+        }
+      } catch (error) {
+        console.error('Error loading user settings:', error);
+      } finally {
+        setLoadingSettings(false);
+      }
+    };
+
+    loadUserSettings();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setTimeout(() => {
+          loadUserSettings();
+        }, 0);
+      } else if (event === 'SIGNED_OUT') {
+        setConfig({
+          ownerName: '',
+          currency: 'EUR',
+          monthlyIncome: 0,
+          language: 'es',
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const updateConfig = async (newConfig: Partial<AppConfig>) => {
+    const updatedConfig = { ...config, ...newConfig };
+    setConfig(updatedConfig);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          user_id: user.id,
+          owner_name: updatedConfig.ownerName,
+          currency: updatedConfig.currency,
+          language: updatedConfig.language,
+          monthly_income: updatedConfig.monthlyIncome,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error('Error saving settings:', error);
+      }
+    } catch (error) {
+      console.error('Error updating config:', error);
+    }
   };
 
   const updateCategory = (
@@ -162,6 +246,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         transactions,
         addTransaction,
         exchangeRate,
+        loadingSettings,
       }}
     >
       {children}
