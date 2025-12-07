@@ -11,38 +11,35 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Plus, Trash2, Save, ChevronDown, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getMonthName, getTableName } from '@/utils/monthUtils';
 import { IncomeExpenseChart } from '@/components/charts/IncomeExpenseChart';
 import { BudgetPieChart } from '@/components/charts/BudgetPieChart';
-
 const MonthlyBudget = () => {
-  const { year, month } = useParams<{ year: string; month: string }>();
+  const {
+    year,
+    month
+  } = useParams<{
+    year: string;
+    month: string;
+  }>();
   const navigate = useNavigate();
-  const { config } = useApp();
+  const {
+    config
+  } = useApp();
   const t = translations[config.language];
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const [loading, setLoading] = useState(true);
   const [monthId, setMonthId] = useState<number>(0);
   const [userId, setUserId] = useState<string>('');
   const [currentMonth, setCurrentMonth] = useState<number>(1);
   const [currentYear, setCurrentYear] = useState<number>(2025);
-  
+
   // Settings
   const [challenge, setChallenge] = useState('');
   const [carryover, setCarryover] = useState(0);
@@ -51,7 +48,11 @@ const MonthlyBudget = () => {
 
   // Income
   const [incomeItems, setIncomeItems] = useState<any[]>([]);
-  const [newIncome, setNewIncome] = useState({ source: '', amount: 0, date: '' });
+  const [newIncome, setNewIncome] = useState({
+    source: '',
+    amount: 0,
+    date: ''
+  });
 
   // Budget categories
   const [categories, setCategories] = useState<any[]>([]);
@@ -59,10 +60,10 @@ const MonthlyBudget = () => {
 
   // Transactions
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [newTxn, setNewTxn] = useState({ 
-    category_id: '', 
-    description: '', 
-    amount: 0, 
+  const [newTxn, setNewTxn] = useState({
+    category_id: '',
+    description: '',
+    amount: 0,
     date: '',
     payment_method_id: '',
     account_id: ''
@@ -79,12 +80,16 @@ const MonthlyBudget = () => {
     starting_balance: 0,
     interest_rate_apr: 0,
     payment_made: 0,
-    min_payment: 0,
+    min_payment: 0
   });
 
   // Wishlist
   const [wishlist, setWishlist] = useState<any[]>([]);
-  const [newWish, setNewWish] = useState({ item: '', estimated_cost: 0, priority: 1 });
+  const [newWish, setNewWish] = useState({
+    item: '',
+    estimated_cost: 0,
+    priority: 1
+  });
 
   // Collapsible states
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -100,7 +105,6 @@ const MonthlyBudget = () => {
   // Data masking state
   const [dataMasked, setDataMasked] = useState(false);
   const [selectedAddType, setSelectedAddType] = useState<'income' | 'transaction' | 'debt' | 'wishlist' | null>(null);
-
   useEffect(() => {
     const monthNum = parseInt(month || '1');
     const yearNum = parseInt(year || '2025');
@@ -108,104 +112,82 @@ const MonthlyBudget = () => {
     setCurrentYear(yearNum);
     loadMonthData();
   }, [year, month]);
-
   const loadMonthData = async () => {
     try {
-      const userResponse = await supabase.auth.getUser() as any;
+      const userResponse = (await supabase.auth.getUser()) as any;
       const user = userResponse.data?.user;
-      
       if (!user) {
         navigate('/auth');
         return;
       }
-      
       setUserId(user.id);
 
       // Get month number from URL params
       const monthNum = parseInt(month || '1');
-      
-      // Get month record - use id directly since months table has id = 1-12 for each month
-      const monthResponse = await (supabase as any)
-        .from('months')
-        .select('id, name, year')
-        .eq('id', monthNum)
-        .single();
-      
-      const monthData = monthResponse.data;
 
+      // Get month record - use id directly since months table has id = 1-12 for each month
+      const monthResponse = await (supabase as any).from('months').select('id, name, year').eq('id', monthNum).single();
+      const monthData = monthResponse.data;
       if (!monthData) {
-        toast({ title: 'Error', description: 'Month not found', variant: 'destructive' });
+        toast({
+          title: 'Error',
+          description: 'Month not found',
+          variant: 'destructive'
+        });
         return;
       }
-
       setMonthId(monthData.id);
 
       // Load all data for the month - pass monthNum directly instead of using state
-      await Promise.all([
-        loadSettings(monthData.id, monthNum),
-        loadIncome(monthData.id, monthNum),
-        loadBudget(monthData.id, monthNum, user.id),
-        loadTransactions(monthData.id, user.id, monthNum),
-        loadDebts(monthData.id, user.id, monthNum),
-        loadWishlist(monthData.id, monthNum),
-        loadCategories(),
-        loadPaymentMethods(),
-        loadAccounts(),
-      ]);
+      await Promise.all([loadSettings(monthData.id, monthNum), loadIncome(monthData.id, monthNum), loadBudget(monthData.id, monthNum, user.id), loadTransactions(monthData.id, user.id, monthNum), loadDebts(monthData.id, user.id, monthNum), loadWishlist(monthData.id, monthNum), loadCategories(), loadPaymentMethods(), loadAccounts()]);
     } catch (error) {
       console.error('Error loading month data:', error);
-      toast({ title: 'Error', description: 'Failed to load data', variant: 'destructive' });
+      toast({
+        title: 'Error',
+        description: 'Failed to load data',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
   };
-
   const loadSettings = async (monthId: number, monthNum: number) => {
     const tableName = getTableName('monthly_settings', monthNum) as any;
-    const { data } = await (supabase as any)
-      .from(tableName)
-      .select('*')
-      .eq('month_id', monthId)
-      .maybeSingle();
-
+    const {
+      data
+    } = await (supabase as any).from(tableName).select('*').eq('month_id', monthId).maybeSingle();
     if (data) {
       setChallenge(data.monthly_challenge || '');
       setCarryover(Number(data.carryover_prev_balance) || 0);
-      setBudgetMode((data.budget_mode as 'ZERO_BASED' | 'COPY_PREVIOUS') || 'ZERO_BASED');
+      setBudgetMode(data.budget_mode as 'ZERO_BASED' | 'COPY_PREVIOUS' || 'ZERO_BASED');
       setUnassignedPool(Number(data.unassigned_pool) || 0);
     }
   };
-
   const loadIncome = async (monthId: number, monthNum: number) => {
     const tableName = getTableName('monthly_income', monthNum) as any;
-    const { data } = await supabase
-      .from(tableName)
-      .select('*')
-      .eq('month_id', monthId)
-      .order('date', { ascending: false });
+    const {
+      data
+    } = await supabase.from(tableName).select('*').eq('month_id', monthId).order('date', {
+      ascending: false
+    });
     setIncomeItems(data || []);
   };
-
   const loadBudget = async (monthId: number, monthNum: number, uid?: string) => {
     const tableName = getTableName('monthly_budget', monthNum) as any;
-    const { data } = await supabase
-      .from(tableName)
-      .select(`
+    const {
+      data
+    } = await supabase.from(tableName).select(`
         *,
         categories(name, emoji, bucket_50_30_20)
-      `)
-      .eq('month_id', monthId);
-    
+      `).eq('month_id', monthId);
+
     // If no budget items exist, create them from user's categories
     if (!data || data.length === 0) {
       const userIdToUse = uid || userId;
       if (userIdToUse) {
-        const { data: userCategories } = await supabase
-          .from('categories')
-          .select('*')
-          .eq('user_id', userIdToUse)
-          .eq('is_active', true);
-        
+        const {
+          data: userCategories
+        } = await supabase.from('categories').select('*').eq('user_id', userIdToUse).eq('is_active', true);
         if (userCategories && userCategories.length > 0) {
           const budgetEntries = userCategories.map(cat => ({
             month_id: monthId,
@@ -217,138 +199,141 @@ const MonthlyBudget = () => {
             actual: 0,
             variance: 0
           }));
-          
           await supabase.from(tableName).insert(budgetEntries);
-          
+
           // Reload after inserting
-          const { data: newData } = await supabase
-            .from(tableName)
-            .select(`
+          const {
+            data: newData
+          } = await supabase.from(tableName).select(`
               *,
               categories(name, emoji, bucket_50_30_20)
-            `)
-            .eq('month_id', monthId);
+            `).eq('month_id', monthId);
           setBudgetItems(newData || []);
           return;
         }
       }
     }
-    
     setBudgetItems(data || []);
   };
-
   const loadTransactions = async (monthId: number, uid: string, monthNum: number) => {
     const tableName = getTableName('monthly_transactions', monthNum) as any;
-    const { data } = await supabase
-      .from(tableName)
-      .select(`
+    const {
+      data
+    } = await supabase.from(tableName).select(`
         *,
         categories(name, emoji),
         payment_methods(name),
         accounts(name)
-      `)
-      .eq('month_id', monthId)
-      .eq('user_id', uid)
-      .order('date', { ascending: false });
+      `).eq('month_id', monthId).eq('user_id', uid).order('date', {
+      ascending: false
+    });
     setTransactions(data || []);
   };
-
   const loadDebts = async (monthId: number, uid: string, monthNum: number) => {
     const tableName = getTableName('monthly_debts', monthNum) as any;
-    const { data } = await supabase
-      .from(tableName)
-      .select(`
+    const {
+      data
+    } = await supabase.from(tableName).select(`
         *,
         accounts(name)
-      `)
-      .eq('month_id', monthId)
-      .eq('user_id', uid);
+      `).eq('month_id', monthId).eq('user_id', uid);
     setDebts(data || []);
   };
-
   const loadWishlist = async (monthId: number, monthNum: number) => {
     const tableName = getTableName('monthly_wishlist', monthNum) as any;
-    const { data } = await supabase
-      .from(tableName)
-      .select('*')
-      .eq('month_id', monthId);
+    const {
+      data
+    } = await supabase.from(tableName).select('*').eq('month_id', monthId);
     setWishlist(data || []);
   };
-
   const loadCategories = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
     if (!user) return;
-    
-    const { data } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true);
+    const {
+      data
+    } = await supabase.from('categories').select('*').eq('user_id', user.id).eq('is_active', true);
     setCategories(data || []);
   };
-
   const loadPaymentMethods = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
     if (!user) return;
-    
-    const { data } = await supabase
-      .from('payment_methods')
-      .select('*')
-      .eq('user_id', user.id);
+    const {
+      data
+    } = await supabase.from('payment_methods').select('*').eq('user_id', user.id);
     setPaymentMethods(data || []);
   };
-
   const loadAccounts = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
     if (!user) return;
-    
-    const { data } = await supabase
-      .from('accounts')
-      .select('*')
-      .eq('user_id', user.id);
+    const {
+      data
+    } = await supabase.from('accounts').select('*').eq('user_id', user.id);
     setAccounts(data || []);
   };
-
   const saveSettings = async () => {
     const tableName = getTableName('monthly_settings', currentMonth) as any;
-    const { data: existing } = await (supabase as any)
-      .from(tableName)
-      .select('id')
-      .eq('month_id', monthId)
-      .maybeSingle();
-
+    const {
+      data: existing
+    } = await (supabase as any).from(tableName).select('id').eq('month_id', monthId).maybeSingle();
     const settingsData: any = {
       month_id: monthId,
       user_id: userId,
       monthly_challenge: challenge,
       carryover_prev_balance: carryover,
       budget_mode: budgetMode,
-      unassigned_pool: unassignedPool,
+      unassigned_pool: unassignedPool
     };
-
     if (existing) {
-      await supabase
-        .from(tableName)
-        .update(settingsData)
-        .eq('id', existing.id);
+      await supabase.from(tableName).update(settingsData).eq('id', existing.id);
     } else {
-      await supabase
-        .from(tableName)
-        .insert([settingsData]);
+      await supabase.from(tableName).insert([settingsData]);
     }
-
-    toast({ title: 'Guardado', description: 'Configuración guardada' });
+    toast({
+      title: 'Guardado',
+      description: 'Configuración guardada'
+    });
   };
-
   const resetFabDialog = () => {
     setFabDialogOpen(false);
     setSelectedAddType(null);
-    setNewIncome({ source: '', amount: 0, date: '' });
-    setNewTxn({ category_id: '', description: '', amount: 0, date: '', payment_method_id: '', account_id: '' });
-    setNewDebt({ debt_account_id: '', starting_balance: 0, interest_rate_apr: 0, payment_made: 0, min_payment: 0 });
-    setNewWish({ item: '', estimated_cost: 0, priority: 1 });
+    setNewIncome({
+      source: '',
+      amount: 0,
+      date: ''
+    });
+    setNewTxn({
+      category_id: '',
+      description: '',
+      amount: 0,
+      date: '',
+      payment_method_id: '',
+      account_id: ''
+    });
+    setNewDebt({
+      debt_account_id: '',
+      starting_balance: 0,
+      interest_rate_apr: 0,
+      payment_made: 0,
+      min_payment: 0
+    });
+    setNewWish({
+      item: '',
+      estimated_cost: 0,
+      priority: 1
+    });
   };
-
   const addIncome = async () => {
     const tableName = getTableName('monthly_income', currentMonth) as any;
     await supabase.from(tableName).insert([{
@@ -357,29 +342,31 @@ const MonthlyBudget = () => {
       source: newIncome.source,
       amount: newIncome.amount,
       date: newIncome.date,
-      currency_code: config.currency,
+      currency_code: config.currency
     }]);
     resetFabDialog();
     loadIncome(monthId, currentMonth);
-    toast({ title: 'Agregado', description: 'Ingreso agregado' });
+    toast({
+      title: 'Agregado',
+      description: 'Ingreso agregado'
+    });
   };
-
   const deleteIncome = async (id: string) => {
     const tableName = getTableName('monthly_income', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
     loadIncome(monthId, currentMonth);
-    toast({ title: 'Eliminado', description: 'Ingreso eliminado' });
+    toast({
+      title: 'Eliminado',
+      description: 'Ingreso eliminado'
+    });
   };
-
   const updateBudgetItem = async (id: string, field: string, value: number) => {
     const tableName = getTableName('monthly_budget', currentMonth) as any;
-    await supabase
-      .from(tableName)
-      .update({ [field]: value })
-      .eq('id', id);
+    await supabase.from(tableName).update({
+      [field]: value
+    }).eq('id', id);
     loadBudget(monthId, currentMonth);
   };
-
   const addTransaction = async () => {
     const tableName = getTableName('monthly_transactions', currentMonth) as any;
     await supabase.from(tableName).insert([{
@@ -387,25 +374,30 @@ const MonthlyBudget = () => {
       user_id: userId,
       category_id: newTxn.category_id,
       description: newTxn.description,
-      amount: -Math.abs(newTxn.amount), // Negative for expenses
+      amount: -Math.abs(newTxn.amount),
+      // Negative for expenses
       date: newTxn.date,
       direction: 'EXPENSE',
       currency_code: config.currency,
       payment_method_id: newTxn.payment_method_id || null,
-      account_id: newTxn.account_id || null,
+      account_id: newTxn.account_id || null
     }]);
     resetFabDialog();
     loadTransactions(monthId, userId, currentMonth);
-    toast({ title: 'Agregado', description: 'Transacción agregada' });
+    toast({
+      title: 'Agregado',
+      description: 'Transacción agregada'
+    });
   };
-
   const deleteTransaction = async (id: string) => {
     const tableName = getTableName('monthly_transactions', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
     loadTransactions(monthId, userId, currentMonth);
-    toast({ title: 'Eliminado', description: 'Transacción eliminada' });
+    toast({
+      title: 'Eliminado',
+      description: 'Transacción eliminada'
+    });
   };
-
   const addDebt = async () => {
     const tableName = getTableName('monthly_debts', currentMonth) as any;
     await supabase.from(tableName).insert([{
@@ -415,20 +407,24 @@ const MonthlyBudget = () => {
       starting_balance: newDebt.starting_balance,
       interest_rate_apr: newDebt.interest_rate_apr,
       payment_made: newDebt.payment_made,
-      min_payment: newDebt.min_payment,
+      min_payment: newDebt.min_payment
     }]);
     resetFabDialog();
     loadDebts(monthId, userId, currentMonth);
-    toast({ title: 'Agregado', description: 'Deuda agregada' });
+    toast({
+      title: 'Agregado',
+      description: 'Deuda agregada'
+    });
   };
-
   const deleteDebt = async (id: string) => {
     const tableName = getTableName('monthly_debts', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
     loadDebts(monthId, userId, currentMonth);
-    toast({ title: 'Eliminado', description: 'Deuda eliminada' });
+    toast({
+      title: 'Eliminado',
+      description: 'Deuda eliminada'
+    });
   };
-
   const addWish = async () => {
     const tableName = getTableName('monthly_wishlist', currentMonth) as any;
     await supabase.from(tableName).insert([{
@@ -436,20 +432,24 @@ const MonthlyBudget = () => {
       user_id: userId,
       item: newWish.item,
       estimated_cost: newWish.estimated_cost,
-      priority: String(newWish.priority),
+      priority: String(newWish.priority)
     }]);
     resetFabDialog();
     loadWishlist(monthId, currentMonth);
-    toast({ title: 'Agregado', description: 'Deseo agregado' });
+    toast({
+      title: 'Agregado',
+      description: 'Deseo agregado'
+    });
   };
-
   const deleteWish = async (id: string) => {
     const tableName = getTableName('monthly_wishlist', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
     loadWishlist(monthId, currentMonth);
-    toast({ title: 'Eliminado', description: 'Deseo eliminado' });
+    toast({
+      title: 'Eliminado',
+      description: 'Deseo eliminado'
+    });
   };
-
   const formatCurrency = (amount: number) => {
     if (dataMasked) {
       return '••••••';
@@ -457,16 +457,13 @@ const MonthlyBudget = () => {
     const symbol = config.currency === 'EUR' ? '€' : '$';
     return `${symbol}${Math.abs(amount).toFixed(2)}`;
   };
-
   const totalIncome = incomeItems.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalExpenses = transactions.reduce((sum, txn) => sum + Math.abs(Number(txn.amount || 0)), 0);
   const netCashFlow = totalIncome - totalExpenses;
 
   // Calculate actual spending per category from transactions
   const getActualByCategory = (categoryId: string) => {
-    return transactions
-      .filter(txn => txn.category_id === categoryId)
-      .reduce((sum, txn) => sum + Math.abs(Number(txn.amount || 0)), 0);
+    return transactions.filter(txn => txn.category_id === categoryId).reduce((sum, txn) => sum + Math.abs(Number(txn.amount || 0)), 0);
   };
 
   // Enrich budget items with calculated actual values
@@ -480,7 +477,6 @@ const MonthlyBudget = () => {
       };
     });
   };
-
   const needsBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'NEEDS'));
   const wantsBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'WANTS'));
   const futureBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'FUTURE'));
@@ -489,20 +485,15 @@ const MonthlyBudget = () => {
   const needsActual = needsBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);
   const wantsActual = wantsBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);
   const futureActual = futureBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
+    return <div className="min-h-screen bg-background">
         <Header />
         <main className="container mx-auto px-4 py-8">
           <div className="animate-pulse">Cargando...</div>
         </main>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8 flex items-center justify-between">
@@ -512,13 +503,7 @@ const MonthlyBudget = () => {
             </h1>
             <p className="text-muted-foreground">Presupuesto mensual detallado</p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setDataMasked(!dataMasked)}
-            className="h-10 w-10"
-            title={dataMasked ? 'Mostrar datos' : 'Ocultar datos'}
-          >
+          <Button variant="ghost" size="icon" onClick={() => setDataMasked(!dataMasked)} className="h-10 w-10" title={dataMasked ? 'Mostrar datos' : 'Ocultar datos'}>
             {dataMasked ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </Button>
         </div>
@@ -530,7 +515,7 @@ const MonthlyBudget = () => {
               <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+              <div className="text-2xl font-bold text-primary">{formatCurrency(totalIncome)}</div>
             </CardContent>
           </Card>
           <Card>
@@ -555,24 +540,14 @@ const MonthlyBudget = () => {
 
         {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <IncomeExpenseChart 
-            income={totalIncome} 
-            expenses={totalExpenses} 
-            currency={config.currency}
-            language={config.language}
-            masked={dataMasked}
-            incomeItems={incomeItems.map(item => ({ date: item.date, amount: item.amount }))}
-            transactionItems={transactions.map(txn => ({ date: txn.date, amount: txn.amount }))}
-          />
-          <BudgetPieChart 
-            needsActual={needsActual}
-            wantsActual={wantsActual}
-            futureActual={futureActual}
-            totalIncome={totalIncome}
-            currency={config.currency}
-            language={config.language}
-            masked={dataMasked}
-          />
+          <IncomeExpenseChart income={totalIncome} expenses={totalExpenses} currency={config.currency} language={config.language} masked={dataMasked} incomeItems={incomeItems.map(item => ({
+          date: item.date,
+          amount: item.amount
+        }))} transactionItems={transactions.map(txn => ({
+          date: txn.date,
+          amount: txn.amount
+        }))} />
+          <BudgetPieChart needsActual={needsActual} wantsActual={wantsActual} futureActual={futureActual} totalIncome={totalIncome} currency={config.currency} language={config.language} masked={dataMasked} />
         </div>
 
         {/* Settings */}
@@ -590,20 +565,12 @@ const MonthlyBudget = () => {
               <CardContent className="space-y-4">
                 <div>
                   <Label>Mi mayor reto para este mes</Label>
-                  <Input 
-                    value={challenge} 
-                    onChange={(e) => setChallenge(e.target.value)}
-                    placeholder="Escribe tu reto..."
-                  />
+                  <Input value={challenge} onChange={e => setChallenge(e.target.value)} placeholder="Escribe tu reto..." />
                 </div>
                 <div className="grid md:grid-cols-3 gap-4">
                   <div>
                     <Label>Saldo del mes anterior</Label>
-                    <Input 
-                      type="number" 
-                      value={carryover} 
-                      onChange={(e) => setCarryover(Number(e.target.value))}
-                    />
+                    <Input type="number" value={carryover} onChange={e => setCarryover(Number(e.target.value))} />
                   </div>
                   <div>
                     <Label>Modo de presupuesto</Label>
@@ -619,11 +586,7 @@ const MonthlyBudget = () => {
                   </div>
                   <div>
                     <Label>Monto no asignado</Label>
-                    <Input 
-                      type="number" 
-                      value={unassignedPool} 
-                      onChange={(e) => setUnassignedPool(Number(e.target.value))}
-                    />
+                    <Input type="number" value={unassignedPool} onChange={e => setUnassignedPool(Number(e.target.value))} />
                   </div>
                 </div>
                 <Button onClick={saveSettings}>
@@ -675,23 +638,16 @@ const MonthlyBudget = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {needsBudget.map((item) => (
-                          <TableRow key={item.id}>
+                        {needsBudget.map(item => <TableRow key={item.id}>
                             <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
                             <TableCell className="text-center">
-                              <Input
-                                type="number"
-                                className="w-24 text-center mx-auto"
-                                value={item.estimated || 0}
-                                onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                              />
+                              <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
                             <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                             <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
                               {formatCurrency(item.calculatedDifference || 0)}
                             </TableCell>
-                          </TableRow>
-                        ))}
+                          </TableRow>)}
                       </TableBody>
                     </Table>
                   </TabsContent>
@@ -707,23 +663,16 @@ const MonthlyBudget = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {wantsBudget.map((item) => (
-                          <TableRow key={item.id}>
+                        {wantsBudget.map(item => <TableRow key={item.id}>
                             <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
                             <TableCell className="text-center">
-                              <Input
-                                type="number"
-                                className="w-24 text-center mx-auto"
-                                value={item.estimated || 0}
-                                onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                              />
+                              <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
                             <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                             <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
                               {formatCurrency(item.calculatedDifference || 0)}
                             </TableCell>
-                          </TableRow>
-                        ))}
+                          </TableRow>)}
                       </TableBody>
                     </Table>
                   </TabsContent>
@@ -739,23 +688,16 @@ const MonthlyBudget = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {futureBudget.map((item) => (
-                          <TableRow key={item.id}>
+                        {futureBudget.map(item => <TableRow key={item.id}>
                             <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
                             <TableCell className="text-center">
-                              <Input
-                                type="number"
-                                className="w-24 text-center mx-auto"
-                                value={item.estimated || 0}
-                                onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                              />
+                              <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
                             <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                             <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
                               {formatCurrency(item.calculatedDifference || 0)}
                             </TableCell>
-                          </TableRow>
-                        ))}
+                          </TableRow>)}
                       </TableBody>
                     </Table>
                   </TabsContent>
@@ -788,8 +730,7 @@ const MonthlyBudget = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {incomeItems.map((item) => (
-                      <TableRow key={item.id}>
+                    {incomeItems.map(item => <TableRow key={item.id}>
                         <TableCell>{item.source}</TableCell>
                         <TableCell>{item.date}</TableCell>
                         <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
@@ -798,8 +739,7 @@ const MonthlyBudget = () => {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -831,8 +771,7 @@ const MonthlyBudget = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {transactions.map((txn) => (
-                      <TableRow key={txn.id}>
+                    {transactions.map(txn => <TableRow key={txn.id}>
                         <TableCell>{txn.date}</TableCell>
                         <TableCell>{txn.categories?.emoji} {txn.categories?.name}</TableCell>
                         <TableCell>{txn.description}</TableCell>
@@ -842,8 +781,7 @@ const MonthlyBudget = () => {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -876,8 +814,7 @@ const MonthlyBudget = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {debts.map((debt) => (
-                      <TableRow key={debt.id}>
+                    {debts.map(debt => <TableRow key={debt.id}>
                         <TableCell>{accounts.find(a => a.id === debt.debt_account_id)?.name}</TableCell>
                         <TableCell className="text-right">{formatCurrency(debt.starting_balance)}</TableCell>
                         <TableCell className="text-right">{debt.interest_rate_apr}%</TableCell>
@@ -888,8 +825,7 @@ const MonthlyBudget = () => {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -920,8 +856,7 @@ const MonthlyBudget = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {wishlist.map((wish) => (
-                      <TableRow key={wish.id}>
+                    {wishlist.map(wish => <TableRow key={wish.id}>
                         <TableCell>{wish.item}</TableCell>
                         <TableCell className="text-right">{formatCurrency(wish.estimated_cost)}</TableCell>
                         <TableCell className="text-center">{wish.priority}</TableCell>
@@ -930,8 +865,7 @@ const MonthlyBudget = () => {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -941,178 +875,184 @@ const MonthlyBudget = () => {
       </main>
 
       {/* FAB Button */}
-      <Button
-        onClick={() => setFabDialogOpen(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-foreground hover:bg-foreground/90 shadow-lg z-50"
-      >
+      <Button onClick={() => setFabDialogOpen(true)} className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-foreground hover:bg-foreground/90 shadow-lg z-50">
         <Plus className="w-6 h-6" />
       </Button>
 
       {/* Unified Add Dialog */}
-      <Dialog open={fabDialogOpen} onOpenChange={(open) => {
-        if (!open) resetFabDialog();
-        else setFabDialogOpen(true);
-      }}>
+      <Dialog open={fabDialogOpen} onOpenChange={open => {
+      if (!open) resetFabDialog();else setFabDialogOpen(true);
+    }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {!selectedAddType ? 'Agregar nuevo' : 
-                selectedAddType === 'income' ? 'Nuevo Ingreso' :
-                selectedAddType === 'transaction' ? 'Nueva Transacción' :
-                selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
+              {!selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nueva Transacción' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
             </DialogTitle>
           </DialogHeader>
 
-          {!selectedAddType ? (
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col gap-2"
-                onClick={() => setSelectedAddType('income')}
-              >
+          {!selectedAddType ? <div className="grid grid-cols-2 gap-4">
+              <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('income')}>
                 <span className="text-2xl">💰</span>
                 <span>Ingreso</span>
               </Button>
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col gap-2"
-                onClick={() => setSelectedAddType('transaction')}
-              >
+              <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('transaction')}>
                 <span className="text-2xl">💸</span>
                 <span>Transacción</span>
               </Button>
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col gap-2"
-                onClick={() => setSelectedAddType('debt')}
-              >
+              <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('debt')}>
                 <span className="text-2xl">💳</span>
                 <span>Deuda</span>
               </Button>
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col gap-2"
-                onClick={() => setSelectedAddType('wishlist')}
-              >
+              <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('wishlist')}>
                 <span className="text-2xl">⭐</span>
                 <span>Lista de Deseos</span>
               </Button>
-            </div>
-          ) : selectedAddType === 'income' ? (
-            <div className="space-y-4">
+            </div> : selectedAddType === 'income' ? <div className="space-y-4">
               <div>
                 <Label>Fuente</Label>
-                <Input value={newIncome.source} onChange={(e) => setNewIncome({...newIncome, source: e.target.value})} />
+                <Input value={newIncome.source} onChange={e => setNewIncome({
+              ...newIncome,
+              source: e.target.value
+            })} />
               </div>
               <div>
                 <Label>Monto</Label>
-                <Input type="number" value={newIncome.amount} onChange={(e) => setNewIncome({...newIncome, amount: Number(e.target.value)})} />
+                <Input type="number" value={newIncome.amount} onChange={e => setNewIncome({
+              ...newIncome,
+              amount: Number(e.target.value)
+            })} />
               </div>
               <div>
                 <Label>Fecha</Label>
-                <Input type="date" value={newIncome.date} onChange={(e) => setNewIncome({...newIncome, date: e.target.value})} />
+                <Input type="date" value={newIncome.date} onChange={e => setNewIncome({
+              ...newIncome,
+              date: e.target.value
+            })} />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
                 <Button className="flex-1" onClick={addIncome}>Agregar</Button>
               </div>
-            </div>
-          ) : selectedAddType === 'transaction' ? (
-            <div className="space-y-4">
+            </div> : selectedAddType === 'transaction' ? <div className="space-y-4">
               <div>
                 <Label>Categoría</Label>
-                <Select value={newTxn.category_id} onValueChange={(v) => setNewTxn({...newTxn, category_id: v})}>
+                <Select value={newTxn.category_id} onValueChange={v => setNewTxn({
+              ...newTxn,
+              category_id: v
+            })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>
+                    {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>
                         {cat.emoji} {cat.name}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Descripción</Label>
-                <Input value={newTxn.description} onChange={(e) => setNewTxn({...newTxn, description: e.target.value})} />
+                <Input value={newTxn.description} onChange={e => setNewTxn({
+              ...newTxn,
+              description: e.target.value
+            })} />
               </div>
               <div>
                 <Label>Monto</Label>
-                <Input type="number" value={newTxn.amount} onChange={(e) => setNewTxn({...newTxn, amount: Number(e.target.value)})} />
+                <Input type="number" value={newTxn.amount} onChange={e => setNewTxn({
+              ...newTxn,
+              amount: Number(e.target.value)
+            })} />
               </div>
               <div>
                 <Label>Fecha</Label>
-                <Input type="date" value={newTxn.date} onChange={(e) => setNewTxn({...newTxn, date: e.target.value})} />
+                <Input type="date" value={newTxn.date} onChange={e => setNewTxn({
+              ...newTxn,
+              date: e.target.value
+            })} />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
                 <Button className="flex-1" onClick={addTransaction}>Agregar</Button>
               </div>
-            </div>
-          ) : selectedAddType === 'debt' ? (
-            <div className="space-y-4">
+            </div> : selectedAddType === 'debt' ? <div className="space-y-4">
               <div>
                 <Label>Cuenta de deuda</Label>
-                <Select value={newDebt.debt_account_id} onValueChange={(v) => setNewDebt({...newDebt, debt_account_id: v})}>
+                <Select value={newDebt.debt_account_id} onValueChange={v => setNewDebt({
+              ...newDebt,
+              debt_account_id: v
+            })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar cuenta" />
                   </SelectTrigger>
                   <SelectContent>
-                    {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => (
-                      <SelectItem key={acc.id} value={acc.id}>
+                    {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => <SelectItem key={acc.id} value={acc.id}>
                         {acc.name}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Saldo inicial</Label>
-                <Input type="number" value={newDebt.starting_balance} onChange={(e) => setNewDebt({...newDebt, starting_balance: Number(e.target.value)})} />
+                <Input type="number" value={newDebt.starting_balance} onChange={e => setNewDebt({
+              ...newDebt,
+              starting_balance: Number(e.target.value)
+            })} />
               </div>
               <div>
                 <Label>Tasa de interés (APR %)</Label>
-                <Input type="number" value={newDebt.interest_rate_apr} onChange={(e) => setNewDebt({...newDebt, interest_rate_apr: Number(e.target.value)})} />
+                <Input type="number" value={newDebt.interest_rate_apr} onChange={e => setNewDebt({
+              ...newDebt,
+              interest_rate_apr: Number(e.target.value)
+            })} />
               </div>
               <div>
                 <Label>Pago mínimo</Label>
-                <Input type="number" value={newDebt.min_payment} onChange={(e) => setNewDebt({...newDebt, min_payment: Number(e.target.value)})} />
+                <Input type="number" value={newDebt.min_payment} onChange={e => setNewDebt({
+              ...newDebt,
+              min_payment: Number(e.target.value)
+            })} />
               </div>
               <div>
                 <Label>Pago realizado</Label>
-                <Input type="number" value={newDebt.payment_made} onChange={(e) => setNewDebt({...newDebt, payment_made: Number(e.target.value)})} />
+                <Input type="number" value={newDebt.payment_made} onChange={e => setNewDebt({
+              ...newDebt,
+              payment_made: Number(e.target.value)
+            })} />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
                 <Button className="flex-1" onClick={addDebt}>Agregar</Button>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
+            </div> : <div className="space-y-4">
               <div>
                 <Label>Artículo</Label>
-                <Input value={newWish.item} onChange={(e) => setNewWish({...newWish, item: e.target.value})} />
+                <Input value={newWish.item} onChange={e => setNewWish({
+              ...newWish,
+              item: e.target.value
+            })} />
               </div>
               <div>
                 <Label>Costo estimado</Label>
-                <Input type="number" value={newWish.estimated_cost} onChange={(e) => setNewWish({...newWish, estimated_cost: Number(e.target.value)})} />
+                <Input type="number" value={newWish.estimated_cost} onChange={e => setNewWish({
+              ...newWish,
+              estimated_cost: Number(e.target.value)
+            })} />
               </div>
               <div>
                 <Label>Prioridad (1-5)</Label>
-                <Input type="number" min={1} max={5} value={newWish.priority} onChange={(e) => setNewWish({...newWish, priority: Number(e.target.value)})} />
+                <Input type="number" min={1} max={5} value={newWish.priority} onChange={e => setNewWish({
+              ...newWish,
+              priority: Number(e.target.value)
+            })} />
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
                 <Button className="flex-1" onClick={addWish}>Agregar</Button>
               </div>
-            </div>
-          )}
+            </div>}
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
 export default MonthlyBudget;
