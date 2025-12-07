@@ -4,7 +4,8 @@ import { useApp } from '@/contexts/AppContext';
 import { useStorage } from '@/contexts/StorageContext';
 import { translations } from '@/i18n/translations';
 import { Button } from './ui/button';
-import { Globe, DollarSign, Euro, Calendar, Menu, X, Cloud, Smartphone } from 'lucide-react';
+import { Globe, DollarSign, Euro, Calendar, Menu, X, Cloud, Smartphone, LogOut, User } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,18 @@ export const Header = () => {
   const params = useParams();
   const t = translations[config.language];
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useState(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email || null);
+    });
+  });
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
 
   const currentMonth = params.month ? parseInt(params.month) : null;
 
@@ -167,6 +180,15 @@ export const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleLogout}
+              title="Cerrar Sesión"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
@@ -177,6 +199,17 @@ export const Header = () => {
               <SheetContent side="right" className="w-[280px] sm:w-[320px]">
                 <nav className="flex flex-col gap-2 mt-8">
                   <NavLinks mobile onClose={() => setMobileMenuOpen(false)} />
+                  <Button
+                    variant="ghost"
+                    className="justify-start px-3"
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    {config.language === 'es' ? 'Cerrar Sesión' : 'Log Out'}
+                  </Button>
                 </nav>
               </SheetContent>
             </Sheet>
