@@ -449,11 +449,14 @@ const MonthlyBudget = () => {
 
   // Enrich budget items with calculated actual values
   const enrichBudgetItems = (items: any[]) => {
-    return items.map(item => ({
-      ...item,
-      calculatedActual: getActualByCategory(item.category_id),
-      calculatedVariance: (item.assigned || 0) - getActualByCategory(item.category_id)
-    }));
+    return items.map(item => {
+      const actual = getActualByCategory(item.category_id);
+      return {
+        ...item,
+        calculatedActual: actual,
+        calculatedDifference: (item.estimated || 0) - actual
+      };
+    });
   };
 
   const needsBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'NEEDS'));
@@ -641,9 +644,8 @@ const MonthlyBudget = () => {
                   <TableRow>
                     <TableHead>Categoría</TableHead>
                     <TableHead className="text-right">Estimado</TableHead>
-                    <TableHead className="text-right">Asignado</TableHead>
                     <TableHead className="text-right">Real</TableHead>
-                    <TableHead className="text-right">Varianza</TableHead>
+                    <TableHead className="text-right">Diferencia</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -658,17 +660,9 @@ const MonthlyBudget = () => {
                           onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
                         />
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-24 text-right"
-                          value={item.assigned || 0}
-                          onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
-                        />
-                      </TableCell>
                       <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                      <TableCell className={`text-right ${(item.calculatedVariance || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {formatCurrency(item.calculatedVariance || 0)}
+                      <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        {formatCurrency(item.calculatedDifference || 0)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -687,9 +681,8 @@ const MonthlyBudget = () => {
                   <TableRow>
                     <TableHead>Categoría</TableHead>
                     <TableHead className="text-right">Estimado</TableHead>
-                    <TableHead className="text-right">Asignado</TableHead>
                     <TableHead className="text-right">Real</TableHead>
-                    <TableHead className="text-right">Varianza</TableHead>
+                    <TableHead className="text-right">Diferencia</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -704,17 +697,9 @@ const MonthlyBudget = () => {
                           onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
                         />
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-24 text-right"
-                          value={item.assigned || 0}
-                          onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
-                        />
-                      </TableCell>
                       <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                      <TableCell className={`text-right ${(item.calculatedVariance || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {formatCurrency(item.calculatedVariance || 0)}
+                      <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        {formatCurrency(item.calculatedDifference || 0)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -733,9 +718,8 @@ const MonthlyBudget = () => {
                   <TableRow>
                     <TableHead>Categoría</TableHead>
                     <TableHead className="text-right">Estimado</TableHead>
-                    <TableHead className="text-right">Asignado</TableHead>
                     <TableHead className="text-right">Real</TableHead>
-                    <TableHead className="text-right">Varianza</TableHead>
+                    <TableHead className="text-right">Diferencia</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -750,17 +734,9 @@ const MonthlyBudget = () => {
                           onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
                         />
                       </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          className="w-24 text-right"
-                          value={item.assigned || 0}
-                          onChange={(e) => updateBudgetItem(item.id, 'assigned', Number(e.target.value))}
-                        />
-                      </TableCell>
                       <TableCell className="text-right">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                      <TableCell className={`text-right ${(item.calculatedVariance || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {formatCurrency(item.calculatedVariance || 0)}
+                      <TableCell className={`text-right ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        {formatCurrency(item.calculatedDifference || 0)}
                       </TableCell>
                     </TableRow>
                   ))}
