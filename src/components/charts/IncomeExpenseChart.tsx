@@ -32,11 +32,11 @@ interface IncomeExpenseChartProps {
 const chartConfig = {
   income: {
     label: "Ingresos",
-    color: "hsl(var(--chart-1))",
+    color: "hsl(var(--success))",
   },
   expenses: {
     label: "Gastos",
-    color: "hsl(var(--chart-2))",
+    color: "hsl(var(--accent))",
   },
 } satisfies ChartConfig;
 
@@ -150,24 +150,24 @@ export function IncomeExpenseChart({
               <linearGradient id="fillIncomeDaily" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="hsl(var(--chart-1))"
+                  stopColor="hsl(var(--success))"
                   stopOpacity={0.6}
                 />
                 <stop
                   offset="95%"
-                  stopColor="hsl(var(--chart-1))"
+                  stopColor="hsl(var(--success))"
                   stopOpacity={0.05}
                 />
               </linearGradient>
               <linearGradient id="fillExpensesDaily" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="hsl(var(--chart-2))"
+                  stopColor="hsl(var(--accent))"
                   stopOpacity={0.6}
                 />
                 <stop
                   offset="95%"
-                  stopColor="hsl(var(--chart-2))"
+                  stopColor="hsl(var(--accent))"
                   stopOpacity={0.05}
                 />
               </linearGradient>
@@ -176,27 +176,27 @@ export function IncomeExpenseChart({
               dataKey="income"
               type="monotone"
               fill="url(#fillIncomeDaily)"
-              stroke="hsl(var(--chart-1))"
+              stroke="hsl(var(--success))"
               strokeWidth={2}
             />
             <Area
               dataKey="expenses"
               type="monotone"
               fill="url(#fillExpensesDaily)"
-              stroke="hsl(var(--chart-2))"
+              stroke="hsl(var(--accent))"
               strokeWidth={2}
             />
           </AreaChart>
         </ChartContainer>
         <div className="flex justify-center gap-6 mt-4">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--chart-1))' }} />
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--success))' }} />
             <span className="text-sm text-muted-foreground">
               {language === 'es' ? 'Ingresos' : 'Income'}: {formatValue(income)}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--chart-2))' }} />
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--accent))' }} />
             <span className="text-sm text-muted-foreground">
               {language === 'es' ? 'Gastos' : 'Expenses'}: {formatValue(expenses)}
             </span>
