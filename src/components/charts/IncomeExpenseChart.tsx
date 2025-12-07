@@ -32,7 +32,7 @@ interface IncomeExpenseChartProps {
 const chartConfig = {
   income: {
     label: "Ingresos",
-    color: "hsl(var(--success))",
+    color: "hsl(var(--primary))",
   },
   expenses: {
     label: "Gastos",
@@ -150,12 +150,12 @@ export function IncomeExpenseChart({
               <linearGradient id="fillIncomeDaily" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="hsl(var(--success))"
+                  stopColor="hsl(var(--primary))"
                   stopOpacity={0.6}
                 />
                 <stop
                   offset="95%"
-                  stopColor="hsl(var(--success))"
+                  stopColor="hsl(var(--primary))"
                   stopOpacity={0.05}
                 />
               </linearGradient>
@@ -176,7 +176,7 @@ export function IncomeExpenseChart({
               dataKey="income"
               type="monotone"
               fill="url(#fillIncomeDaily)"
-              stroke="hsl(var(--success))"
+              stroke="hsl(var(--primary))"
               strokeWidth={2}
             />
             <Area
@@ -190,7 +190,7 @@ export function IncomeExpenseChart({
         </ChartContainer>
         <div className="flex justify-center gap-6 mt-4">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--success))' }} />
+            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }} />
             <span className="text-sm text-muted-foreground">
               {language === 'es' ? 'Ingresos' : 'Income'}: {formatValue(income)}
             </span>
