@@ -585,78 +585,6 @@ const MonthlyBudget = () => {
           </Card>
         </Collapsible>
 
-        {/* Income */}
-        <Collapsible open={incomeOpen} onOpenChange={setIncomeOpen} className="mb-8">
-          <Card>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <CardTitle>Ingresos</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Dialog open={newIncomeOpen} onOpenChange={setNewIncomeOpen}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" onClick={(e) => e.stopPropagation()}>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Agregar Ingreso
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Nuevo Ingreso</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <Label>Fuente</Label>
-                            <Input value={newIncome.source} onChange={(e) => setNewIncome({...newIncome, source: e.target.value})} />
-                          </div>
-                          <div>
-                            <Label>Monto</Label>
-                            <Input type="number" value={newIncome.amount} onChange={(e) => setNewIncome({...newIncome, amount: Number(e.target.value)})} />
-                          </div>
-                          <div>
-                            <Label>Fecha</Label>
-                            <Input type="date" value={newIncome.date} onChange={(e) => setNewIncome({...newIncome, date: e.target.value})} />
-                          </div>
-                          <Button onClick={addIncome}>Agregar</Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <ChevronDown className={`h-5 w-5 transition-transform ${incomeOpen ? 'rotate-180' : ''}`} />
-                  </div>
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fuente</TableHead>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead className="text-right">Monto</TableHead>
-                      <TableHead className="text-center">Acción</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {incomeItems.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.source}</TableCell>
-                        <TableCell>{item.date}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
-                        <TableCell className="text-center">
-                          <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
-
         {/* Budget 50/30/20 */}
         <Collapsible open={budgetOpen} onOpenChange={setBudgetOpen} className="mb-8">
           <Card>
@@ -782,6 +710,78 @@ const MonthlyBudget = () => {
                     </Table>
                   </TabsContent>
                 </Tabs>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Income */}
+        <Collapsible open={incomeOpen} onOpenChange={setIncomeOpen} className="mb-8">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Ingresos</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Dialog open={newIncomeOpen} onOpenChange={setNewIncomeOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" onClick={(e) => e.stopPropagation()}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Agregar Ingreso
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Nuevo Ingreso</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Fuente</Label>
+                            <Input value={newIncome.source} onChange={(e) => setNewIncome({...newIncome, source: e.target.value})} />
+                          </div>
+                          <div>
+                            <Label>Monto</Label>
+                            <Input type="number" value={newIncome.amount} onChange={(e) => setNewIncome({...newIncome, amount: Number(e.target.value)})} />
+                          </div>
+                          <div>
+                            <Label>Fecha</Label>
+                            <Input type="date" value={newIncome.date} onChange={(e) => setNewIncome({...newIncome, date: e.target.value})} />
+                          </div>
+                          <Button onClick={addIncome}>Agregar</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <ChevronDown className={`h-5 w-5 transition-transform ${incomeOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fuente</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="text-center">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {incomeItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.source}</TableCell>
+                        <TableCell>{item.date}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+                        <TableCell className="text-center">
+                          <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </CollapsibleContent>
           </Card>
