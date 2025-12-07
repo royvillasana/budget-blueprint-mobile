@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '@/contexts/AppContext';
+import { useStorage } from '@/contexts/StorageContext';
 import { translations } from '@/i18n/translations';
 import { Button } from './ui/button';
-import { Globe, DollarSign, Euro, Calendar, Menu, X } from 'lucide-react';
+import { Globe, DollarSign, Euro, Calendar, Menu, X, Cloud, Smartphone } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import { getMonthName, MONTH_INFO } from '@/utils/monthUtils';
 
 export const Header = () => {
   const { config, updateConfig } = useApp();
+  const { storageType, setStorageType } = useStorage();
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams();
@@ -34,33 +36,30 @@ export const Header = () => {
   const isActive = (path: string) => location.pathname === path;
   const isBudgetRoute = location.pathname.startsWith('/budget');
 
-  const NavLinks = ({ mobile = false, onClose = () => {} }) => (
+  const NavLinks = ({ mobile = false, onClose = () => { } }) => (
     <>
       <Link
         to="/dashboard"
         onClick={onClose}
-        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${
-          mobile ? 'block w-full' : ''
-        } ${
-          isActive('/dashboard') || isActive('/') 
-            ? 'text-primary bg-primary/10' 
+        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${mobile ? 'block w-full' : ''
+          } ${isActive('/dashboard') || isActive('/')
+            ? 'text-primary bg-primary/10'
             : 'text-muted-foreground hover:bg-muted/50'
-        }`}
+          }`}
       >
         {t.dashboard}
       </Link>
-      
+
       {/* Month Selector Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
-            className={`flex items-center gap-2 ${mobile ? 'w-full justify-start' : ''} ${
-              isBudgetRoute 
-                ? 'text-primary bg-primary/10' 
-                : 'text-muted-foreground hover:bg-muted/50'
-            }`}
+            className={`flex items-center gap-2 ${mobile ? 'w-full justify-start' : ''} ${isBudgetRoute
+              ? 'text-primary bg-primary/10'
+              : 'text-muted-foreground hover:bg-muted/50'
+              }`}
           >
             <Calendar className="h-4 w-4" />
             <span>
@@ -87,26 +86,22 @@ export const Header = () => {
       <Link
         to="/catalog"
         onClick={onClose}
-        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${
-          mobile ? 'block w-full' : ''
-        } ${
-          isActive('/catalog') 
-            ? 'text-primary bg-primary/10' 
+        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${mobile ? 'block w-full' : ''
+          } ${isActive('/catalog')
+            ? 'text-primary bg-primary/10'
             : 'text-muted-foreground hover:bg-muted/50'
-        }`}
+          }`}
       >
         {config.language === 'es' ? 'Catálogo' : 'Catalog'}
       </Link>
       <Link
         to="/settings"
         onClick={onClose}
-        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${
-          mobile ? 'block w-full' : ''
-        } ${
-          isActive('/settings') 
-            ? 'text-primary bg-primary/10' 
+        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${mobile ? 'block w-full' : ''
+          } ${isActive('/settings')
+            ? 'text-primary bg-primary/10'
             : 'text-muted-foreground hover:bg-muted/50'
-        }`}
+          }`}
       >
         {t.settings}
       </Link>
@@ -153,6 +148,24 @@ export const Header = () => {
                 <DollarSign className="h-4 w-4" />
               )}
             </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" title={storageType === 'supabase' ? 'Cloud Storage' : 'Local Storage'}>
+                  {storageType === 'supabase' ? <Cloud className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setStorageType('supabase')}>
+                  <Cloud className="mr-2 h-4 w-4" />
+                  <span>Cloud (Supabase)</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStorageType('local')}>
+                  <Smartphone className="mr-2 h-4 w-4" />
+                  <span>Local (Device)</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Mobile Menu */}
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>

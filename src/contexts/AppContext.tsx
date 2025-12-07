@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useStorage } from '@/contexts/StorageContext';
 
 export type Currency = 'EUR' | 'USD';
 export type Language = 'es' | 'en';
@@ -109,6 +110,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+  const { storage } = useStorage();
+
   // Load user settings from database
   useEffect(() => {
     const loadUserSettings = async () => {
@@ -119,21 +122,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        const { data: settings, error } = await supabase
-          .from('user_settings')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error loading settings:', error);
-        }
+        const settings = await storage.getSettings(user.id);
 
         if (settings) {
           setConfig({
-            ownerName: settings.owner_name || '',
+            ownerName: settings.ownerName || '',
             currency: (settings.currency as Currency) || 'EUR',
-            monthlyIncome: Number(settings.monthly_income) || 0,
+            monthlyIncome: Number(settings.monthlyIncome) || 0,
             language: (settings.language as Language) || 'es',
           });
         }
@@ -163,7 +158,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [storage]);
 
   const updateConfig = async (newConfig: Partial<AppConfig>) => {
     const updatedConfig = { ...config, ...newConfig };
@@ -173,22 +168,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
-          owner_name: updatedConfig.ownerName,
-          currency: updatedConfig.currency,
-          language: updatedConfig.language,
-          monthly_income: updatedConfig.monthlyIncome,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (error) {
-        console.error('Error saving settings:', error);
-      }
+      await storage.saveSettings(user.id, updatedConfig);
     } catch (error) {
       console.error('Error updating config:', error);
     }
