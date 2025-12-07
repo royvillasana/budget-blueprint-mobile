@@ -359,7 +359,7 @@ export const AIChat = () => {
                     <Sparkles className="h-6 w-6 text-white animate-pulse" />
                 </Button>
             </SheetTrigger>
-            <SheetContent className="w-[400px] sm:w-[540px] flex flex-col p-0">
+            <SheetContent className="w-full sm:w-[540px] flex flex-col p-0">
                 <SheetHeader className="p-4 border-b">
                     <SheetTitle className="flex items-center gap-2">
                         <Bot className="h-5 w-5 text-primary" />
@@ -441,8 +441,8 @@ export const AIChat = () => {
                                                                     variant="outline"
                                                                     size="sm"
                                                                     className={`text-xs transition-colors ${isSuggested
-                                                                            ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
-                                                                            : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                        ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                        : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
                                                                         }`}
                                                                     onClick={() => handleCategorySelect(cat.name, cat.id)}
                                                                 >
