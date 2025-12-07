@@ -43,6 +43,7 @@ If the user clicks "Modificar", restart the relevant step.
 Be concise and direct. Do not be conversational.
 If the user asks for advice, analyze their spending patterns and budget status to provide personalized recommendations.
 Important: Always use the provided Category IDs (UUIDs) for the 'category' parameter.
+Important: NEVER display Category IDs to the user in your text response. Only use the Name.
 `;
 
 export class AIService {
@@ -210,6 +211,19 @@ export class AIService {
       return response.choices[0].message;
     } catch (error) {
       console.error('Error calling OpenAI:', error);
+      throw error;
+    }
+  }
+  async transcribeAudio(audioFile: File): Promise<string> {
+    try {
+      const response = await this.openai.audio.transcriptions.create({
+        file: audioFile,
+        model: 'whisper-1',
+        language: 'es' // Hint for Spanish
+      });
+      return response.text;
+    } catch (error) {
+      console.error('Error transcribing audio:', error);
       throw error;
     }
   }

@@ -3,7 +3,8 @@ import { useApp } from '@/contexts/AppContext';
 import { AIService, AIMessage } from '@/services/AIService';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
-import { Bot, Sparkles, ExternalLink } from 'lucide-react';
+import { Bot, Sparkles, ExternalLink, Mic, Square } from 'lucide-react';
+
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -62,6 +63,63 @@ export const AIChat = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const chunksRef = useRef<Blob[]>([]);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            chunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    chunksRef.current.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                const audioFile = new File([audioBlob], 'voice_note.webm', { type: 'audio/webm' });
+
+                setIsLoading(true);
+                try {
+                    const transcription = await aiService.transcribeAudio(audioFile);
+                    handleSend({ text: transcription });
+                } catch (error) {
+                    console.error('Transcription error:', error);
+                    toast({
+                        title: "Error",
+                        description: "No pude entender el audio.",
+                        variant: "destructive"
+                    });
+                    setIsLoading(false);
+                }
+
+                // Stop all tracks
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            toast({
+                title: "Error",
+                description: "No puedo acceder al micrófono.",
+                variant: "destructive"
+            });
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
+    };
 
     // Initialize AI Service
     const aiService = new AIService(config.openaiApiKey);
@@ -380,12 +438,15 @@ export const AIChat = () => {
                                                             return (
                                                                 <Button
                                                                     key={cat.id}
-                                                                    variant={isSuggested ? "default" : "secondary"}
+                                                                    variant="outline"
                                                                     size="sm"
-                                                                    className={`text-xs ${isSuggested ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+                                                                    className={`text-xs transition-colors ${isSuggested
+                                                                            ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                            : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                        }`}
                                                                     onClick={() => handleCategorySelect(cat.name, cat.id)}
                                                                 >
-                                                                    {isSuggested && <Sparkles className="w-3 h-3 mr-1 inline" />}
+                                                                    {isSuggested && <Sparkles className="w-3 h-3 mr-1 inline text-primary group-hover:text-primary-foreground" />}
                                                                     {cat.name}
                                                                 </Button>
                                                             );
@@ -459,6 +520,15 @@ export const AIChat = () => {
                                             <PromptInputActionAddAttachments />
                                         </PromptInputActionMenuContent>
                                     </PromptInputActionMenu>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className={isRecording ? "text-red-500 animate-pulse" : ""}
+                                        onClick={isRecording ? stopRecording : startRecording}
+                                    >
+                                        {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                    </Button>
                                 </PromptInputTools>
                                 <PromptInputSubmit disabled={isLoading} />
                             </PromptInputFooter>
