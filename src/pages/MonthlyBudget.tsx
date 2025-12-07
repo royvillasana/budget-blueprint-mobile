@@ -642,7 +642,7 @@ const MonthlyBudget = () => {
                               <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
                             <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                            <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                            <TableCell className="text-center text-primary">
                               {formatCurrency(item.calculatedDifference || 0)}
                             </TableCell>
                           </TableRow>)}
@@ -667,7 +667,7 @@ const MonthlyBudget = () => {
                               <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
                             <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                            <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                            <TableCell className="text-center text-primary">
                               {formatCurrency(item.calculatedDifference || 0)}
                             </TableCell>
                           </TableRow>)}
@@ -692,7 +692,7 @@ const MonthlyBudget = () => {
                               <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
                             </TableCell>
                             <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                            <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                            <TableCell className="text-center text-primary">
                               {formatCurrency(item.calculatedDifference || 0)}
                             </TableCell>
                           </TableRow>)}
