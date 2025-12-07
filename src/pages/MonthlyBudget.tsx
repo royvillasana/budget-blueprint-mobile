@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getMonthName, getTableName } from '@/utils/monthUtils';
 
 const MonthlyBudget = () => {
@@ -87,6 +88,14 @@ const MonthlyBudget = () => {
   const [wishlist, setWishlist] = useState<any[]>([]);
   const [newWishOpen, setNewWishOpen] = useState(false);
   const [newWish, setNewWish] = useState({ item: '', estimated_cost: 0, priority: 1 });
+
+  // Collapsible states
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [incomeOpen, setIncomeOpen] = useState(false);
+  const [budgetOpen, setBudgetOpen] = useState(true);
+  const [transactionsOpen, setTransactionsOpen] = useState(false);
+  const [debtsOpen, setDebtsOpen] = useState(false);
+  const [wishlistOpen, setWishlistOpen] = useState(false);
 
   useEffect(() => {
     const monthNum = parseInt(month || '1');
@@ -517,460 +526,522 @@ const MonthlyBudget = () => {
         </div>
 
         {/* Settings */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Configuración del Mes</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Mi mayor reto para este mes</Label>
-              <Input 
-                value={challenge} 
-                onChange={(e) => setChallenge(e.target.value)}
-                placeholder="Escribe tu reto..."
-              />
-            </div>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <Label>Saldo del mes anterior</Label>
-                <Input 
-                  type="number" 
-                  value={carryover} 
-                  onChange={(e) => setCarryover(Number(e.target.value))}
-                />
-              </div>
-              <div>
-                <Label>Modo de presupuesto</Label>
-                <Select value={budgetMode} onValueChange={(v: any) => setBudgetMode(v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ZERO_BASED">Desde cero</SelectItem>
-                    <SelectItem value="COPY_PREVIOUS">Copiar del mes anterior</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Monto no asignado</Label>
-                <Input 
-                  type="number" 
-                  value={unassignedPool} 
-                  onChange={(e) => setUnassignedPool(Number(e.target.value))}
-                />
-              </div>
-            </div>
-            <Button onClick={saveSettings}>
-              <Save className="w-4 h-4 mr-2" />
-              Guardar Configuración
-            </Button>
-          </CardContent>
-        </Card>
+        <Collapsible open={settingsOpen} onOpenChange={setSettingsOpen} className="mb-8">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Configuración del Mes</CardTitle>
+                  <ChevronDown className={`h-5 w-5 transition-transform ${settingsOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Mi mayor reto para este mes</Label>
+                  <Input 
+                    value={challenge} 
+                    onChange={(e) => setChallenge(e.target.value)}
+                    placeholder="Escribe tu reto..."
+                  />
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Saldo del mes anterior</Label>
+                    <Input 
+                      type="number" 
+                      value={carryover} 
+                      onChange={(e) => setCarryover(Number(e.target.value))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Modo de presupuesto</Label>
+                    <Select value={budgetMode} onValueChange={(v: any) => setBudgetMode(v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ZERO_BASED">Desde cero</SelectItem>
+                        <SelectItem value="COPY_PREVIOUS">Copiar del mes anterior</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Monto no asignado</Label>
+                    <Input 
+                      type="number" 
+                      value={unassignedPool} 
+                      onChange={(e) => setUnassignedPool(Number(e.target.value))}
+                    />
+                  </div>
+                </div>
+                <Button onClick={saveSettings}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar Configuración
+                </Button>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Income */}
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Ingresos</CardTitle>
-            <Dialog open={newIncomeOpen} onOpenChange={setNewIncomeOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Agregar Ingreso
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nuevo Ingreso</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Fuente</Label>
-                    <Input value={newIncome.source} onChange={(e) => setNewIncome({...newIncome, source: e.target.value})} />
+        <Collapsible open={incomeOpen} onOpenChange={setIncomeOpen} className="mb-8">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Ingresos</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Dialog open={newIncomeOpen} onOpenChange={setNewIncomeOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" onClick={(e) => e.stopPropagation()}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Agregar Ingreso
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Nuevo Ingreso</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Fuente</Label>
+                            <Input value={newIncome.source} onChange={(e) => setNewIncome({...newIncome, source: e.target.value})} />
+                          </div>
+                          <div>
+                            <Label>Monto</Label>
+                            <Input type="number" value={newIncome.amount} onChange={(e) => setNewIncome({...newIncome, amount: Number(e.target.value)})} />
+                          </div>
+                          <div>
+                            <Label>Fecha</Label>
+                            <Input type="date" value={newIncome.date} onChange={(e) => setNewIncome({...newIncome, date: e.target.value})} />
+                          </div>
+                          <Button onClick={addIncome}>Agregar</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <ChevronDown className={`h-5 w-5 transition-transform ${incomeOpen ? 'rotate-180' : ''}`} />
                   </div>
-                  <div>
-                    <Label>Monto</Label>
-                    <Input type="number" value={newIncome.amount} onChange={(e) => setNewIncome({...newIncome, amount: Number(e.target.value)})} />
-                  </div>
-                  <div>
-                    <Label>Fecha</Label>
-                    <Input type="date" value={newIncome.date} onChange={(e) => setNewIncome({...newIncome, date: e.target.value})} />
-                  </div>
-                  <Button onClick={addIncome}>Agregar</Button>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fuente</TableHead>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead className="text-right">Monto</TableHead>
-                  <TableHead className="text-center">Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {incomeItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.source}</TableCell>
-                    <TableCell>{item.date}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
-                    <TableCell className="text-center">
-                      <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fuente</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="text-center">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {incomeItems.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.source}</TableCell>
+                        <TableCell>{item.date}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
+                        <TableCell className="text-center">
+                          <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Budget 50/30/20 */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Presupuesto 50/30/20</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="needs" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="needs" className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-needs" />
-                  Necesidades
-                </TabsTrigger>
-                <TabsTrigger value="wants" className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-desires" />
-                  Deseos
-                </TabsTrigger>
-                <TabsTrigger value="future" className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-future" />
-                  Futuro
-                </TabsTrigger>
-              </TabsList>
+        <Collapsible open={budgetOpen} onOpenChange={setBudgetOpen} className="mb-8">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Presupuesto 50/30/20</CardTitle>
+                  <ChevronDown className={`h-5 w-5 transition-transform ${budgetOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <Tabs defaultValue="needs" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                    <TabsTrigger value="needs" className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-needs" />
+                      Necesidades
+                    </TabsTrigger>
+                    <TabsTrigger value="wants" className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-desires" />
+                      Deseos
+                    </TabsTrigger>
+                    <TabsTrigger value="future" className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-future" />
+                      Futuro
+                    </TabsTrigger>
+                  </TabsList>
 
-              <TabsContent value="needs">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-center">Categoría</TableHead>
-                      <TableHead className="text-center">Estimado</TableHead>
-                      <TableHead className="text-center">Real</TableHead>
-                      <TableHead className="text-center">Diferencia</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {needsBudget.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
-                        <TableCell className="text-center">
-                          <Input
-                            type="number"
-                            className="w-24 text-center mx-auto"
-                            value={item.estimated || 0}
-                            onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                        <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                          {formatCurrency(item.calculatedDifference || 0)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
+                  <TabsContent value="needs">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-center">Categoría</TableHead>
+                          <TableHead className="text-center">Estimado</TableHead>
+                          <TableHead className="text-center">Real</TableHead>
+                          <TableHead className="text-center">Diferencia</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {needsBudget.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                            <TableCell className="text-center">
+                              <Input
+                                type="number"
+                                className="w-24 text-center mx-auto"
+                                value={item.estimated || 0}
+                                onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                            <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                              {formatCurrency(item.calculatedDifference || 0)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TabsContent>
 
-              <TabsContent value="wants">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-center">Categoría</TableHead>
-                      <TableHead className="text-center">Estimado</TableHead>
-                      <TableHead className="text-center">Real</TableHead>
-                      <TableHead className="text-center">Diferencia</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {wantsBudget.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
-                        <TableCell className="text-center">
-                          <Input
-                            type="number"
-                            className="w-24 text-center mx-auto"
-                            value={item.estimated || 0}
-                            onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                        <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                          {formatCurrency(item.calculatedDifference || 0)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
+                  <TabsContent value="wants">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-center">Categoría</TableHead>
+                          <TableHead className="text-center">Estimado</TableHead>
+                          <TableHead className="text-center">Real</TableHead>
+                          <TableHead className="text-center">Diferencia</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {wantsBudget.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                            <TableCell className="text-center">
+                              <Input
+                                type="number"
+                                className="w-24 text-center mx-auto"
+                                value={item.estimated || 0}
+                                onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                            <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                              {formatCurrency(item.calculatedDifference || 0)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TabsContent>
 
-              <TabsContent value="future">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-center">Categoría</TableHead>
-                      <TableHead className="text-center">Estimado</TableHead>
-                      <TableHead className="text-center">Real</TableHead>
-                      <TableHead className="text-center">Diferencia</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {futureBudget.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
-                        <TableCell className="text-center">
-                          <Input
-                            type="number"
-                            className="w-24 text-center mx-auto"
-                            value={item.estimated || 0}
-                            onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
-                        <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
-                          {formatCurrency(item.calculatedDifference || 0)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                  <TabsContent value="future">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-center">Categoría</TableHead>
+                          <TableHead className="text-center">Estimado</TableHead>
+                          <TableHead className="text-center">Real</TableHead>
+                          <TableHead className="text-center">Diferencia</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {futureBudget.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="text-center">{item.categories?.emoji} {item.categories?.name}</TableCell>
+                            <TableCell className="text-center">
+                              <Input
+                                type="number"
+                                className="w-24 text-center mx-auto"
+                                value={item.estimated || 0}
+                                onChange={(e) => updateBudgetItem(item.id, 'estimated', Number(e.target.value))}
+                              />
+                            </TableCell>
+                            <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
+                            <TableCell className={`text-center ${(item.calculatedDifference || 0) < 0 ? 'text-destructive' : 'text-green-600'}`}>
+                              {formatCurrency(item.calculatedDifference || 0)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Transactions */}
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Transacciones</CardTitle>
-            <Dialog open={newTxnOpen} onOpenChange={setNewTxnOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Agregar Transacción
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nueva Transacción</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Categoría</Label>
-                    <Select value={newTxn.category_id} onValueChange={(v) => setNewTxn({...newTxn, category_id: v})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map(cat => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.emoji} {cat.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+        <Collapsible open={transactionsOpen} onOpenChange={setTransactionsOpen} className="mb-8">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Transacciones</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Dialog open={newTxnOpen} onOpenChange={setNewTxnOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" onClick={(e) => e.stopPropagation()}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Agregar Transacción
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Nueva Transacción</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Categoría</Label>
+                            <Select value={newTxn.category_id} onValueChange={(v) => setNewTxn({...newTxn, category_id: v})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {categories.map(cat => (
+                                  <SelectItem key={cat.id} value={cat.id}>
+                                    {cat.emoji} {cat.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Descripción</Label>
+                            <Input value={newTxn.description} onChange={(e) => setNewTxn({...newTxn, description: e.target.value})} />
+                          </div>
+                          <div>
+                            <Label>Monto</Label>
+                            <Input type="number" value={newTxn.amount} onChange={(e) => setNewTxn({...newTxn, amount: Number(e.target.value)})} />
+                          </div>
+                          <div>
+                            <Label>Fecha</Label>
+                            <Input type="date" value={newTxn.date} onChange={(e) => setNewTxn({...newTxn, date: e.target.value})} />
+                          </div>
+                          <Button onClick={addTransaction}>Agregar</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <ChevronDown className={`h-5 w-5 transition-transform ${transactionsOpen ? 'rotate-180' : ''}`} />
                   </div>
-                  <div>
-                    <Label>Descripción</Label>
-                    <Input value={newTxn.description} onChange={(e) => setNewTxn({...newTxn, description: e.target.value})} />
-                  </div>
-                  <div>
-                    <Label>Monto</Label>
-                    <Input type="number" value={newTxn.amount} onChange={(e) => setNewTxn({...newTxn, amount: Number(e.target.value)})} />
-                  </div>
-                  <div>
-                    <Label>Fecha</Label>
-                    <Input type="date" value={newTxn.date} onChange={(e) => setNewTxn({...newTxn, date: e.target.value})} />
-                  </div>
-                  <Button onClick={addTransaction}>Agregar</Button>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Categoría</TableHead>
-                  <TableHead>Descripción</TableHead>
-                  <TableHead className="text-right">Monto</TableHead>
-                  <TableHead className="text-center">Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((txn) => (
-                  <TableRow key={txn.id}>
-                    <TableCell>{txn.date}</TableCell>
-                    <TableCell>{txn.categories?.emoji} {txn.categories?.name}</TableCell>
-                    <TableCell>{txn.description}</TableCell>
-                    <TableCell className="text-right text-destructive">{formatCurrency(txn.amount)}</TableCell>
-                    <TableCell className="text-center">
-                      <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead>Descripción</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="text-center">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((txn) => (
+                      <TableRow key={txn.id}>
+                        <TableCell>{txn.date}</TableCell>
+                        <TableCell>{txn.categories?.emoji} {txn.categories?.name}</TableCell>
+                        <TableCell>{txn.description}</TableCell>
+                        <TableCell className="text-right text-destructive">{formatCurrency(txn.amount)}</TableCell>
+                        <TableCell className="text-center">
+                          <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Debts */}
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Deudas</CardTitle>
-            <Dialog open={newDebtOpen} onOpenChange={setNewDebtOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Agregar Deuda
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nueva Deuda</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Cuenta de deuda</Label>
-                    <Select value={newDebt.debt_account_id} onValueChange={(v) => setNewDebt({...newDebt, debt_account_id: v})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar cuenta" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => (
-                          <SelectItem key={acc.id} value={acc.id}>
-                            {acc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+        <Collapsible open={debtsOpen} onOpenChange={setDebtsOpen} className="mb-8">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Deudas</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Dialog open={newDebtOpen} onOpenChange={setNewDebtOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" onClick={(e) => e.stopPropagation()}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Agregar Deuda
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Nueva Deuda</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Cuenta de deuda</Label>
+                            <Select value={newDebt.debt_account_id} onValueChange={(v) => setNewDebt({...newDebt, debt_account_id: v})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar cuenta" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => (
+                                  <SelectItem key={acc.id} value={acc.id}>
+                                    {acc.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Saldo inicial</Label>
+                            <Input type="number" value={newDebt.starting_balance} onChange={(e) => setNewDebt({...newDebt, starting_balance: Number(e.target.value)})} />
+                          </div>
+                          <div>
+                            <Label>Tasa de interés (APR %)</Label>
+                            <Input type="number" value={newDebt.interest_rate_apr} onChange={(e) => setNewDebt({...newDebt, interest_rate_apr: Number(e.target.value)})} />
+                          </div>
+                          <div>
+                            <Label>Pago mínimo</Label>
+                            <Input type="number" value={newDebt.min_payment} onChange={(e) => setNewDebt({...newDebt, min_payment: Number(e.target.value)})} />
+                          </div>
+                          <div>
+                            <Label>Pago realizado</Label>
+                            <Input type="number" value={newDebt.payment_made} onChange={(e) => setNewDebt({...newDebt, payment_made: Number(e.target.value)})} />
+                          </div>
+                          <Button onClick={addDebt}>Agregar</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <ChevronDown className={`h-5 w-5 transition-transform ${debtsOpen ? 'rotate-180' : ''}`} />
                   </div>
-                  <div>
-                    <Label>Saldo inicial</Label>
-                    <Input type="number" value={newDebt.starting_balance} onChange={(e) => setNewDebt({...newDebt, starting_balance: Number(e.target.value)})} />
-                  </div>
-                  <div>
-                    <Label>Tasa de interés (APR %)</Label>
-                    <Input type="number" value={newDebt.interest_rate_apr} onChange={(e) => setNewDebt({...newDebt, interest_rate_apr: Number(e.target.value)})} />
-                  </div>
-                  <div>
-                    <Label>Pago mínimo</Label>
-                    <Input type="number" value={newDebt.min_payment} onChange={(e) => setNewDebt({...newDebt, min_payment: Number(e.target.value)})} />
-                  </div>
-                  <div>
-                    <Label>Pago realizado</Label>
-                    <Input type="number" value={newDebt.payment_made} onChange={(e) => setNewDebt({...newDebt, payment_made: Number(e.target.value)})} />
-                  </div>
-                  <Button onClick={addDebt}>Agregar</Button>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Cuenta</TableHead>
-                  <TableHead className="text-right">Saldo Inicial</TableHead>
-                  <TableHead className="text-right">Interés APR</TableHead>
-                  <TableHead className="text-right">Pago</TableHead>
-                  <TableHead className="text-right">Saldo Final</TableHead>
-                  <TableHead className="text-center">Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {debts.map((debt) => (
-                  <TableRow key={debt.id}>
-                    <TableCell>{accounts.find(a => a.id === debt.debt_account_id)?.name}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(debt.starting_balance)}</TableCell>
-                    <TableCell className="text-right">{debt.interest_rate_apr}%</TableCell>
-                    <TableCell className="text-right">{formatCurrency(debt.payment_made)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(debt.ending_balance)}</TableCell>
-                    <TableCell className="text-center">
-                      <Button size="sm" variant="ghost" onClick={() => deleteDebt(debt.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cuenta</TableHead>
+                      <TableHead className="text-right">Saldo Inicial</TableHead>
+                      <TableHead className="text-right">Interés APR</TableHead>
+                      <TableHead className="text-right">Pago</TableHead>
+                      <TableHead className="text-right">Saldo Final</TableHead>
+                      <TableHead className="text-center">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {debts.map((debt) => (
+                      <TableRow key={debt.id}>
+                        <TableCell>{accounts.find(a => a.id === debt.debt_account_id)?.name}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(debt.starting_balance)}</TableCell>
+                        <TableCell className="text-right">{debt.interest_rate_apr}%</TableCell>
+                        <TableCell className="text-right">{formatCurrency(debt.payment_made)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(debt.ending_balance)}</TableCell>
+                        <TableCell className="text-center">
+                          <Button size="sm" variant="ghost" onClick={() => deleteDebt(debt.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
 
         {/* Wishlist */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Lista de Deseos</CardTitle>
-            <Dialog open={newWishOpen} onOpenChange={setNewWishOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Agregar Deseo
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Nuevo Deseo</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Artículo</Label>
-                    <Input value={newWish.item} onChange={(e) => setNewWish({...newWish, item: e.target.value})} />
+        <Collapsible open={wishlistOpen} onOpenChange={setWishlistOpen}>
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Lista de Deseos</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Dialog open={newWishOpen} onOpenChange={setNewWishOpen}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" onClick={(e) => e.stopPropagation()}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Agregar Deseo
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Nuevo Deseo</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Artículo</Label>
+                            <Input value={newWish.item} onChange={(e) => setNewWish({...newWish, item: e.target.value})} />
+                          </div>
+                          <div>
+                            <Label>Costo estimado</Label>
+                            <Input type="number" value={newWish.estimated_cost} onChange={(e) => setNewWish({...newWish, estimated_cost: Number(e.target.value)})} />
+                          </div>
+                          <div>
+                            <Label>Prioridad (1-5)</Label>
+                            <Input type="number" min={1} max={5} value={newWish.priority} onChange={(e) => setNewWish({...newWish, priority: Number(e.target.value)})} />
+                          </div>
+                          <Button onClick={addWish}>Agregar</Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <ChevronDown className={`h-5 w-5 transition-transform ${wishlistOpen ? 'rotate-180' : ''}`} />
                   </div>
-                  <div>
-                    <Label>Costo estimado</Label>
-                    <Input type="number" value={newWish.estimated_cost} onChange={(e) => setNewWish({...newWish, estimated_cost: Number(e.target.value)})} />
-                  </div>
-                  <div>
-                    <Label>Prioridad (1-5)</Label>
-                    <Input type="number" min={1} max={5} value={newWish.priority} onChange={(e) => setNewWish({...newWish, priority: Number(e.target.value)})} />
-                  </div>
-                  <Button onClick={addWish}>Agregar</Button>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Artículo</TableHead>
-                  <TableHead className="text-right">Costo Estimado</TableHead>
-                  <TableHead className="text-center">Prioridad</TableHead>
-                  <TableHead className="text-center">Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {wishlist.map((wish) => (
-                  <TableRow key={wish.id}>
-                    <TableCell>{wish.item}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(wish.estimated_cost)}</TableCell>
-                    <TableCell className="text-center">{wish.priority}</TableCell>
-                    <TableCell className="text-center">
-                      <Button size="sm" variant="ghost" onClick={() => deleteWish(wish.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Artículo</TableHead>
+                      <TableHead className="text-right">Costo Estimado</TableHead>
+                      <TableHead className="text-center">Prioridad</TableHead>
+                      <TableHead className="text-center">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {wishlist.map((wish) => (
+                      <TableRow key={wish.id}>
+                        <TableCell>{wish.item}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(wish.estimated_cost)}</TableCell>
+                        <TableCell className="text-center">{wish.priority}</TableCell>
+                        <TableCell className="text-center">
+                          <Button size="sm" variant="ghost" onClick={() => deleteWish(wish.id)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
       </main>
     </div>
   );
