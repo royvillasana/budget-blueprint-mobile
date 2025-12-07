@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { getMonthName, getTableName, MONTH_INFO } from '@/utils/monthUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label } from 'recharts';
 import {
   ChartConfig,
   ChartContainer,
@@ -359,43 +359,218 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* 50/30/20 Summary */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Distribución Anual 50/30/20</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-needs" />
-                  <p className="font-medium">{t.needs} (50%)</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">{formatCurrency(annualSummary?.annual_needs_actual)}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between border-b pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-desires" />
-                  <p className="font-medium">{t.desires} (30%)</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">{formatCurrency(annualSummary?.annual_wants_actual)}</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-future" />
-                  <p className="font-medium">{t.future} (20%)</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">{formatCurrency(annualSummary?.annual_future_actual)}</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* 50/30/20 Summary with Radial Charts */}
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          {/* Needs Card */}
+          <Card className="flex flex-col">
+            <CardHeader className="items-center pb-0">
+              <CardTitle>{t.needs}</CardTitle>
+              <CardDescription>50% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+              <ChartContainer
+                config={{
+                  needs: {
+                    label: t.needs,
+                    color: 'hsl(var(--chart-1))',
+                  },
+                }}
+                className="mx-auto aspect-square max-h-[200px]"
+              >
+                <RadialBarChart
+                  data={[{ 
+                    category: 'needs', 
+                    value: Math.abs(annualSummary?.annual_needs_actual || 0), 
+                    fill: 'var(--color-needs)' 
+                  }]}
+                  endAngle={Math.min(360, ((Math.abs(annualSummary?.annual_needs_actual || 0) / (annualSummary?.annual_income || 1)) * 100 / 50) * 180)}
+                  innerRadius={60}
+                  outerRadius={100}
+                >
+                  <PolarGrid
+                    gridType="circle"
+                    radialLines={false}
+                    stroke="none"
+                    className="first:fill-muted last:fill-background"
+                    polarRadius={[66, 54]}
+                  />
+                  <RadialBar dataKey="value" background cornerRadius={10} />
+                  <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                    <Label
+                      content={({ viewBox }) => {
+                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          return (
+                            <text
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                            >
+                              <tspan
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                className="fill-foreground text-2xl font-bold"
+                              >
+                                {formatCurrency(annualSummary?.annual_needs_actual)}
+                              </tspan>
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) + 20}
+                                className="fill-muted-foreground text-xs"
+                              >
+                                {t.needs}
+                              </tspan>
+                            </text>
+                          )
+                        }
+                      }}
+                    />
+                  </PolarRadiusAxis>
+                </RadialBarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Wants Card */}
+          <Card className="flex flex-col">
+            <CardHeader className="items-center pb-0">
+              <CardTitle>{t.desires}</CardTitle>
+              <CardDescription>30% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+              <ChartContainer
+                config={{
+                  wants: {
+                    label: t.desires,
+                    color: 'hsl(var(--chart-2))',
+                  },
+                }}
+                className="mx-auto aspect-square max-h-[200px]"
+              >
+                <RadialBarChart
+                  data={[{ 
+                    category: 'wants', 
+                    value: Math.abs(annualSummary?.annual_wants_actual || 0), 
+                    fill: 'var(--color-wants)' 
+                  }]}
+                  endAngle={Math.min(360, ((Math.abs(annualSummary?.annual_wants_actual || 0) / (annualSummary?.annual_income || 1)) * 100 / 30) * 180)}
+                  innerRadius={60}
+                  outerRadius={100}
+                >
+                  <PolarGrid
+                    gridType="circle"
+                    radialLines={false}
+                    stroke="none"
+                    className="first:fill-muted last:fill-background"
+                    polarRadius={[66, 54]}
+                  />
+                  <RadialBar dataKey="value" background cornerRadius={10} />
+                  <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                    <Label
+                      content={({ viewBox }) => {
+                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          return (
+                            <text
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                            >
+                              <tspan
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                className="fill-foreground text-2xl font-bold"
+                              >
+                                {formatCurrency(annualSummary?.annual_wants_actual)}
+                              </tspan>
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) + 20}
+                                className="fill-muted-foreground text-xs"
+                              >
+                                {t.desires}
+                              </tspan>
+                            </text>
+                          )
+                        }
+                      }}
+                    />
+                  </PolarRadiusAxis>
+                </RadialBarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Future Card */}
+          <Card className="flex flex-col">
+            <CardHeader className="items-center pb-0">
+              <CardTitle>{t.future}</CardTitle>
+              <CardDescription>20% {config.language === 'es' ? 'del presupuesto' : 'of budget'}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+              <ChartContainer
+                config={{
+                  future: {
+                    label: t.future,
+                    color: 'hsl(var(--chart-3))',
+                  },
+                }}
+                className="mx-auto aspect-square max-h-[200px]"
+              >
+                <RadialBarChart
+                  data={[{ 
+                    category: 'future', 
+                    value: Math.abs(annualSummary?.annual_future_actual || 0), 
+                    fill: 'var(--color-future)' 
+                  }]}
+                  endAngle={Math.min(360, ((Math.abs(annualSummary?.annual_future_actual || 0) / (annualSummary?.annual_income || 1)) * 100 / 20) * 180)}
+                  innerRadius={60}
+                  outerRadius={100}
+                >
+                  <PolarGrid
+                    gridType="circle"
+                    radialLines={false}
+                    stroke="none"
+                    className="first:fill-muted last:fill-background"
+                    polarRadius={[66, 54]}
+                  />
+                  <RadialBar dataKey="value" background cornerRadius={10} />
+                  <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                    <Label
+                      content={({ viewBox }) => {
+                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                          return (
+                            <text
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              textAnchor="middle"
+                              dominantBaseline="middle"
+                            >
+                              <tspan
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                className="fill-foreground text-2xl font-bold"
+                              >
+                                {formatCurrency(annualSummary?.annual_future_actual)}
+                              </tspan>
+                              <tspan
+                                x={viewBox.cx}
+                                y={(viewBox.cy || 0) + 20}
+                                className="fill-muted-foreground text-xs"
+                              >
+                                {t.future}
+                              </tspan>
+                            </text>
+                          )
+                        }
+                      }}
+                    />
+                  </PolarRadiusAxis>
+                </RadialBarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Current Month Dynamic Tables */}
         <Card className="mb-8">
