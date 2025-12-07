@@ -534,15 +534,15 @@ const Dashboard = () => {
 
         {/* Main Chart + Side Stats */}
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Chart - Takes 2 columns */}
-          <Card className="lg:col-span-2 border-border/50 bg-gradient-to-br from-card to-card/80">
-            <CardHeader className="flex flex-row items-center justify-between">
+          {/* Chart - Takes 2 columns on large screens, full width on mobile */}
+          <Card className="lg:col-span-2 border-border/50 bg-gradient-to-br from-card to-card/80 overflow-hidden">
+            <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <CardTitle className="text-lg">
                   {config.language === 'es' ? 'Ingresos totales' : 'Total revenue'}
                 </CardTitle>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-3xl font-bold">{formatCurrency(annualSummary?.annual_income, true)}</span>
+                  <span className="text-2xl sm:text-3xl font-bold">{formatCurrency(annualSummary?.annual_income, true)}</span>
                   <span className="badge-success text-xs">
                     <TrendingUp className="h-3 w-3" />
                     {config.language === 'es' ? 'vs año anterior' : 'vs last year'}
@@ -574,7 +574,7 @@ const Dashboard = () => {
                 label: config.language === 'es' ? 'Gastos' : 'Expenses',
                 color: 'hsl(var(--chart-2))'
               }
-            } satisfies ChartConfig} className="h-[300px] w-full">
+            } satisfies ChartConfig} className="h-[250px] sm:h-[300px] w-full">
                 <AreaChart accessibilityLayer data={monthlySummaries.map(m => ({
                 month: getMonthName(m.month_id || 1, config.language),
                 income: m.total_income || 0,
@@ -586,8 +586,8 @@ const Dashboard = () => {
                 bottom: 12
               }}>
                   <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={value => value.slice(0, 3)} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={value => `${config.currency === 'EUR' ? '€' : '$'}${(value / 1000).toFixed(0)}K`} stroke="hsl(var(--muted-foreground))" />
+                  <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={value => value.slice(0, 3)} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={value => `${config.currency === 'EUR' ? '€' : '$'}${(value / 1000).toFixed(0)}K`} stroke="hsl(var(--muted-foreground))" width={50} fontSize={12} />
                   <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                   <defs>
                     <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
