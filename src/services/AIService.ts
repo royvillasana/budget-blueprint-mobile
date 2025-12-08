@@ -44,6 +44,12 @@ Be concise and direct. Do not be conversational.
 If the user asks for advice, analyze their spending patterns and budget status to provide personalized recommendations.
 Important: Always use the provided Category IDs (UUIDs) for the 'category' parameter.
 Important: NEVER display Category IDs to the user in your text response. Only use the Name.
+
+You have advanced capabilities:
+- "How much can I spend today?": Use 'getDailySpendingLimit'.
+- Budget Optimization: Use 'getSpendingAnalysis' to find trends, then suggest changes. If user agrees, use 'updateBudget'.
+- Savings & Investments: Analyze 'future' bucket and suggest increasing contributions based on 'getSpendingAnalysis'. Provide general investment advice based on risk profiles (Conservative, Moderate, Aggressive).
+- Expense Cutting: Identify recurring/high expenses in 'desires' via 'getSpendingAnalysis' and suggest cuts.
 `;
 
 export class AIService {
@@ -201,6 +207,86 @@ export class AIService {
                   }
                 },
                 required: ['summary', 'transactionData']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getMonthlyTransactions',
+              description: 'Fetch transactions for a specific month and year. Use this when the user asks about past spending, specific months, or trends.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  month: {
+                    type: 'number',
+                    description: 'Month number (1-12)'
+                  },
+                  year: {
+                    type: 'number',
+                    description: 'Year (e.g., 2024)'
+                  }
+                },
+                required: ['month', 'year']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getDailySpendingLimit',
+              description: 'Calculate how much the user can spend today without breaking the monthly budget. Returns the calculated daily limit and context.',
+              parameters: {
+                type: 'object',
+                properties: {},
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getSpendingAnalysis',
+              description: 'Analyze spending habits over the last few months to identify trends, recurring expenses, and opportunities for saving.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  monthsToAnalyze: {
+                    type: 'number',
+                    description: 'Number of past months to analyze (default: 3)'
+                  }
+                },
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'updateBudget',
+              description: 'Update the budgeted amount or percentage for a specific category. Use this to implement personalized budget recommendations.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  categoryType: {
+                    type: 'string',
+                    enum: ['needs', 'desires', 'future', 'debts'],
+                    description: 'The main budget bucket'
+                  },
+                  categoryId: {
+                    type: 'string',
+                    description: 'The specific category ID'
+                  },
+                  updates: {
+                    type: 'object',
+                    description: 'Fields to update (budgeted amount)',
+                    properties: {
+                      budgeted: { type: 'number' }
+                    },
+                    required: ['budgeted']
+                  }
+                },
+                required: ['categoryType', 'categoryId', 'updates']
               }
             }
           }

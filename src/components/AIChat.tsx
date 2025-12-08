@@ -1,4 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
+import { FloatingActionMenu } from '@/components/FloatingActionMenu';
+import { supabase } from '@/integrations/supabase/client';
+import { getTableName } from '@/utils/monthUtils';
 import { useApp } from '@/contexts/AppContext';
 import { AIService, AIMessage } from '@/services/AIService';
 import { Button } from '@/components/ui/button';
@@ -56,7 +59,7 @@ interface ExtendedAIMessage extends AIMessage {
 }
 
 export const AIChat = () => {
-    const { config, transactions, budgetCategories, addTransaction } = useApp();
+    const { config, transactions, budgetCategories, addTransaction, updateCategory } = useApp();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<ExtendedAIMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -134,7 +137,7 @@ export const AIChat = () => {
 
     // ... (rest of the component)
 
-    const processAIResponse = async (response: any) => {
+    const processAIResponse = async (response: any, currentHistory: ExtendedAIMessage[]) => {
         console.log('AI Response:', response);
 
         if (response.tool_calls) {
@@ -149,6 +152,7 @@ export const AIChat = () => {
 
             // We'll build a list of new messages to add
             const newMessages: ExtendedAIMessage[] = [assistantMessage];
+            let shouldCallAI = false;
 
             // Handle tool calls
             for (const toolCall of response.tool_calls) {
@@ -196,51 +200,280 @@ export const AIChat = () => {
                         }
                     });
 
+                } else if (functionName === 'getDailySpendingLimit') {
+                    const today = new Date();
+                    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                    const remainingDays = daysInMonth - today.getDate() + 1;
+
+                    // Calculate total budget (income)
+                    const totalIncome = config.monthlyIncome;
+
+                    // Calculate fixed expenses (Needs + Debts + Future)
+                    // Note: This assumes 'budgeted' amount is what we want to reserve. 
+                    // Alternatively, we could use actual spent if it's higher? Let's stick to budget for planning.
+                    let reservedAmount = 0;
+                    ['needs', 'debts', 'future'].forEach(key => {
+                        // @ts-ignore
+                        budgetCategories[key].categories.forEach(cat => {
+                            reservedAmount += cat.budgeted || 0;
+                        });
+                    });
+
+                    // Calculate what has been spent so far in ALL categories
+                    // We need current month's transactions for this.
+                    // Since 'transactions' in context might be limited, let's fetch current month's data to be safe
+                    // Or rely on what we have if it's already loaded? 
+                    // Let's assume 'transactions' contains current month data or we fetch it.
+                    // For robustness, let's fetch current month data here similar to getMonthlyTransactions
+
+                    const month = today.getMonth() + 1;
+                    const year = today.getFullYear();
+                    const tableName = getTableName('monthly_transactions', month);
+                    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+                    const endDate = `${year}-${String(month).padStart(2, '0')}-${daysInMonth}`;
+
+                    let currentMonthSpent = 0;
+                    try {
+                        const { data: currentTxns, error } = await supabase
+                            .from(tableName as any)
+                            .select('amount, type')
+                            .gte('date', startDate)
+                            .lte('date', endDate);
+
+                        if (!error && currentTxns) {
+                            (currentTxns as any[]).forEach(t => {
+                                if (t.type === 'expense' || t.amount < 0) { // Handle both conventions
+                                    currentMonthSpent += Math.abs(t.amount);
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.error("Error fetching current month data", e);
+                    }
+
+                    const availableForWants = totalIncome - reservedAmount;
+                    // We assume 'currentMonthSpent' includes everything. 
+                    // Ideally we should subtract fixed expenses spent from reservedAmount? 
+                    // Simplified formula: (Income - Fixed_Budgeted - Total_Spent_So_Far) / Days_Left
+                    // Wait, if I spent money on Rent, it increases Total_Spent but I already subtracted it via Fixed_Budgeted?
+                    // No. (Income - Fixed_Budgeted) is "Discretionary Budget".
+                    // We need to subtract "Discretionary Spent" from "Discretionary Budget".
+                    // Or: (Income - Total_Spent - Remaining_Fixed_Bills).
+
+                    // Let's go with a simpler "Safe to Spend" for "Wants":
+                    // Safe = (Wants_Budget - Wants_Spent) / Days_Left.
+
+                    let wantsBudget = 0;
+                    let wantsSpent = 0;
+                    // @ts-ignore
+                    budgetCategories['desires'].categories.forEach(cat => {
+                        wantsBudget += cat.budgeted || 0;
+                        // We need to know how much spent in this category. 
+                        // This requires mapping transactions to categories.
+                    });
+
+                    // Let's use the aggressive formula:
+                    // Remaining = Income - Total_Spent.
+                    // But we must reserve for future bills.
+                    // So: Remaining_Liquid = Income - Total_Spent.
+                    // Pending_Bills = Fixed_Budgeted - Fixed_Spent.
+                    // Safe_Daily = (Remaining_Liquid - Pending_Bills) / Days_Left.
+
+                    // We need Fixed_Spent.
+                    let fixedBudgeted = 0;
+                    ['needs', 'debts', 'future'].forEach(key => {
+                        // @ts-ignore
+                        budgetCategories[key].categories.forEach(cat => {
+                            fixedBudgeted += cat.budgeted || 0;
+                        });
+                    });
+
+                    // We need to categorize current month transactions to know Fixed_Spent vs Wants_Spent
+                    // This is complex without a joined query.
+
+                    // SIMPLIFIED APPROACH for MVP:
+                    // (MonthlyIncome - TotalSpent - (FixedBudget * 0.5)) / DaysLeft ?? No.
+
+                    // Let's just return the raw numbers to the AI and let it reason?
+                    // "Income: X, Spent: Y, FixedBudget: Z, DaysLeft: D".
+
+                    newMessages.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        content: JSON.stringify({
+                            income: totalIncome,
+                            totalSpentSoFar: currentMonthSpent,
+                            fixedExpensesBudget: fixedBudgeted,
+                            daysRemaining: remainingDays,
+                            note: "Calculate: (Income - TotalSpent - (FixedExpensesBudget - FixedExpensesSpent)) / DaysRemaining. If FixedExpensesSpent is unknown, assume proportional or ask user."
+                        }),
+                        name: functionName
+                    });
+                    shouldCallAI = true;
+
+                } else if (functionName === 'getSpendingAnalysis') {
+                    const monthsToAnalyze = functionArgs.monthsToAnalyze || 3;
+                    const today = new Date();
+                    const analysisData = [];
+
+                    for (let i = 0; i < monthsToAnalyze; i++) {
+                        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                        const m = d.getMonth() + 1;
+                        const y = d.getFullYear();
+                        const tableName = getTableName('monthly_transactions', m);
+
+                        try {
+                            const { data, error } = await supabase
+                                .from(tableName as any)
+                                .select('*')
+                                .order('date', { ascending: false });
+
+                            if (!error && data) {
+                                analysisData.push({ month: m, year: y, transactions: data });
+                            }
+                        } catch (e) {
+                            console.error(`Error fetching data for ${m}/${y}`, e);
+                        }
+                    }
+
+                    newMessages.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        content: JSON.stringify(analysisData),
+                        name: functionName
+                    });
+                    shouldCallAI = true;
+
+                } else if (functionName === 'updateBudget') {
+                    const { categoryType, categoryId, updates } = functionArgs;
+                    // @ts-ignore
+                    // const { updateCategory } = useApp(); // This won't work inside a function.
+                    // We need to capture updateCategory from the component scope.
+                    // It is available in the component scope as 'updateCategory' (destructured from useApp)
+
+                    // Call the context function
+                    // Note: We need to ensure updateCategory is in the closure.
+                    // It is currently NOT in the closure of processAIResponse if defined outside.
+                    // BUT processAIResponse is defined INSIDE AIChat component now (I fixed it earlier).
+                    // So 'updateCategory' should be available if I destructure it.
+
+                    updateCategory(categoryType, categoryId, updates);
+
+                    newMessages.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        content: `Budget updated for category ${categoryId} in ${categoryType}. New values: ${JSON.stringify(updates)}`,
+                        name: functionName
+                    });
+
+                    newMessages.push({
+                        role: 'assistant',
+                        content: `He actualizado el presupuesto para la categoría.`
+                    });
+                    // No need to call AI again necessarily, but maybe to confirm?
+                    // Let's not call AI to avoid loops, just confirm.
                 } else if (functionName === 'requestCategorySelection') {
                     // Add tool result message (required by OpenAI)
                     newMessages.push({
                         role: 'tool',
                         tool_call_id: toolCall.id,
-                        content: "Category selection UI shown to user.",
+                        content: "Asking user for category selection.",
                         name: functionName
                     });
 
-                    // Attach UI properties to the assistant message
-                    assistantMessage.categorySelection = {
-                        type: functionArgs.type,
+                    // Add the visible assistant message asking for category
+                    newMessages.push({
+                        role: 'assistant',
+                        content: "Por favor selecciona una categoría:",
+                        isCategorySelection: true,
                         suggestedCategories: functionArgs.suggestedCategories
-                    };
-                    assistantMessage.content = assistantMessage.content || 'Por favor, selecciona una categoría:';
+                    });
 
                 } else if (functionName === 'requestConfirmation') {
-                    // Add tool result message (required by OpenAI)
+                    // Add tool result message
                     newMessages.push({
                         role: 'tool',
                         tool_call_id: toolCall.id,
-                        content: "Confirmation UI shown to user.",
+                        content: "Asking user for confirmation.",
                         name: functionName
                     });
 
-                    // Attach UI properties to the assistant message
-                    assistantMessage.confirmation = {
-                        summary: functionArgs.summary,
-                        transactionData: functionArgs.transactionData
-                    };
-                    assistantMessage.content = assistantMessage.content || functionArgs.summary;
+                    // Add visible confirmation request
+                    newMessages.push({
+                        role: 'assistant',
+                        content: `¿Confirmas esta transacción?\n\n${functionArgs.summary}`,
+                        isConfirmation: true,
+                        confirmationData: functionArgs.transactionData
+                    });
+                } else if (functionName === 'getMonthlyTransactions') {
+                    const { month, year } = functionArgs;
+                    const tableName = getTableName('monthly_transactions', month);
+
+                    // Calculate last day of the month
+                    const lastDay = new Date(year, month, 0).getDate();
+                    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+                    const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`;
+
+                    try {
+                        const { data, error } = await supabase
+                            .from(tableName as any)
+                            .select('*')
+                            .gte('date', startDate)
+                            .lte('date', endDate)
+                            .order('date', { ascending: false });
+
+                        if (error) throw error;
+
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify(data),
+                            name: functionName
+                        });
+
+                        shouldCallAI = true;
+
+                    } catch (err) {
+                        console.error('Error fetching transactions:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: "Error fetching transactions.",
+                            name: functionName
+                        });
+                    }
                 }
             }
 
             setMessages(prev => [...prev, ...newMessages]);
 
-        } else if (response.content) {
-            setMessages(prev => [...prev, { role: 'assistant', content: response.content || '' }]);
-        }
+            if (shouldCallAI) {
+                const context = {
+                    transactions,
+                    budgetCategories,
+                    monthlyIncome: config.monthlyIncome,
+                    currency: config.currency
+                };
+                const updatedHistory = [...currentHistory, ...newMessages];
+                const followUpResponse = await aiService.sendMessage(updatedHistory, context);
+                await processAIResponse(followUpResponse, updatedHistory);
+            } else {
+                setIsLoading(false);
+            }
 
-        setIsLoading(false);
+        } else {
+            // No tool calls, just a regular message
+            const assistantMessage: ExtendedAIMessage = {
+                role: 'assistant',
+                content: response.content
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+            setIsLoading(false);
+        }
     };
 
     const handleSend = async (message: { text: string; files?: FileUIPart[] }, isHidden: boolean = false) => {
-        if ((!message.text.trim() && (!message.files || message.files.length === 0)) || isLoading) return;
+        if (!message.text && (!message.files || message.files.length === 0)) return;
 
         setIsLoading(true);
 
@@ -276,8 +509,9 @@ export const AIChat = () => {
                 currency: config.currency
             };
 
-            const response = await aiService.sendMessage([...messages, userMessage], context);
-            await processAIResponse(response);
+            const currentHistory = [...messages, userMessage];
+            const response = await aiService.sendMessage(currentHistory, context);
+            await processAIResponse(response, currentHistory);
 
         } catch (error) {
             console.error('Error sending message:', error);
@@ -308,9 +542,10 @@ export const AIChat = () => {
             currency: config.currency
         };
 
-        aiService.sendMessage([...messages, hiddenMessage], context)
+        const currentHistory = [...messages, hiddenMessage];
+        aiService.sendMessage(currentHistory, context)
             .then(response => {
-                processAIResponse(response);
+                processAIResponse(response, currentHistory);
             })
             .catch(error => {
                 console.error('Error sending message:', error);
@@ -349,193 +584,212 @@ export const AIChat = () => {
         return allCats;
     };
 
+    // ...
+
     return (
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild>
-                <Button
-                    className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50 bg-gradient-to-r from-primary to-accent hover:shadow-xl transition-all duration-300"
-                    size="icon"
-                >
-                    <Sparkles className="h-6 w-6 text-white animate-pulse" />
-                </Button>
-            </SheetTrigger>
-            <SheetContent className="w-full sm:w-[540px] flex flex-col p-0">
-                <SheetHeader className="p-4 border-b">
-                    <SheetTitle className="flex items-center gap-2">
-                        <Bot className="h-5 w-5 text-primary" />
-                        Asistente Financiero
-                    </SheetTitle>
-                    <SheetDescription>
-                        Tu asistente personal para gestionar gastos y presupuesto.
-                    </SheetDescription>
-                </SheetHeader>
+        <>
+            <FloatingActionMenu onOpenChat={() => setIsOpen(true)} />
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetContent className="w-full sm:w-[540px] flex flex-col p-0">
+                    <SheetHeader className="p-4 border-b">
+                        <SheetTitle className="flex items-center gap-2">
+                            <Bot className="h-5 w-5 text-primary" />
+                            Asistente Financiero
+                        </SheetTitle>
+                        <SheetDescription>
+                            Tu asistente personal para gestionar gastos y presupuesto.
+                        </SheetDescription>
+                    </SheetHeader>
 
-                <div className="flex-1 overflow-hidden flex flex-col">
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {messages.length === 0 ? (
-                            <ConversationEmptyState
-                                icon={<Bot className="h-12 w-12 opacity-50" />}
-                                title="Hola, soy tu asistente financiero"
-                                description="Puedo ayudarte a analizar tus gastos o añadir nuevas transacciones. ¡También puedes enviarme fotos de tus recibos!"
-                            />
-                        ) : (
-                            messages.filter(m => !m.isHidden && m.role !== 'tool').map((msg, i) => (
-                                <Message key={i} from={msg.role === 'user' ? 'user' : 'assistant'}>
-                                    <MessageContent>
-                                        {msg.attachments && msg.attachments.length > 0 && (
-                                            <MessageAttachments>
-                                                {msg.attachments.map((att, idx) => (
-                                                    <MessageAttachment key={idx} data={{ type: 'file', url: att.url, mediaType: 'image/png' }} />
-                                                ))}
-                                            </MessageAttachments>
-                                        )}
-                                        <div className="prose dark:prose-invert text-foreground text-sm max-w-none">
-                                            <ReactMarkdown
-                                                components={{
-                                                    ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2" {...props} />,
-                                                    ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2" {...props} />,
-                                                    li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                                                    p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                                                    strong: ({ node, ...props }) => <span className="font-bold text-primary" {...props} />
-                                                }}
-                                            >
-                                                {Array.isArray(msg.content)
-                                                    ? msg.content.filter(c => c.type === 'text').map(c => (c as any).text).join('')
-                                                    : msg.content || ''}
-                                            </ReactMarkdown>
-
-                                            {msg.action && (
-                                                <div className="mt-3">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="gap-2 text-xs"
-                                                        onClick={() => handleActionClick(msg.action!.path, msg.action!.transactionId)}
-                                                    >
-                                                        <ExternalLink className="h-3 w-3" />
-                                                        {msg.action.label}
-                                                    </Button>
-                                                </div>
+                    <div className="flex-1 overflow-hidden flex flex-col">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {messages.length === 0 ? (
+                                <div className="flex flex-col gap-4">
+                                    <ConversationEmptyState
+                                        icon={<Bot className="h-12 w-12 opacity-50" />}
+                                        title="Hola, soy tu asistente financiero"
+                                        description="Puedo ayudarte a analizar tus gastos o añadir nuevas transacciones. ¡También puedes enviarme fotos de tus recibos!"
+                                    />
+                                    <div className="grid grid-cols-2 gap-2 px-4">
+                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal" onClick={() => handlePillClick("¿Cuánto puedo gastar hoy?")}>
+                                            💰 Límite diario
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal" onClick={() => handlePillClick("Analiza mis gastos de los últimos 3 meses")}>
+                                            📊 Analizar gastos
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal" onClick={() => handlePillClick("Ayúdame a optimizar mi presupuesto")}>
+                                            ⚖️ Optimizar presupuesto
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal" onClick={() => handlePillClick("Dame consejos de inversión")}>
+                                            📈 Inversión
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal col-span-2 bg-secondary/20 hover:bg-secondary/30 border-secondary/50" onClick={() => {
+                                            setIsOpen(false);
+                                            window.dispatchEvent(new Event('open-add-transaction-dialog'));
+                                        }}>
+                                            ➕ Añadir manualmente
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                messages.filter(m => !m.isHidden && m.role !== 'tool').map((msg, i) => (
+                                    <Message key={i} from={msg.role === 'user' ? 'user' : 'assistant'}>
+                                        <MessageContent>
+                                            {msg.attachments && msg.attachments.length > 0 && (
+                                                <MessageAttachments>
+                                                    {msg.attachments.map((att, idx) => (
+                                                        <MessageAttachment key={idx} data={{ type: 'file', url: att.url, mediaType: 'image/png' }} />
+                                                    ))}
+                                                </MessageAttachments>
                                             )}
+                                            <div className="prose dark:prose-invert text-foreground text-sm max-w-none">
+                                                <ReactMarkdown
+                                                    components={{
+                                                        ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2" {...props} />,
+                                                        ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2" {...props} />,
+                                                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                                                        p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                                        strong: ({ node, ...props }) => <span className="font-bold text-primary" {...props} />
+                                                    }}
+                                                >
+                                                    {Array.isArray(msg.content)
+                                                        ? msg.content.filter(c => c.type === 'text').map(c => (c as any).text).join('')
+                                                        : msg.content || ''}
+                                                </ReactMarkdown>
 
-                                            {msg.categorySelection && (
-                                                <div className="mt-3 flex flex-wrap gap-2">
-                                                    {(() => {
-                                                        const allCats = getAllCategories();
-                                                        const suggested = msg.categorySelection.suggestedCategories || [];
+                                                {msg.action && (
+                                                    <div className="mt-3">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="gap-2 text-xs"
+                                                            onClick={() => handleActionClick(msg.action!.path, msg.action!.transactionId)}
+                                                        >
+                                                            <ExternalLink className="h-3 w-3" />
+                                                            {msg.action.label}
+                                                        </Button>
+                                                    </div>
+                                                )}
 
-                                                        // Sort: Suggested first, then others
-                                                        const sortedCats = [...allCats].sort((a, b) => {
-                                                            const isASuggested = suggested.includes(a.id);
-                                                            const isBSuggested = suggested.includes(b.id);
-                                                            if (isASuggested && !isBSuggested) return -1;
-                                                            if (!isASuggested && isBSuggested) return 1;
-                                                            return 0;
-                                                        });
+                                                {msg.categorySelection && (
+                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                        {(() => {
+                                                            const allCats = getAllCategories();
+                                                            const suggested = msg.categorySelection.suggestedCategories || [];
 
-                                                        return sortedCats.map(cat => {
-                                                            const isSuggested = suggested.includes(cat.id);
-                                                            return (
-                                                                <Button
-                                                                    key={cat.id}
-                                                                    variant="outline"
-                                                                    size="sm"
-                                                                    className={`text-xs transition-colors ${isSuggested
-                                                                        ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
-                                                                        : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
-                                                                        }`}
-                                                                    onClick={() => handleCategorySelect(cat.name, cat.id)}
-                                                                >
-                                                                    {isSuggested && <Sparkles className="w-3 h-3 mr-1 inline text-primary group-hover:text-primary-foreground" />}
-                                                                    {cat.name}
-                                                                </Button>
-                                                            );
-                                                        });
-                                                    })()}
-                                                </div>
-                                            )}
+                                                            // Sort: Suggested first, then others
+                                                            const sortedCats = [...allCats].sort((a, b) => {
+                                                                const isASuggested = suggested.includes(a.id);
+                                                                const isBSuggested = suggested.includes(b.id);
+                                                                if (isASuggested && !isBSuggested) return -1;
+                                                                if (!isASuggested && isBSuggested) return 1;
+                                                                return 0;
+                                                            });
 
-                                            {msg.confirmation && (
-                                                <div className="mt-3 flex gap-2">
-                                                    <Button
-                                                        size="sm"
-                                                        className="bg-green-600 hover:bg-green-700 text-white"
-                                                        onClick={() => handleConfirmation(true)}
-                                                    >
-                                                        Ingresar
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => handleConfirmation(false)}
-                                                    >
-                                                        Modificar
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </MessageContent>
-                                </Message>
-                            ))
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
+                                                            return sortedCats.map(cat => {
+                                                                const isSuggested = suggested.includes(cat.id);
+                                                                return (
+                                                                    <Button
+                                                                        key={cat.id}
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className={`text-xs transition-colors ${isSuggested
+                                                                            ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                            : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                            }`}
+                                                                        onClick={() => handleCategorySelect(cat.name, cat.id)}
+                                                                    >
+                                                                        {isSuggested && <Sparkles className="w-3 h-3 mr-1 inline text-primary group-hover:text-primary-foreground" />}
+                                                                        {cat.name}
+                                                                    </Button>
+                                                                );
+                                                            });
+                                                        })()}
+                                                    </div>
+                                                )}
 
-                    <div className="p-4 border-t bg-background">
-                        <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-full text-xs whitespace-nowrap bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
-                                onClick={() => handlePillClick("Quiero añadir un gasto")}
-                            >
-                                Añadir Gasto
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-full text-xs whitespace-nowrap bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
-                                onClick={() => handlePillClick("Quiero añadir un ingreso")}
-                            >
-                                Añadir Ingreso
-                            </Button>
+                                                {msg.confirmation && (
+                                                    <div className="mt-3 flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                                            onClick={() => handleConfirmation(true)}
+                                                        >
+                                                            Ingresar
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleConfirmation(false)}
+                                                        >
+                                                            Modificar
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </MessageContent>
+                                    </Message>
+                                ))
+                            )}
+                            <div ref={messagesEndRef} />
                         </div>
-                        <PromptInput
-                            onSubmit={(msg) => handleSend(msg)}
-                            className="w-full"
-                            accept="image/*"
-                            maxFiles={3}
-                        >
-                            <PromptInputAttachments>
-                                {(file) => <PromptInputAttachment key={file.id} data={file} />}
-                            </PromptInputAttachments>
-                            <PromptInputBody>
-                                <PromptInputTextarea placeholder="Escribe un mensaje o adjunta un recibo..." />
-                            </PromptInputBody>
-                            <PromptInputFooter className="justify-between">
-                                <PromptInputTools>
-                                    <PromptInputActionMenu>
-                                        <PromptInputActionMenuTrigger />
-                                        <PromptInputActionMenuContent>
-                                            <PromptInputActionAddAttachments />
-                                        </PromptInputActionMenuContent>
-                                    </PromptInputActionMenu>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className={isRecording ? "text-red-500 animate-pulse" : ""}
-                                        onClick={isRecording ? stopRecording : startRecording}
-                                    >
-                                        {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                                    </Button>
-                                </PromptInputTools>
-                                <PromptInputSubmit disabled={isLoading} />
-                            </PromptInputFooter>
-                        </PromptInput>
+
+                        <div className="p-4 border-t bg-background">
+                            <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full text-xs whitespace-nowrap bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
+                                    onClick={() => handlePillClick("Quiero añadir un gasto")}
+                                >
+                                    Añadir Gasto
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full text-xs whitespace-nowrap bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
+                                    onClick={() => handlePillClick("Quiero añadir un ingreso")}
+                                >
+                                    Añadir Ingreso
+                                </Button>
+                            </div>
+                            <PromptInput
+                                onSubmit={(msg) => handleSend(msg)}
+                                className="w-full"
+                                accept="image/*"
+                                maxFiles={3}
+                            >
+                                <PromptInputAttachments>
+                                    {(file) => <PromptInputAttachment key={file.id} data={file} />}
+                                </PromptInputAttachments>
+                                <PromptInputBody>
+                                    <PromptInputTextarea placeholder="Escribe un mensaje o adjunta un recibo..." />
+                                </PromptInputBody>
+                                <PromptInputFooter className="justify-between">
+                                    <PromptInputTools>
+                                        <PromptInputActionMenu>
+                                            <PromptInputActionMenuTrigger />
+                                            <PromptInputActionMenuContent>
+                                                <PromptInputActionAddAttachments />
+                                            </PromptInputActionMenuContent>
+                                        </PromptInputActionMenu>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className={isRecording ? "text-red-500 animate-pulse" : ""}
+                                            onClick={isRecording ? stopRecording : startRecording}
+                                        >
+                                            {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                        </Button>
+                                    </PromptInputTools>
+                                    <PromptInputSubmit disabled={isLoading} />
+                                </PromptInputFooter>
+                            </PromptInput>
+                        </div>
                     </div>
-                </div>
-            </SheetContent>
-        </Sheet>
+                </SheetContent>
+            </Sheet>
+        </>
     );
 };

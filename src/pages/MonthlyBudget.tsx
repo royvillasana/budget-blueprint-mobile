@@ -106,6 +106,17 @@ const MonthlyBudget = () => {
   // Data masking state
   const [dataMasked, setDataMasked] = useState(false);
   const [selectedAddType, setSelectedAddType] = useState<'income' | 'transaction' | 'debt' | 'wishlist' | null>(null);
+
+  useEffect(() => {
+    const handleOpenAddTransaction = () => {
+      setFabDialogOpen(true);
+      setSelectedAddType('transaction');
+    };
+
+    window.addEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
+    return () => window.removeEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
+  }, []);
+
   useEffect(() => {
     const monthNum = parseInt(month || '1');
     const yearNum = parseInt(year || '2025');
@@ -113,7 +124,7 @@ const MonthlyBudget = () => {
     setCurrentYear(yearNum);
     loadMonthData();
 
-    const handleBudgetUpdate = (event: Event) => {
+    const handleBudgetUpdate = (event: CustomEvent) => {
       loadMonthData();
       const customEvent = event as CustomEvent;
       if (customEvent.detail?.transactionId) {
@@ -1004,10 +1015,7 @@ const MonthlyBudget = () => {
       </Collapsible>
     </main>
 
-    {/* FAB Button */}
-    <Button onClick={() => setFabDialogOpen(true)} className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg z-50">
-      <Plus className="w-6 h-6 text-primary-foreground" />
-    </Button>
+
 
     {/* Unified Add Dialog */}
     <Dialog open={fabDialogOpen} onOpenChange={open => {
