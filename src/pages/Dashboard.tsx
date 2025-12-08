@@ -95,6 +95,16 @@ const Dashboard = () => {
   const [newDebt, setNewDebt] = useState({ debt_account_id: '', starting_balance: 0, interest_rate_apr: 0, payment_made: 0, min_payment: 0 });
   const [newWish, setNewWish] = useState({ item: '', estimated_cost: 0, priority: 1 });
   useEffect(() => {
+    const handleOpenAddTransaction = () => {
+      setFabDialogOpen(true);
+      setSelectedAddType('transaction');
+    };
+
+    window.addEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
+    return () => window.removeEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
+  }, []);
+
+  useEffect(() => {
     loadDashboardData();
   }, []);
   const loadDashboardData = async () => {
@@ -791,10 +801,6 @@ const Dashboard = () => {
       </Collapsible>
     </main>
 
-    {/* FAB Button */}
-    <Button onClick={() => setFabDialogOpen(true)} className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg z-50">
-      <Plus className="w-6 h-6 text-primary-foreground" />
-    </Button>
 
     {/* FAB Dialog */}
     <Dialog open={fabDialogOpen} onOpenChange={open => {
