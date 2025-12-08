@@ -6,7 +6,7 @@ import { useApp } from '@/contexts/AppContext';
 import { AIService, AIMessage } from '@/services/AIService';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
-import { Bot, Sparkles, ExternalLink, Mic, Square } from 'lucide-react';
+import { Bot, Sparkles, ExternalLink, Mic, Square, Paperclip } from 'lucide-react';
 
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -31,10 +31,7 @@ import {
     PromptInputTools,
     PromptInputAttachments,
     PromptInputAttachment,
-    PromptInputActionMenu,
-    PromptInputActionMenuTrigger,
-    PromptInputActionMenuContent,
-    PromptInputActionAddAttachments,
+    usePromptInputAttachments,
 } from '@/components/ai-elements/prompt-input';
 import type { FileUIPart } from 'ai';
 import ReactMarkdown from 'react-markdown';
@@ -48,15 +45,30 @@ interface ExtendedAIMessage extends AIMessage {
         transactionId?: string;
     };
     categorySelection?: {
-        type: 'income' | 'expense';
+        categories: Array<{ id: string; name: string }>;
         suggestedCategories?: string[];
     };
     confirmation?: {
         summary: string;
-        transactionData: any;
+        transaction: any;
     };
     isHidden?: boolean;
 }
+
+// Small component to access attachment hook
+const AttachmentButton = () => {
+    const { openFileDialog } = usePromptInputAttachments();
+    return (
+        <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={openFileDialog}
+        >
+            <Paperclip className="h-4 w-4" />
+        </Button>
+    );
+};
 
 export const AIChat = () => {
     const { config, transactions, budgetCategories, addTransaction, updateCategory } = useApp();
@@ -611,19 +623,19 @@ export const AIChat = () => {
                                         description="Puedo ayudarte a analizar tus gastos o añadir nuevas transacciones. ¡También puedes enviarme fotos de tus recibos!"
                                     />
                                     <div className="grid grid-cols-2 gap-2 px-4">
-                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal" onClick={() => handlePillClick("¿Cuánto puedo gastar hoy?")}>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("¿Cuánto puedo gastar hoy?")}>
                                             💰 Límite diario
                                         </Button>
-                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal" onClick={() => handlePillClick("Analiza mis gastos de los últimos 3 meses")}>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Analiza mis gastos de los últimos 3 meses")}>
                                             📊 Analizar gastos
                                         </Button>
-                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal" onClick={() => handlePillClick("Ayúdame a optimizar mi presupuesto")}>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Ayúdame a optimizar mi presupuesto")}>
                                             ⚖️ Optimizar presupuesto
                                         </Button>
-                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal" onClick={() => handlePillClick("Dame consejos de inversión")}>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Dame consejos de inversión")}>
                                             📈 Inversión
                                         </Button>
-                                        <Button variant="outline" className="h-auto py-2 px-3 text-xs justify-start text-left whitespace-normal col-span-2 bg-secondary/20 hover:bg-secondary/30 border-secondary/50" onClick={() => {
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal col-span-2 bg-secondary/20 hover:bg-secondary/30 border-secondary/50" onClick={() => {
                                             setIsOpen(false);
                                             window.dispatchEvent(new Event('open-add-transaction-dialog'));
                                         }}>
@@ -763,16 +775,11 @@ export const AIChat = () => {
                                     {(file) => <PromptInputAttachment key={file.id} data={file} />}
                                 </PromptInputAttachments>
                                 <PromptInputBody>
-                                    <PromptInputTextarea placeholder="Escribe un mensaje o adjunta un recibo..." />
+                                    <PromptInputTextarea placeholder="Presiona Enter para enviar..." />
                                 </PromptInputBody>
                                 <PromptInputFooter className="justify-between">
                                     <PromptInputTools>
-                                        <PromptInputActionMenu>
-                                            <PromptInputActionMenuTrigger />
-                                            <PromptInputActionMenuContent>
-                                                <PromptInputActionAddAttachments />
-                                            </PromptInputActionMenuContent>
-                                        </PromptInputActionMenu>
+                                        <AttachmentButton />
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -783,7 +790,6 @@ export const AIChat = () => {
                                             {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                                         </Button>
                                     </PromptInputTools>
-                                    <PromptInputSubmit disabled={isLoading} />
                                 </PromptInputFooter>
                             </PromptInput>
                         </div>
