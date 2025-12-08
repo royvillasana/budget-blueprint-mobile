@@ -82,6 +82,13 @@ export const AIChat = () => {
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
 
+    // Notify App.tsx when drawer state changes (for desktop push effect)
+    useEffect(() => {
+        window.dispatchEvent(new CustomEvent('ai-chat-state-change', {
+            detail: { isOpen }
+        }));
+    }, [isOpen]);
+
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -601,201 +608,220 @@ export const AIChat = () => {
     return (
         <>
             <FloatingActionMenu onOpenChat={() => setIsOpen(true)} />
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                <SheetContent className="w-full sm:w-[540px] flex flex-col p-0">
-                    <SheetHeader className="p-4 border-b">
-                        <SheetTitle className="flex items-center gap-2">
-                            <Bot className="h-5 w-5 text-primary" />
-                            Asistente Financiero
-                        </SheetTitle>
-                        <SheetDescription>
-                            Tu asistente personal para gestionar gastos y presupuesto.
-                        </SheetDescription>
-                    </SheetHeader>
 
-                    <div className="flex-1 overflow-hidden flex flex-col">
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                            {messages.length === 0 ? (
-                                <div className="flex flex-col gap-4">
-                                    <ConversationEmptyState
-                                        icon={<Bot className="h-12 w-12 opacity-50" />}
-                                        title="Hola, soy tu asistente financiero"
-                                        description="Puedo ayudarte a analizar tus gastos o añadir nuevas transacciones. ¡También puedes enviarme fotos de tus recibos!"
-                                    />
-                                    <div className="grid grid-cols-2 gap-2 px-4">
-                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("¿Cuánto puedo gastar hoy?")}>
-                                            💰 Límite diario
-                                        </Button>
-                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Analiza mis gastos de los últimos 3 meses")}>
-                                            📊 Analizar gastos
-                                        </Button>
-                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Ayúdame a optimizar mi presupuesto")}>
-                                            ⚖️ Optimizar presupuesto
-                                        </Button>
-                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Dame consejos de inversión")}>
-                                            📈 Inversión
-                                        </Button>
-                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal col-span-2 bg-secondary/20 hover:bg-secondary/30 border-secondary/50" onClick={() => {
-                                            setIsOpen(false);
-                                            window.dispatchEvent(new Event('open-add-transaction-dialog'));
-                                        }}>
-                                            ➕ Añadir manualmente
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : (
-                                messages.filter(m => !m.isHidden && m.role !== 'tool').map((msg, i) => (
-                                    <Message key={i} from={msg.role === 'user' ? 'user' : 'assistant'}>
-                                        <MessageContent>
-                                            {msg.attachments && msg.attachments.length > 0 && (
-                                                <MessageAttachments>
-                                                    {msg.attachments.map((att, idx) => (
-                                                        <MessageAttachment key={idx} data={{ type: 'file', url: att.url, mediaType: 'image/png' }} />
-                                                    ))}
-                                                </MessageAttachments>
-                                            )}
-                                            <div className="prose dark:prose-invert text-foreground text-sm max-w-none">
-                                                <ReactMarkdown
-                                                    components={{
-                                                        ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2" {...props} />,
-                                                        ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2" {...props} />,
-                                                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                                                        p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                                                        strong: ({ node, ...props }) => <span className="font-bold text-primary" {...props} />
-                                                    }}
-                                                >
-                                                    {Array.isArray(msg.content)
-                                                        ? msg.content.filter(c => c.type === 'text').map(c => (c as any).text).join('')
-                                                        : msg.content || ''}
-                                                </ReactMarkdown>
+            {/* Overlay only on mobile */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
 
-                                                {msg.action && (
-                                                    <div className="mt-3">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            className="gap-2 text-xs"
-                                                            onClick={() => handleActionClick(msg.action!.path, msg.action!.transactionId)}
-                                                        >
-                                                            <ExternalLink className="h-3 w-3" />
-                                                            {msg.action.label}
-                                                        </Button>
-                                                    </div>
-                                                )}
+            {/* Custom Drawer */}
+            <div
+                className={`fixed top-0 right-0 h-full bg-background border-l shadow-lg z-50 flex flex-col transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                    } w-full md:w-1/4`}
+                style={{
+                    // Prevent zoom on mobile when focusing inputs
+                    touchAction: 'manipulation'
+                }}
+            >
+                {/* Header */}
+                <div className="p-4 border-b flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2">
+                        <Bot className="h-5 w-5 text-primary" />
+                        <h2 className="font-semibold">Asistente Financiero</h2>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </Button>
+                </div>
 
-                                                {msg.categorySelection && (
-                                                    <div className="mt-3 flex flex-wrap gap-2">
-                                                        {(() => {
-                                                            const allCats = getAllCategories();
-                                                            const suggested = msg.categorySelection.suggestedCategories || [];
-
-                                                            // Sort: Suggested first, then others
-                                                            const sortedCats = [...allCats].sort((a, b) => {
-                                                                const isASuggested = suggested.includes(a.id);
-                                                                const isBSuggested = suggested.includes(b.id);
-                                                                if (isASuggested && !isBSuggested) return -1;
-                                                                if (!isASuggested && isBSuggested) return 1;
-                                                                return 0;
-                                                            });
-
-                                                            return sortedCats.map(cat => {
-                                                                const isSuggested = suggested.includes(cat.id);
-                                                                return (
-                                                                    <Button
-                                                                        key={cat.id}
-                                                                        variant="outline"
-                                                                        size="sm"
-                                                                        className={`text-xs transition-colors ${isSuggested
-                                                                            ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
-                                                                            : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
-                                                                            }`}
-                                                                        onClick={() => handleCategorySelect(cat.name, cat.id)}
-                                                                    >
-                                                                        {isSuggested && <Sparkles className="w-3 h-3 mr-1 inline text-primary group-hover:text-primary-foreground" />}
-                                                                        {cat.name}
-                                                                    </Button>
-                                                                );
-                                                            });
-                                                        })()}
-                                                    </div>
-                                                )}
-
-                                                {msg.confirmation && (
-                                                    <div className="mt-3 flex gap-2">
-                                                        <Button
-                                                            size="sm"
-                                                            className="bg-green-600 hover:bg-green-700 text-white"
-                                                            onClick={() => handleConfirmation(true)}
-                                                        >
-                                                            Ingresar
-                                                        </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => handleConfirmation(false)}
-                                                        >
-                                                            Modificar
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </MessageContent>
-                                    </Message>
-                                ))
-                            )}
-                            <div ref={messagesEndRef} />
-                        </div>
-
-                        <div className="p-4 border-t bg-background">
-                            <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-full text-xs whitespace-nowrap bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
-                                    onClick={() => handlePillClick("Quiero añadir un gasto")}
-                                >
-                                    Añadir Gasto
+                {/* Messages Area */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    {messages.length === 0 ? (
+                        <div className="flex flex-col gap-4">
+                            <ConversationEmptyState
+                                icon={<Bot className="h-12 w-12 opacity-50" />}
+                                title="Hola, soy tu asistente financiero"
+                                description="Puedo ayudarte a analizar tus gastos o añadir nuevas transacciones. ¡También puedes enviarme fotos de tus recibos!"
+                            />
+                            <div className="grid grid-cols-2 gap-2 px-4">
+                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("¿Cuánto puedo gastar hoy?")}>
+                                    💰 Límite diario
                                 </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-full text-xs whitespace-nowrap bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
-                                    onClick={() => handlePillClick("Quiero añadir un ingreso")}
-                                >
-                                    Añadir Ingreso
+                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Analiza mis gastos de los últimos 3 meses")}>
+                                    📊 Analizar gastos
+                                </Button>
+                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Ayúdame a optimizar mi presupuesto")}>
+                                    ⚖️ Optimizar presupuesto
+                                </Button>
+                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Dame consejos de inversión")}>
+                                    📈 Inversión
+                                </Button>
+                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal col-span-2 bg-secondary/20 hover:bg-secondary/30 border-secondary/50" onClick={() => {
+                                    setIsOpen(false);
+                                    window.dispatchEvent(new Event('open-add-transaction-dialog'));
+                                }}>
+                                    ➕ Añadir manualmente
                                 </Button>
                             </div>
-                            <PromptInput
-                                onSubmit={(msg) => handleSend(msg)}
-                                className="w-full"
-                                accept="image/*"
-                                maxFiles={3}
-                            >
-                                <PromptInputAttachments>
-                                    {(file) => <PromptInputAttachment key={file.id} data={file} />}
-                                </PromptInputAttachments>
-                                <PromptInputBody>
-                                    <PromptInputTextarea placeholder="Presiona Enter para enviar..." />
-                                </PromptInputBody>
-                                <PromptInputFooter className="justify-between">
-                                    <PromptInputTools>
-                                        <AttachmentButton />
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className={isRecording ? "text-red-500 animate-pulse" : ""}
-                                            onClick={isRecording ? stopRecording : startRecording}
-                                        >
-                                            {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                                        </Button>
-                                    </PromptInputTools>
-                                </PromptInputFooter>
-                            </PromptInput>
                         </div>
+                    ) : (
+                        messages.filter(m => !m.isHidden && m.role !== 'tool').map((msg, i) => (
+                            <Message key={i} from={msg.role === 'user' ? 'user' : 'assistant'}>
+                                <MessageContent>
+                                    {msg.attachments && msg.attachments.length > 0 && (
+                                        <MessageAttachments>
+                                            {msg.attachments.map((att, idx) => (
+                                                <MessageAttachment key={idx} data={{ type: 'file', url: att.url, mediaType: 'image/png' }} />
+                                            ))}
+                                        </MessageAttachments>
+                                    )}
+                                    <div className="prose dark:prose-invert text-foreground text-sm max-w-none">
+                                        <ReactMarkdown
+                                            components={{
+                                                ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2" {...props} />,
+                                                ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2" {...props} />,
+                                                li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                                                p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                                strong: ({ node, ...props }) => <span className="font-bold text-primary" {...props} />
+                                            }}
+                                        >
+                                            {Array.isArray(msg.content)
+                                                ? msg.content.filter(c => c.type === 'text').map(c => (c as any).text).join('')
+                                                : msg.content || ''}
+                                        </ReactMarkdown>
+
+                                        {msg.action && (
+                                            <div className="mt-3">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="gap-2 text-xs"
+                                                    onClick={() => handleActionClick(msg.action!.path, msg.action!.transactionId)}
+                                                >
+                                                    <ExternalLink className="h-3 w-3" />
+                                                    {msg.action.label}
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {msg.categorySelection && (
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                {(() => {
+                                                    const allCats = getAllCategories();
+                                                    const suggested = msg.categorySelection.suggestedCategories || [];
+
+                                                    // Sort: Suggested first, then others
+                                                    const sortedCats = [...allCats].sort((a, b) => {
+                                                        const isASuggested = suggested.includes(a.id);
+                                                        const isBSuggested = suggested.includes(b.id);
+                                                        if (isASuggested && !isBSuggested) return -1;
+                                                        if (!isASuggested && isBSuggested) return 1;
+                                                        return 0;
+                                                    });
+
+                                                    return sortedCats.map(cat => {
+                                                        const isSuggested = suggested.includes(cat.id);
+                                                        return (
+                                                            <Button
+                                                                key={cat.id}
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className={`text-xs transition-colors ${isSuggested
+                                                                    ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                    : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                    }`}
+                                                                onClick={() => handleCategorySelect(cat.name, cat.id)}
+                                                            >
+                                                                {isSuggested && <Sparkles className="w-3 h-3 mr-1 inline text-primary group-hover:text-primary-foreground" />}
+                                                                {cat.name}
+                                                            </Button>
+                                                        );
+                                                    });
+                                                })()}
+                                            </div>
+                                        )}
+
+                                        {msg.confirmation && (
+                                            <div className="mt-3 flex gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                                    onClick={() => handleConfirmation(true)}
+                                                >
+                                                    Ingresar
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => handleConfirmation(false)}
+                                                >
+                                                    Modificar
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </MessageContent>
+                            </Message>
+                        ))
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
+
+                <div className="p-4 border-t bg-background">
+                    <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full text-xs whitespace-nowrap bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
+                            onClick={() => handlePillClick("Quiero añadir un gasto")}
+                        >
+                            Añadir Gasto
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full text-xs whitespace-nowrap bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
+                            onClick={() => handlePillClick("Quiero añadir un ingreso")}
+                        >
+                            Añadir Ingreso
+                        </Button>
                     </div>
-                </SheetContent>
-            </Sheet>
+                    <PromptInput
+                        onSubmit={(msg) => handleSend(msg)}
+                        className="w-full"
+                        accept="image/*"
+                        maxFiles={3}
+                    >
+                        <PromptInputAttachments>
+                            {(file) => <PromptInputAttachment key={file.id} data={file} />}
+                        </PromptInputAttachments>
+                        <PromptInputBody>
+                            <PromptInputTextarea placeholder="Presiona Enter para enviar..." />
+                        </PromptInputBody>
+                        <PromptInputFooter className="justify-between">
+                            <PromptInputTools>
+                                <AttachmentButton />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className={isRecording ? "text-red-500 animate-pulse" : ""}
+                                    onClick={isRecording ? stopRecording : startRecording}
+                                >
+                                    {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                </Button>
+                            </PromptInputTools>
+                        </PromptInputFooter>
+                    </PromptInput>
+                </div>
+            </div>
         </>
     );
 };
