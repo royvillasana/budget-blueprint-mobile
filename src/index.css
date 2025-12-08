@@ -232,3 +232,14 @@ Modern dark dashboard theme inspired by Dashdark X
     @apply transition-all duration-300 ease-out;
   }
 }
+
+/* Hide Unicorn Studio watermark/badge */
+[data-us-project] a[href*="unicornstudio"],
+[data-us-project] > a,
+[data-us-project] .us-badge,
+[data-us-project] [class*="badge"],
+[data-us-project] [class*="watermark"] {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}

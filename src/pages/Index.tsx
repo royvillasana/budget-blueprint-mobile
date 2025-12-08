@@ -6,6 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutDashboard, Wallet, Shield, Globe, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Header } from '@/components/Header';
 
+declare global {
+  interface Window {
+    UnicornStudio?: {
+      init: () => void;
+    };
+  }
+}
+
 const Index = () => {
   const navigate = useNavigate();
 
@@ -18,13 +26,36 @@ const Index = () => {
     });
   }, [navigate]);
 
+  useEffect(() => {
+    // Force Unicorn Studio to re-scan for data-us-project elements after React mounts
+    const timer = setTimeout(() => {
+      if (window.UnicornStudio && typeof window.UnicornStudio.init === 'function') {
+        window.UnicornStudio.init();
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
       {/* Hero Section */}
-      <section className="relative py-20 px-4 md:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 -z-10" />
-        <div className="container mx-auto max-w-5xl text-center">
+      <section className="relative py-20 px-4 md:py-32 overflow-hidden" style={{ minHeight: '700px' }}>
+        <div
+          data-us-project="De8YNf7Nr44PNL3ZLFTf"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100%',
+            minHeight: '700px',
+            zIndex: 0
+          }}
+        />
+        <div className="container mx-auto max-w-5xl text-center relative" style={{ zIndex: 10 }}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 animate-fade-in">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
@@ -32,12 +63,20 @@ const Index = () => {
             </span>
             New: Local Storage Option
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Master Your Money, <span className="text-primary">Your Way</span>.
-          </h1>
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-            Professional budget tracking with the flexibility you need. Choose between cloud sync for access anywhere, or keep your data 100% private on your device.
-          </p>
+
+          {/* Hero Title Container with Gradient Border */}
+          <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-white/20 backdrop-blur-md p-8 md:p-12 mb-8 mx-auto max-w-4xl">
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
+
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-background">
+              Master Your Money, <span className="text-background">Your Way</span>.
+            </h1>
+            <p className="text-xl text-background font-semibold leading-relaxed">
+              Professional budget tracking with the flexibility you need. Choose between cloud sync for access anywhere, or keep your data 100% private on your device.
+            </p>
+          </div>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button
               size="lg"
@@ -62,7 +101,8 @@ const Index = () => {
       <section id="features" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/20 transition-colors">
+            <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/80 hover:border-primary/30 transition-colors">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
               <CardHeader>
                 <Shield className="h-10 w-10 text-primary mb-4" />
                 <CardTitle className="text-xl">Flexible Storage</CardTitle>
@@ -74,7 +114,8 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/20 transition-colors">
+            <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/80 hover:border-accent/30 transition-colors">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
               <CardHeader>
                 <LayoutDashboard className="h-10 w-10 text-accent mb-4" />
                 <CardTitle className="text-xl">Visual Analytics</CardTitle>
@@ -86,9 +127,10 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card className="bg-card/50 backdrop-blur-sm border-primary/10 hover:border-primary/20 transition-colors">
+            <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/80 hover:border-primary/30 transition-colors">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
               <CardHeader>
-                <Wallet className="h-10 w-10 text-secondary mb-4" />
+                <Wallet className="h-10 w-10 text-primary mb-4" />
                 <CardTitle className="text-xl">Smart Budgeting</CardTitle>
               </CardHeader>
               <CardContent>
