@@ -771,6 +771,40 @@ export const AIChat = () => {
                             </Message>
                         ))
                     )}
+
+                    {/* AI Loading Indicator */}
+                    {isLoading && (
+                        <div className="flex items-start gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                <Bot className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
+                                {/* AI Chip Icon with Animation */}
+                                <div className="relative w-12 h-12 animate-pulse">
+                                    {/* Chip body */}
+                                    <div className="absolute inset-2 rounded-lg border-2 border-primary bg-background flex items-center justify-center">
+                                        <span className="text-primary font-bold text-xs">AI</span>
+                                    </div>
+
+                                    {/* Connection pins - top */}
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-2 bg-primary rounded-t animate-pulse" style={{ animationDelay: '0ms' }} />
+                                    <div className="absolute top-0 left-1/3 -translate-x-1/2 w-1 h-2 bg-accent rounded-t animate-pulse" style={{ animationDelay: '100ms' }} />
+                                    <div className="absolute top-0 left-2/3 -translate-x-1/2 w-1 h-2 bg-primary rounded-t animate-pulse" style={{ animationDelay: '200ms' }} />
+
+                                    {/* Connection pins - bottom */}
+                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-2 bg-primary rounded-b animate-pulse" style={{ animationDelay: '300ms' }} />
+                                    <div className="absolute bottom-0 left-1/3 -translate-x-1/2 w-1 h-2 bg-accent rounded-b animate-pulse" style={{ animationDelay: '400ms' }} />
+                                    <div className="absolute bottom-0 left-2/3 -translate-x-1/2 w-1 h-2 bg-primary rounded-b animate-pulse" style={{ animationDelay: '500ms' }} />
+
+                                    {/* Connection dots - left */}
+                                    <div className="absolute left-0 top-1/3 w-1.5 h-1.5 rounded-full bg-primary animate-ping" style={{ animationDuration: '1.5s' }} />
+                                    <div className="absolute left-0 top-1/2 w-1.5 h-1.5 rounded-full bg-accent animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
+                                    <div className="absolute left-0 top-2/3 w-1.5 h-1.5 rounded-full bg-primary animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
+                                </div>
+                                <span className="text-xs text-muted-foreground">Pensando...</span>
+                            </div>
+                        </div>
+                    )}
                     <div ref={messagesEndRef} />
                 </div>
 
