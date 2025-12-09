@@ -26,7 +26,6 @@ export class SupabaseStorage implements StorageService {
     const { data, error } = await supabase
       .from('view_annual_summary')
       .select('*')
-      .eq('user_id', userId)
       .maybeSingle();
       
     if (error) throw error;
@@ -48,26 +47,16 @@ export class SupabaseStorage implements StorageService {
   }
 
   async getRecentTransactions(userId: string, monthId: number): Promise<TransactionItem[]> {
-    const tableName = getTableName('monthly_transactions', monthId);
     const { data, error } = await (supabase as any)
-      .from(tableName)
-      .select('id, description, amount, date, category_id, month_id, user_id, direction, categories(name, emoji)')
-      .eq('user_id', userId)
-      .eq('month_id', monthId)
-      .order('date', { ascending: false })
-      .limit(5);
+      .rpc('get_user_transactions', { p_user_id: userId, p_month_id: monthId });
 
     if (error) throw error;
     return data as TransactionItem[] || [];
   }
 
   async getCurrentDebts(userId: string, monthId: number): Promise<DebtItem[]> {
-    const tableName = getTableName('monthly_debts', monthId);
     const { data, error } = await (supabase as any)
-      .from(tableName)
-      .select('id, starting_balance, payment_made, ending_balance, month_id, user_id, debt_account_id, interest_rate_apr, min_payment, accounts(name)')
-      .eq('user_id', userId)
-      .eq('month_id', monthId);
+      .rpc('get_user_debts', { p_user_id: userId, p_month_id: monthId });
 
     if (error) throw error;
     return data as DebtItem[] || [];

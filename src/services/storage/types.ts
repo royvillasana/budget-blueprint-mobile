@@ -49,6 +49,11 @@ export interface TransactionItem {
     name: string;
     emoji: string;
   } | null;
+  // Alternative format from views
+  category_name?: string;
+  category_emoji?: string;
+  payment_method_name?: string;
+  account_name?: string;
 }
 
 export interface DebtItem {
@@ -64,6 +69,8 @@ export interface DebtItem {
   accounts?: {
     name: string;
   } | null;
+  // Alternative format from views
+  account_name?: string;
 }
 
 export interface WishItem {

@@ -10,6 +10,17 @@ export interface AIContext {
   budgetCategories: any;
   monthlyIncome: number;
   currency: string;
+  currentMonthTransactions?: Transaction[];
+  monthlyIncome?: number;
+  totalSpentThisMonth?: number;
+  budgetSummary?: {
+    needs: { budgeted: number; spent: number };
+    desires: { budgeted: number; spent: number };
+    future: { budgeted: number; spent: number };
+    debts: { budgeted: number; spent: number };
+  };
+  remainingBudget?: number;
+  daysLeftInMonth?: number;
 }
 
 export interface AIMessage {
@@ -25,10 +36,20 @@ const SYSTEM_PROMPT = `
 You are a helpful and knowledgeable financial advisor assistant for the "Budget Pro" application.
 Your goal is to help the user manage their finances, track their budget, and provide insights.
 
-You have access to the user's current financial data, including:
-- Monthly Income
-- Budget Categories (Needs, Desires, Future, Debts)
-- Recent Transactions
+You have access to the user's COMPLETE financial data, including:
+- Monthly Income and Currency
+- Budget Categories (Needs, Desires, Future, Debts) with allocated budgets and current spending
+- ALL transactions from the current month
+- Budget Summary showing how much has been spent in each category vs. budgeted amounts
+- Total spent this month
+- Remaining budget
+- Days left in the month
+
+Use this comprehensive data to provide CONTEXTUAL and PERSONALIZED advice.
+For example:
+- When asked "How much can I spend today?", consider the remaining budget, days left, and pending bills
+- When analyzing spending, look at actual transactions and compare against budget
+- When giving recommendations, base them on the user's real spending patterns
 
 You can also perform actions on behalf of the user, such as adding new transactions.
 You can analyze images provided by the user, such as receipts or invoices, to extract transaction details.
@@ -76,16 +97,37 @@ export class AIService {
       return formatted.join('\n');
     };
 
+    // Prepare comprehensive financial summary
+    const calculatePercentage = (spent: number, budgeted: number) => {
+      if (budgeted === 0) return '0.0';
+      return ((spent / budgeted) * 100).toFixed(1);
+    };
+
+    const budgetSummaryText = context.budgetSummary
+      ? `Budget Summary This Month:
+      - Needs: ${context.budgetSummary.needs.spent}/${context.budgetSummary.needs.budgeted} ${context.currency} (${calculatePercentage(context.budgetSummary.needs.spent, context.budgetSummary.needs.budgeted)}% used)
+      - Desires: ${context.budgetSummary.desires.spent}/${context.budgetSummary.desires.budgeted} ${context.currency} (${calculatePercentage(context.budgetSummary.desires.spent, context.budgetSummary.desires.budgeted)}% used)
+      - Future/Savings: ${context.budgetSummary.future.spent}/${context.budgetSummary.future.budgeted} ${context.currency} (${calculatePercentage(context.budgetSummary.future.spent, context.budgetSummary.future.budgeted)}% used)
+      - Debts: ${context.budgetSummary.debts.spent}/${context.budgetSummary.debts.budgeted} ${context.currency} (${calculatePercentage(context.budgetSummary.debts.spent, context.budgetSummary.debts.budgeted)}% used)
+
+      Total Spent This Month: ${context.totalSpentThisMonth || 0} ${context.currency}
+      Remaining Budget: ${context.remainingBudget || 0} ${context.currency}
+      Days Left in Month: ${context.daysLeftInMonth || 0}`
+      : '';
+
     // Prepare the context message
     const contextMessage = {
       role: 'system',
       content: `Current Financial Context:
       Monthly Income: ${context.monthlyIncome} ${context.currency}
-      
+
+      ${budgetSummaryText}
+
       Available Budget Categories (Use these IDs strictly):
       ${formatCategories(context.budgetCategories)}
-      
-      Recent Transactions: ${JSON.stringify(context.transactions.slice(-10))}
+
+      Current Month Transactions (${context.currentMonthTransactions?.length || 0} total):
+      ${JSON.stringify(context.currentMonthTransactions || context.transactions.slice(-10))}
       `
     };
 

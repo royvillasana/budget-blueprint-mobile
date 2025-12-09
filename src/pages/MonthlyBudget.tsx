@@ -208,41 +208,33 @@ const MonthlyBudget = () => {
     setIncomeItems(data || []);
   };
   const loadBudget = async (monthId: number, monthNum: number, uid?: string) => {
-    const tableName = getTableName('monthly_budget', monthNum) as any;
-    const {
-      data
-    } = await supabase.from(tableName).select(`
-        *,
-        categories(name, emoji, bucket_50_30_20)
-      `).eq('month_id', monthId);
+    const { data, error } = await (supabase as any)
+      .rpc('get_user_budget', { p_user_id: uid || userId, p_month_id: monthId });
+    if (error) console.error('Error loading budget:', error);
 
-    // If no budget items exist, create them from user's categories
+    // If no budget items exist, create them from categories
     if (!data || data.length === 0) {
       const userIdToUse = uid || userId;
       if (userIdToUse) {
         const {
-          data: userCategories
-        } = await supabase.from('categories').select('*').eq('user_id', userIdToUse).eq('is_active', true);
-        if (userCategories && userCategories.length > 0) {
-          const budgetEntries = userCategories.map(cat => ({
+          data: allCategories
+        } = await supabase.from('categories').select('*').eq('is_active', true);
+        if (allCategories && allCategories.length > 0) {
+          const tableName = getTableName('monthly_budget', monthNum) as any;
+          const budgetEntries = allCategories.map(cat => ({
             month_id: monthId,
             user_id: userIdToUse,
             category_id: cat.id,
             bucket_50_30_20: cat.bucket_50_30_20,
-            estimated: 0,
-            assigned: 0,
-            actual: 0,
+            planned_amount: 0,
+            spent_amount: 0,
             variance: 0
           }));
           await supabase.from(tableName).insert(budgetEntries);
 
           // Reload after inserting
-          const {
-            data: newData
-          } = await supabase.from(tableName).select(`
-              *,
-              categories(name, emoji, bucket_50_30_20)
-            `).eq('month_id', monthId);
+          const { data: newData } = await (supabase as any)
+            .rpc('get_user_budget', { p_user_id: userIdToUse, p_month_id: monthId });
           setBudgetItems(newData || []);
           return;
         }
@@ -251,27 +243,15 @@ const MonthlyBudget = () => {
     setBudgetItems(data || []);
   };
   const loadTransactions = async (monthId: number, uid: string, monthNum: number) => {
-    const tableName = getTableName('monthly_transactions', monthNum) as any;
-    const {
-      data
-    } = await supabase.from(tableName).select(`
-        *,
-        categories(name, emoji),
-        payment_methods(name),
-        accounts(name)
-      `).eq('month_id', monthId).eq('user_id', uid).order('date', {
-      ascending: false
-    });
+    const { data, error } = await (supabase as any)
+      .rpc('get_user_transactions', { p_user_id: uid, p_month_id: monthId });
+    if (error) console.error('Error loading transactions:', error);
     setTransactions(data || []);
   };
   const loadDebts = async (monthId: number, uid: string, monthNum: number) => {
-    const tableName = getTableName('monthly_debts', monthNum) as any;
-    const {
-      data
-    } = await supabase.from(tableName).select(`
-        *,
-        accounts(name)
-      `).eq('month_id', monthId).eq('user_id', uid);
+    const { data, error } = await (supabase as any)
+      .rpc('get_user_debts', { p_user_id: uid, p_month_id: monthId });
+    if (error) console.error('Error loading debts:', error);
     setDebts(data || []);
   };
   const loadWishlist = async (monthId: number, monthNum: number) => {
@@ -283,26 +263,14 @@ const MonthlyBudget = () => {
   };
   const loadCategories = async () => {
     const {
-      data: {
-        user
-      }
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    const {
       data
-    } = await supabase.from('categories').select('*').eq('user_id', user.id).eq('is_active', true);
+    } = await supabase.from('categories').select('*').eq('is_active', true);
     setCategories(data || []);
   };
   const loadPaymentMethods = async () => {
     const {
-      data: {
-        user
-      }
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    const {
       data
-    } = await supabase.from('payment_methods').select('*').eq('user_id', user.id);
+    } = await supabase.from('payment_methods').select('*');
     setPaymentMethods(data || []);
   };
   const loadAccounts = async () => {
@@ -508,7 +476,7 @@ const MonthlyBudget = () => {
       return {
         ...item,
         calculatedActual: actual,
-        calculatedDifference: (item.estimated || 0) - actual
+        calculatedDifference: (item.planned_amount || 0) - actual
       };
     });
   };
@@ -732,9 +700,9 @@ const MonthlyBudget = () => {
                     </TableHeader>
                     <TableBody>
                       {needsBudget.map(item => <TableRow key={item.id}>
-                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
+                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.category_emoji || item.categories?.emoji} {item.category_name || item.categories?.name}</span></TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
+                          <Input type="number" className="w-24 text-center mx-auto" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
                         </TableCell>
                         <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                         <TableCell className="text-center text-primary">
@@ -757,9 +725,9 @@ const MonthlyBudget = () => {
                     </TableHeader>
                     <TableBody>
                       {wantsBudget.map(item => <TableRow key={item.id}>
-                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
+                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.category_emoji || item.categories?.emoji} {item.category_name || item.categories?.name}</span></TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
+                          <Input type="number" className="w-24 text-center mx-auto" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
                         </TableCell>
                         <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                         <TableCell className="text-center text-primary">
@@ -782,9 +750,9 @@ const MonthlyBudget = () => {
                     </TableHeader>
                     <TableBody>
                       {futureBudget.map(item => <TableRow key={item.id}>
-                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.categories?.emoji} {item.categories?.name}</span></TableCell>
+                        <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.category_emoji || item.categories?.emoji} {item.category_name || item.categories?.name}</span></TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="w-24 text-center mx-auto" value={item.estimated || 0} onChange={e => updateBudgetItem(item.id, 'estimated', Number(e.target.value))} />
+                          <Input type="number" className="w-24 text-center mx-auto" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
                         </TableCell>
                         <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                         <TableCell className="text-center text-primary">
@@ -890,7 +858,7 @@ const MonthlyBudget = () => {
                 <TableBody>
                   {transactions.map(txn => <TableRow key={txn.id} id={`txn-${txn.id}`}>
                     <TableCell>{txn.date}</TableCell>
-                    <TableCell><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{txn.categories?.emoji} {txn.categories?.name}</span></TableCell>
+                    <TableCell><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{txn.category_emoji || txn.categories?.emoji} {txn.category_name || txn.categories?.name}</span></TableCell>
                     <TableCell>{txn.description}</TableCell>
                     <TableCell className="text-right text-desires">{formatCurrency(txn.amount)}</TableCell>
                     <TableCell className="text-center">

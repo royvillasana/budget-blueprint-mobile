@@ -718,7 +718,7 @@ const Dashboard = () => {
                   {recentTransactions.map(item => <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.description}</TableCell>
                     <TableCell>
-                      {item.categories?.emoji} {item.categories?.name || '-'}
+                      {item.category_emoji || item.categories?.emoji} {item.category_name || item.categories?.name || '-'}
                     </TableCell>
                     <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right text-destructive">{formatCurrency(Math.abs(item.amount))}</TableCell>
@@ -741,7 +741,7 @@ const Dashboard = () => {
                 </TableHeader>
                 <TableBody>
                   {currentDebts.map(item => <TableRow key={item.id}>
-                    <TableCell className="font-medium">{item.accounts?.name || '-'}</TableCell>
+                    <TableCell className="font-medium">{item.account_name || item.accounts?.name || '-'}</TableCell>
                     <TableCell className="text-right">{formatCurrency(item.starting_balance)}</TableCell>
                     <TableCell className="text-right text-success">{formatCurrency(item.payment_made || 0)}</TableCell>
                     <TableCell className="text-right text-destructive">{formatCurrency(item.ending_balance || item.starting_balance)}</TableCell>

@@ -6,10 +6,13 @@ import { useApp } from '@/contexts/AppContext';
 import { AIService, AIMessage } from '@/services/AIService';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
-import { Bot, Sparkles, ExternalLink, Mic, Square, Paperclip } from 'lucide-react';
+import { Bot, Sparkles, ExternalLink, Mic, Square, Paperclip, History } from 'lucide-react';
+import { useConversations } from '@/contexts/ConversationContext';
+import { ConversationTabs } from '@/components/ConversationTabs';
+import { ConversationHistory } from '@/components/ConversationHistory';
 
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Conversation,
     ConversationContent,
@@ -48,10 +51,14 @@ interface ExtendedAIMessage extends AIMessage {
         categories: Array<{ id: string; name: string }>;
         suggestedCategories?: string[];
     };
+    isCategorySelection?: boolean;
+    suggestedCategories?: string[];
     confirmation?: {
         summary: string;
         transaction: any;
     };
+    isConfirmation?: boolean;
+    confirmationData?: any;
     isHidden?: boolean;
 }
 
@@ -77,10 +84,21 @@ export const AIChat = () => {
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     const navigate = useNavigate();
+    const location = useLocation();
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const chunksRef = useRef<Blob[]>([]);
+
+    // Conversation management
+    const {
+        currentConversation,
+        currentMessages,
+        createConversation,
+        addMessage,
+        refreshMessages,
+    } = useConversations();
+    const [showHistory, setShowHistory] = useState(false);
 
     // Notify App.tsx when drawer state changes (for desktop push effect)
     useEffect(() => {
@@ -88,6 +106,33 @@ export const AIChat = () => {
             detail: { isOpen }
         }));
     }, [isOpen]);
+
+    // Create a conversation if none exists when chat is opened
+    useEffect(() => {
+        const initConversation = async () => {
+            if (isOpen && !currentConversation) {
+                await createConversation({ title: 'Nueva conversación' });
+            }
+        };
+        initConversation();
+    }, [isOpen, currentConversation, createConversation]);
+
+    // Load messages from current conversation
+    useEffect(() => {
+        if (currentConversation && currentMessages) {
+            // Convert ConversationMessage[] to ExtendedAIMessage[]
+            const loadedMessages: ExtendedAIMessage[] = currentMessages.map(msg => ({
+                role: msg.role,
+                content: msg.content,
+                tool_calls: msg.tool_calls,
+                tool_call_id: msg.tool_call_id,
+                name: msg.name,
+                attachments: msg.attachments,
+                isHidden: msg.is_hidden
+            }));
+            setMessages(loadedMessages);
+        }
+    }, [currentConversation, currentMessages]);
 
     const startRecording = async () => {
         try {
@@ -153,6 +198,48 @@ export const AIChat = () => {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Helper to add message both locally and to database
+    const addMessageToConversation = async (message: ExtendedAIMessage) => {
+        // Add to local state
+        setMessages(prev => [...prev, message]);
+
+        // Save to database if we have a current conversation
+        if (currentConversation) {
+            await addMessage({
+                conversation_id: currentConversation.id,
+                role: message.role,
+                content: message.content,
+                tool_calls: message.tool_calls,
+                tool_call_id: message.tool_call_id,
+                name: message.name,
+                attachments: message.attachments,
+                is_hidden: message.isHidden || false
+            });
+        }
+    };
+
+    // Helper to add multiple messages
+    const addMessagesToConversation = async (newMessages: ExtendedAIMessage[]) => {
+        // Add to local state
+        setMessages(prev => [...prev, ...newMessages]);
+
+        // Save to database if we have a current conversation
+        if (currentConversation) {
+            for (const msg of newMessages) {
+                await addMessage({
+                    conversation_id: currentConversation.id,
+                    role: msg.role,
+                    content: msg.content,
+                    tool_calls: msg.tool_calls,
+                    tool_call_id: msg.tool_call_id,
+                    name: msg.name,
+                    attachments: msg.attachments,
+                    is_hidden: msg.isHidden || false
+                });
+            }
+        }
+    };
 
     // ... (rest of the component)
 
@@ -464,15 +551,10 @@ export const AIChat = () => {
                 }
             }
 
-            setMessages(prev => [...prev, ...newMessages]);
+            await addMessagesToConversation(newMessages);
 
             if (shouldCallAI) {
-                const context = {
-                    transactions,
-                    budgetCategories,
-                    monthlyIncome: config.monthlyIncome,
-                    currency: config.currency
-                };
+                const context = await buildFinancialContext();
                 const updatedHistory = [...currentHistory, ...newMessages];
                 const followUpResponse = await aiService.sendMessage(updatedHistory, context);
                 await processAIResponse(followUpResponse, updatedHistory);
@@ -486,9 +568,76 @@ export const AIChat = () => {
                 role: 'assistant',
                 content: response.content
             };
-            setMessages(prev => [...prev, assistantMessage]);
+            await addMessageToConversation(assistantMessage);
             setIsLoading(false);
         }
+    };
+
+    const buildFinancialContext = async () => {
+        const today = new Date();
+        const month = today.getMonth() + 1;
+        const year = today.getFullYear();
+        const daysInMonth = new Date(year, month, 0).getDate();
+        const daysLeftInMonth = daysInMonth - today.getDate() + 1;
+
+        // Fetch current month transactions
+        const tableName = getTableName('monthly_transactions', month);
+        const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+        const endDate = `${year}-${String(month).padStart(2, '0')}-${daysInMonth}`;
+
+        let currentMonthTransactions: any[] = [];
+        let totalSpentThisMonth = 0;
+
+        try {
+            const { data, error } = await supabase
+                .from(tableName as any)
+                .select('*')
+                .gte('date', startDate)
+                .lte('date', endDate)
+                .order('date', { ascending: false });
+
+            if (!error && data) {
+                currentMonthTransactions = data;
+                // Calculate total spent
+                data.forEach((t: any) => {
+                    if (t.type === 'expense' || t.amount < 0) {
+                        totalSpentThisMonth += Math.abs(t.amount);
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Error fetching current month data", e);
+        }
+
+        // Calculate budget summary
+        const budgetSummary = {
+            needs: { budgeted: 0, spent: 0 },
+            desires: { budgeted: 0, spent: 0 },
+            future: { budgeted: 0, spent: 0 },
+            debts: { budgeted: 0, spent: 0 }
+        };
+
+        Object.entries(budgetCategories).forEach(([key, group]: [string, any]) => {
+            group.categories.forEach((cat: any) => {
+                budgetSummary[key as keyof typeof budgetSummary].budgeted += cat.budgeted || 0;
+                budgetSummary[key as keyof typeof budgetSummary].spent += cat.spent || 0;
+            });
+        });
+
+        const totalBudgeted = Object.values(budgetSummary).reduce((sum, cat) => sum + cat.budgeted, 0);
+        const remainingBudget = config.monthlyIncome - totalSpentThisMonth;
+
+        return {
+            transactions,
+            budgetCategories,
+            monthlyIncome: config.monthlyIncome,
+            currency: config.currency,
+            currentMonthTransactions,
+            totalSpentThisMonth,
+            budgetSummary,
+            remainingBudget,
+            daysLeftInMonth
+        };
     };
 
     const handleSend = async (message: { text: string; files?: FileUIPart[] }, isHidden: boolean = false) => {
@@ -518,15 +667,10 @@ export const AIChat = () => {
             userMessage = { role: 'user', content: message.text, isHidden };
         }
 
-        setMessages(prev => [...prev, userMessage]);
+        await addMessageToConversation(userMessage);
 
         try {
-            const context = {
-                transactions,
-                budgetCategories,
-                monthlyIncome: config.monthlyIncome,
-                currency: config.currency
-            };
+            const context = await buildFinancialContext();
 
             const currentHistory = [...messages, userMessage];
             const response = await aiService.sendMessage(currentHistory, context);
@@ -543,7 +687,7 @@ export const AIChat = () => {
         }
     };
 
-    const handleCategorySelect = (categoryName: string, categoryId: string) => {
+    const handleCategorySelect = async (categoryName: string, categoryId: string) => {
         // Send hidden message to AI
         const hiddenMessage: ExtendedAIMessage = {
             role: 'user',
@@ -551,25 +695,18 @@ export const AIChat = () => {
             isHidden: true
         };
 
-        setMessages(prev => [...prev, hiddenMessage]);
+        await addMessageToConversation(hiddenMessage);
         setIsLoading(true);
 
-        const context = {
-            transactions,
-            budgetCategories,
-            monthlyIncome: config.monthlyIncome,
-            currency: config.currency
-        };
-
-        const currentHistory = [...messages, hiddenMessage];
-        aiService.sendMessage(currentHistory, context)
-            .then(response => {
-                processAIResponse(response, currentHistory);
-            })
-            .catch(error => {
-                console.error('Error sending message:', error);
-                setIsLoading(false);
-            });
+        try {
+            const context = await buildFinancialContext();
+            const currentHistory = [...messages, hiddenMessage];
+            const response = await aiService.sendMessage(currentHistory, context);
+            await processAIResponse(response, currentHistory);
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setIsLoading(false);
+        }
     };
 
     const handleActionClick = (path: string, transactionId?: string) => {
@@ -605,9 +742,12 @@ export const AIChat = () => {
 
     // ...
 
+    // Don't show FAB on landing page or auth page
+    const shouldShowFAB = location.pathname !== '/' && location.pathname !== '/auth';
+
     return (
         <>
-            <FloatingActionMenu onOpenChat={() => setIsOpen(true)} />
+            {shouldShowFAB && <FloatingActionMenu onOpenChat={() => setIsOpen(true)} />}
 
             {/* Overlay only on mobile */}
             {isOpen && (
@@ -632,18 +772,38 @@ export const AIChat = () => {
                         <Bot className="h-5 w-5 text-primary" />
                         <h2 className="font-semibold">Asistente Financiero</h2>
                     </div>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowHistory(!showHistory)}
+                            title="Historial de conversaciones"
+                        >
+                            <History className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-                    {messages.length === 0 ? (
+                {/* Conversation Tabs */}
+                {!showHistory && <ConversationTabs />}
+
+                {/* Conversation History View */}
+                {showHistory ? (
+                    <div className="flex-1 overflow-hidden">
+                        <ConversationHistory onClose={() => setShowHistory(false)} />
+                    </div>
+                ) : (
+                    <>
+                        {/* Messages Area */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            {messages.length === 0 ? (
                         <div className="flex flex-col gap-4">
                             <ConversationEmptyState
                                 icon={<Bot className="h-12 w-12 opacity-50" />}
@@ -711,11 +871,11 @@ export const AIChat = () => {
                                             </div>
                                         )}
 
-                                        {msg.categorySelection && (
+                                        {msg.isCategorySelection && (
                                             <div className="mt-3 flex flex-wrap gap-2">
                                                 {(() => {
                                                     const allCats = getAllCategories();
-                                                    const suggested = msg.categorySelection.suggestedCategories || [];
+                                                    const suggested = msg.suggestedCategories || [];
 
                                                     // Sort: Suggested first, then others
                                                     const sortedCats = [...allCats].sort((a, b) => {
@@ -748,7 +908,7 @@ export const AIChat = () => {
                                             </div>
                                         )}
 
-                                        {msg.confirmation && (
+                                        {msg.isConfirmation && (
                                             <div className="mt-3 flex gap-2">
                                                 <Button
                                                     size="sm"
@@ -805,10 +965,10 @@ export const AIChat = () => {
                             </div>
                         </div>
                     )}
-                    <div ref={messagesEndRef} />
-                </div>
+                            <div ref={messagesEndRef} />
+                        </div>
 
-                <div className="p-4 border-t bg-background">
+                        <div className="p-4 border-t bg-background">
                     <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
                         <Button
                             variant="outline"
@@ -851,10 +1011,12 @@ export const AIChat = () => {
                                 >
                                     {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                                 </Button>
-                            </PromptInputTools>
-                        </PromptInputFooter>
-                    </PromptInput>
-                </div>
+                                </PromptInputTools>
+                            </PromptInputFooter>
+                        </PromptInput>
+                    </div>
+                </>
+                )}
             </div>
         </>
     );
