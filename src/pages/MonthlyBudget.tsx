@@ -480,9 +480,9 @@ const MonthlyBudget = () => {
       };
     });
   };
-  const needsBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'NEEDS'));
-  const wantsBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'WANTS'));
-  const futureBudget = enrichBudgetItems(budgetItems.filter(b => b.categories?.bucket_50_30_20 === 'FUTURE'));
+  const needsBudget = enrichBudgetItems(budgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'NEEDS'));
+  const wantsBudget = enrichBudgetItems(budgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'WANTS'));
+  const futureBudget = enrichBudgetItems(budgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'FUTURE'));
 
   // Calculate totals for charts
   const needsActual = needsBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);

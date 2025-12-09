@@ -16,8 +16,9 @@ export class SupabaseStorage implements StorageService {
     const { data, error } = await supabase
       .from('view_monthly_summary')
       .select('*')
+      .eq('user_id', userId)
       .order('month_id', { ascending: true });
-      
+
     if (error) throw error;
     return data || [];
   }
@@ -26,8 +27,9 @@ export class SupabaseStorage implements StorageService {
     const { data, error } = await supabase
       .from('view_annual_summary')
       .select('*')
+      .eq('user_id', userId)
       .maybeSingle();
-      
+
     if (error) throw error;
     return data;
   }
