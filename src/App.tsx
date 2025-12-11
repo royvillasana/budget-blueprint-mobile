@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import { FinancialHealth } from "./pages/FinancialHealth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AIChat } from './components/AIChat';
 import { useState, useEffect } from 'react';
@@ -84,6 +85,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <Settings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/financial-health"
+                      element={
+                        <ProtectedRoute>
+                          <FinancialHealth />
                         </ProtectedRoute>
                       }
                     />

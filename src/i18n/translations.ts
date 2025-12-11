@@ -46,14 +46,14 @@ export const translations = {
     pendingToAllocate: 'Pendiente por asignar',
     availableToSpend: 'Disponible para gastar',
     spentSoFar: 'Gastado hasta ahora',
-    transactionRegistry: 'Registro de Transacciones',
+    transactionRegistry: 'Registro de Gastos',
     date: 'Fecha',
     wishList: 'Lista de deseos',
     todoList: 'Cosas por hacer',
     currentBudget: 'Mi presupuesto actual 50 / 30 / 20',
     currentPercentage: '% actual',
     used: 'Usado',
-    noTransactionsYet: 'No hay transacciones todavía',
+    noTransactionsYet: 'No hay gastos todavía',
     
     // Settings
     settingsTitle: 'Configuración del Planificador',
@@ -132,14 +132,14 @@ export const translations = {
     pendingToAllocate: 'Pending to allocate',
     availableToSpend: 'Available to spend',
     spentSoFar: 'Spent so far',
-    transactionRegistry: 'Transaction Registry',
+    transactionRegistry: 'Expense Registry',
     date: 'Date',
     wishList: 'Wish List',
     todoList: 'To-do List',
     currentBudget: 'My current 50 / 30 / 20 budget',
     currentPercentage: '% current',
     used: 'Used',
-    noTransactionsYet: 'No transactions yet',
+    noTransactionsYet: 'No expenses yet',
     
     // Settings
     settingsTitle: 'Planner Configuration',

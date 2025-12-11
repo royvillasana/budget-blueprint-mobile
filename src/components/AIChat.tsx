@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getTableName } from '@/utils/monthUtils';
 import { useApp } from '@/contexts/AppContext';
 import { AIService, AIMessage } from '@/services/AIService';
+import { FinancialDataService } from '@/services/FinancialDataService';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
 import { Bot, Sparkles, ExternalLink, Mic, Square, Paperclip, History } from 'lucide-react';
@@ -77,6 +78,132 @@ const AttachmentButton = () => {
     );
 };
 
+// Helper function to generate investment recommendations
+const generateInvestmentRecommendations = (
+    riskProfile: string,
+    investmentHorizon: string,
+    financialHealth: any
+) => {
+    const recommendations = [];
+
+    // Check if user should focus on debt first
+    if (financialHealth.debtToIncomeRatio > 1.5) {
+        recommendations.push({
+            priority: 'high',
+            category: 'debt_management',
+            message: 'Considera priorizar el pago de deudas antes de invertir. Tu ratio deuda-ingreso es alto.'
+        });
+    }
+
+    // Emergency fund check
+    const emergencyFundMonths = financialHealth.averageMonthlySavings * 12 / financialHealth.averageMonthlyExpenses;
+    if (emergencyFundMonths < 3) {
+        recommendations.push({
+            priority: 'high',
+            category: 'emergency_fund',
+            message: 'Construye un fondo de emergencia de 3-6 meses de gastos antes de invertir agresivamente.'
+        });
+    }
+
+    // Investment allocation based on risk profile
+    if (riskProfile === 'conservative') {
+        recommendations.push({
+            priority: 'medium',
+            category: 'asset_allocation',
+            message: 'Para perfil conservador: 70% bonos/renta fija, 20% acciones, 10% efectivo/equivalentes.'
+        });
+    } else if (riskProfile === 'moderate') {
+        recommendations.push({
+            priority: 'medium',
+            category: 'asset_allocation',
+            message: 'Para perfil moderado: 50% acciones, 40% bonos, 10% alternativos/efectivo.'
+        });
+    } else if (riskProfile === 'aggressive') {
+        recommendations.push({
+            priority: 'medium',
+            category: 'asset_allocation',
+            message: 'Para perfil agresivo: 80% acciones, 15% alternativos, 5% bonos/efectivo.'
+        });
+    }
+
+    // Time horizon recommendations
+    if (investmentHorizon === 'short') {
+        recommendations.push({
+            priority: 'medium',
+            category: 'strategy',
+            message: 'Horizonte corto (<3 años): Prioriza inversiones de bajo riesgo y alta liquidez.'
+        });
+    } else if (investmentHorizon === 'long') {
+        recommendations.push({
+            priority: 'medium',
+            category: 'strategy',
+            message: 'Horizonte largo (>10 años): Puedes asumir más riesgo para mayor potencial de crecimiento.'
+        });
+    }
+
+    // Diversification reminder
+    recommendations.push({
+        priority: 'low',
+        category: 'diversification',
+        message: 'Mantén una cartera diversificada para reducir riesgo. Considera ETFs indexados de bajo costo.'
+    });
+
+    return recommendations;
+};
+
+// Helper function to generate savings recommendations
+const generateSavingsRecommendations = (
+    monthlyRequired: number,
+    currentMonthlySavings: number,
+    financialHealth: any
+) => {
+    const recommendations = [];
+    const gap = monthlyRequired - currentMonthlySavings;
+
+    if (gap > 0) {
+        recommendations.push({
+            priority: 'high',
+            category: 'increase_savings',
+            message: `Necesitas aumentar tu ahorro mensual en ${gap.toFixed(2)}€ para alcanzar tu meta.`
+        });
+
+        // Suggest cutting from overbudget categories
+        if (financialHealth.overBudgetCategories.length > 0) {
+            recommendations.push({
+                priority: 'high',
+                category: 'reduce_spending',
+                message: `Categorías donde estás gastando de más: ${financialHealth.overBudgetCategories.join(', ')}. Reduce estos gastos.`
+            });
+        }
+
+        // Suggest utilizing underutilized budget
+        if (financialHealth.underutilizedCategories.length > 0) {
+            recommendations.push({
+                priority: 'medium',
+                category: 'reallocate_budget',
+                message: `Reasigna presupuesto de categorías poco utilizadas: ${financialHealth.underutilizedCategories.join(', ')}.`
+            });
+        }
+    } else {
+        recommendations.push({
+            priority: 'low',
+            category: 'on_track',
+            message: '¡Excelente! Tu ahorro mensual actual es suficiente para alcanzar tu meta.'
+        });
+    }
+
+    // Income increase suggestion
+    if (gap > currentMonthlySavings * 0.5) {
+        recommendations.push({
+            priority: 'medium',
+            category: 'increase_income',
+            message: 'Considera buscar fuentes de ingreso adicionales para alcanzar tu meta más fácilmente.'
+        });
+    }
+
+    return recommendations;
+};
+
 export const AIChat = () => {
     const { config, transactions, budgetCategories, addTransaction, updateCategory } = useApp();
     const [isOpen, setIsOpen] = useState(false);
@@ -111,7 +238,7 @@ export const AIChat = () => {
     useEffect(() => {
         const initConversation = async () => {
             if (isOpen && !currentConversation) {
-                await createConversation({ title: 'Nueva conversación' });
+                await createConversation();
             }
         };
         initConversation();
@@ -548,6 +675,571 @@ export const AIChat = () => {
                             name: functionName
                         });
                     }
+
+                } else if (functionName === 'getDebtAnalysis') {
+                    try {
+                        const { data: userData } = await supabase.auth.getUser();
+                        if (userData?.user?.id) {
+                            const financialService = new FinancialDataService();
+                            const debtAnalysis = await financialService.getDebtAnalysis(userData.user.id);
+
+                            newMessages.push({
+                                role: 'tool',
+                                tool_call_id: toolCall.id,
+                                content: JSON.stringify(debtAnalysis),
+                                name: functionName
+                            });
+                            shouldCallAI = true;
+                        }
+                    } catch (err) {
+                        console.error('Error fetching debt analysis:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: "Error fetching debt analysis.",
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'getFinancialHealthScore') {
+                    try {
+                        const { data: userData } = await supabase.auth.getUser();
+                        if (userData?.user?.id) {
+                            const financialService = new FinancialDataService();
+                            const comprehensiveData = await financialService.getComprehensiveFinancialData(userData.user.id);
+
+                            newMessages.push({
+                                role: 'tool',
+                                tool_call_id: toolCall.id,
+                                content: JSON.stringify({
+                                    overallScore: comprehensiveData.financialHealth.overallHealthScore,
+                                    breakdown: comprehensiveData.financialHealth.healthScoreBreakdown,
+                                    metrics: {
+                                        debtToIncomeRatio: comprehensiveData.financialHealth.debtToIncomeRatio,
+                                        savingsRate: comprehensiveData.financialHealth.savingsRate,
+                                        budgetAdherenceRate: comprehensiveData.financialHealth.budgetAdherenceRate,
+                                        expenseTrend: comprehensiveData.financialHealth.expenseTrend
+                                    },
+                                    alerts: {
+                                        overBudgetCategories: comprehensiveData.financialHealth.overBudgetCategories,
+                                        underutilizedCategories: comprehensiveData.financialHealth.underutilizedCategories
+                                    }
+                                }),
+                                name: functionName
+                            });
+                            shouldCallAI = true;
+                        }
+                    } catch (err) {
+                        console.error('Error fetching financial health score:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: "Error fetching financial health score.",
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'getInvestmentAdvice') {
+                    try {
+                        const { riskProfile, investmentHorizon, monthlyInvestmentAmount } = functionArgs;
+                        const { data: userData } = await supabase.auth.getUser();
+
+                        if (userData?.user?.id) {
+                            const financialService = new FinancialDataService();
+                            const comprehensiveData = await financialService.getComprehensiveFinancialData(userData.user.id);
+
+                            // Build investment advice based on risk profile and user's financial situation
+                            const advice = {
+                                riskProfile,
+                                investmentHorizon,
+                                monthlyInvestmentAmount: monthlyInvestmentAmount || comprehensiveData.financialHealth.averageMonthlySavings,
+                                currentFinancialSituation: {
+                                    debtToIncomeRatio: comprehensiveData.financialHealth.debtToIncomeRatio,
+                                    savingsRate: comprehensiveData.financialHealth.savingsRate,
+                                    averageMonthlySavings: comprehensiveData.financialHealth.averageMonthlySavings,
+                                    totalDebt: comprehensiveData.financialHealth.totalDebt
+                                },
+                                recommendations: generateInvestmentRecommendations(
+                                    riskProfile,
+                                    investmentHorizon,
+                                    comprehensiveData.financialHealth
+                                )
+                            };
+
+                            newMessages.push({
+                                role: 'tool',
+                                tool_call_id: toolCall.id,
+                                content: JSON.stringify(advice),
+                                name: functionName
+                            });
+                            shouldCallAI = true;
+                        }
+                    } catch (err) {
+                        console.error('Error generating investment advice:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: "Error generating investment advice.",
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'calculateSavingsGoal') {
+                    try {
+                        const { targetAmount, timelineMonths, currentSavings = 0, purpose } = functionArgs;
+                        const { data: userData } = await supabase.auth.getUser();
+
+                        if (userData?.user?.id) {
+                            const financialService = new FinancialDataService();
+                            const comprehensiveData = await financialService.getComprehensiveFinancialData(userData.user.id);
+
+                            const remainingAmount = targetAmount - currentSavings;
+                            const monthlyRequired = remainingAmount / timelineMonths;
+                            const currentMonthlySavings = comprehensiveData.financialHealth.averageMonthlySavings;
+                            const feasibility = currentMonthlySavings >= monthlyRequired ? 'feasible' : 'challenging';
+                            const adjustmentNeeded = Math.max(0, monthlyRequired - currentMonthlySavings);
+
+                            const savingsGoalPlan = {
+                                purpose,
+                                targetAmount,
+                                currentSavings,
+                                remainingAmount,
+                                timelineMonths,
+                                monthlyRequired,
+                                currentMonthlySavings,
+                                feasibility,
+                                adjustmentNeeded,
+                                projectedCompletion: feasibility === 'feasible'
+                                    ? timelineMonths
+                                    : currentMonthlySavings > 0
+                                        ? Math.ceil(remainingAmount / currentMonthlySavings)
+                                        : null,
+                                recommendations: generateSavingsRecommendations(
+                                    monthlyRequired,
+                                    currentMonthlySavings,
+                                    comprehensiveData.financialHealth
+                                )
+                            };
+
+                            newMessages.push({
+                                role: 'tool',
+                                tool_call_id: toolCall.id,
+                                content: JSON.stringify(savingsGoalPlan),
+                                name: functionName
+                            });
+                            shouldCallAI = true;
+                        }
+                    } catch (err) {
+                        console.error('Error calculating savings goal:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: "Error calculating savings goal.",
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'getExpenseForecast') {
+                    try {
+                        const { forecastMonths = 3, categoryId } = functionArgs;
+                        const { data: userData } = await supabase.auth.getUser();
+
+                        if (userData?.user?.id) {
+                            const financialService = new FinancialDataService();
+                            const comprehensiveData = await financialService.getComprehensiveFinancialData(userData.user.id);
+
+                            // Analyze historical spending patterns
+                            const historicalData = comprehensiveData.monthlySummaries.slice(-6); // Last 6 months
+                            const averageMonthlyExpenses = historicalData.reduce((sum, m) => sum + Number(m.total_expenses), 0) / historicalData.length;
+
+                            // Simple forecast based on trend
+                            const trend = comprehensiveData.financialHealth.expenseTrend;
+                            const trendMultiplier = trend === 'increasing' ? 1.05 : trend === 'decreasing' ? 0.95 : 1.0;
+
+                            const forecast = [];
+                            for (let i = 1; i <= forecastMonths; i++) {
+                                const projectedAmount = averageMonthlyExpenses * Math.pow(trendMultiplier, i);
+                                forecast.push({
+                                    month: i,
+                                    projectedExpenses: projectedAmount,
+                                    confidence: i <= 2 ? 'high' : 'medium'
+                                });
+                            }
+
+                            newMessages.push({
+                                role: 'tool',
+                                tool_call_id: toolCall.id,
+                                content: JSON.stringify({
+                                    forecastMonths,
+                                    categoryId,
+                                    historicalAverage: averageMonthlyExpenses,
+                                    trend,
+                                    forecast
+                                }),
+                                name: functionName
+                            });
+                            shouldCallAI = true;
+                        }
+                    } catch (err) {
+                        console.error('Error generating expense forecast:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: "Error generating expense forecast.",
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'createFinancialGoal') {
+                    try {
+                        const { goalType, targetAmount, description, monthId } = functionArgs;
+                        const { data: userData } = await supabase.auth.getUser();
+
+                        if (userData?.user?.id) {
+                            const currentMonth = monthId || (new Date().getMonth() + 1);
+
+                            const { data, error } = await supabase
+                                .from('financial_goals')
+                                .insert({
+                                    user_id: userData.user.id,
+                                    month_id: currentMonth,
+                                    goal_type: goalType,
+                                    target_amount: targetAmount,
+                                    current_amount: 0,
+                                    description: description,
+                                    is_completed: false
+                                })
+                                .select()
+                                .single();
+
+                            if (error) throw error;
+
+                            newMessages.push({
+                                role: 'tool',
+                                tool_call_id: toolCall.id,
+                                content: JSON.stringify({
+                                    success: true,
+                                    goal: data,
+                                    message: `Meta financiera creada exitosamente: ${description}`
+                                }),
+                                name: functionName
+                            });
+                            shouldCallAI = true;
+
+                            // Trigger a refresh event for the Financial Health page
+                            window.dispatchEvent(new CustomEvent('financial-goals-updated'));
+                        }
+                    } catch (err) {
+                        console.error('Error creating financial goal:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify({
+                                success: false,
+                                error: "Error al crear la meta financiera."
+                            }),
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'updateFinancialGoal') {
+                    try {
+                        const { goalId, updates } = functionArgs;
+
+                        const { data, error } = await supabase
+                            .from('financial_goals')
+                            .update(updates)
+                            .eq('id', goalId)
+                            .select()
+                            .single();
+
+                        if (error) throw error;
+
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify({
+                                success: true,
+                                goal: data,
+                                message: 'Meta financiera actualizada exitosamente'
+                            }),
+                            name: functionName
+                        });
+                        shouldCallAI = true;
+
+                        // Trigger a refresh event for the Financial Health page
+                        window.dispatchEvent(new CustomEvent('financial-goals-updated'));
+                    } catch (err) {
+                        console.error('Error updating financial goal:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify({
+                                success: false,
+                                error: "Error al actualizar la meta financiera."
+                            }),
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'deleteFinancialGoal') {
+                    try {
+                        const { goalId } = functionArgs;
+
+                        const { error } = await supabase
+                            .from('financial_goals')
+                            .delete()
+                            .eq('id', goalId);
+
+                        if (error) throw error;
+
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify({
+                                success: true,
+                                message: 'Meta financiera eliminada exitosamente'
+                            }),
+                            name: functionName
+                        });
+                        shouldCallAI = true;
+
+                        // Trigger a refresh event for the Financial Health page
+                        window.dispatchEvent(new CustomEvent('financial-goals-updated'));
+                    } catch (err) {
+                        console.error('Error deleting financial goal:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify({
+                                success: false,
+                                error: "Error al eliminar la meta financiera."
+                            }),
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'getFinancialGoals') {
+                    try {
+                        const { monthId } = functionArgs;
+                        const { data: userData } = await supabase.auth.getUser();
+
+                        if (userData?.user?.id) {
+                            let query = supabase
+                                .from('financial_goals')
+                                .select('*')
+                                .eq('user_id', userData.user.id)
+                                .order('created_at', { ascending: false });
+
+                            if (monthId) {
+                                query = query.eq('month_id', monthId);
+                            }
+
+                            const { data, error } = await query;
+
+                            if (error) throw error;
+
+                            newMessages.push({
+                                role: 'tool',
+                                tool_call_id: toolCall.id,
+                                content: JSON.stringify({
+                                    success: true,
+                                    goals: data,
+                                    count: data?.length || 0
+                                }),
+                                name: functionName
+                            });
+                            shouldCallAI = true;
+                        }
+                    } catch (err) {
+                        console.error('Error fetching financial goals:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify({
+                                success: false,
+                                error: "Error al obtener las metas financieras."
+                            }),
+                            name: functionName
+                        });
+                    }
+
+                } else if (functionName === 'generatePersonalizedRecommendations') {
+                    try {
+                        const { focusArea = 'all' } = functionArgs;
+                        const { data: userData } = await supabase.auth.getUser();
+
+                        if (userData?.user?.id) {
+                            const financialService = new FinancialDataService();
+                            const comprehensiveData = await financialService.getComprehensiveFinancialData(userData.user.id);
+
+                            const recommendations = [];
+                            const fh = comprehensiveData.financialHealth;
+
+                            // SAVINGS RECOMMENDATIONS
+                            if (focusArea === 'all' || focusArea === 'savings') {
+                                if (fh.savingsRate < 10) {
+                                    recommendations.push({
+                                        category: 'savings',
+                                        priority: 'high',
+                                        title: 'Aumenta tu tasa de ahorro',
+                                        description: `Tu tasa de ahorro actual es del ${fh.savingsRate.toFixed(1)}%, muy por debajo del 20% recomendado. Intenta ahorrar al menos el 10% de tus ingresos.`,
+                                        action: 'Establece transferencias automáticas a una cuenta de ahorros el día que recibes tu nómina.',
+                                        impact: 'high'
+                                    });
+                                } else if (fh.savingsRate < 20) {
+                                    recommendations.push({
+                                        category: 'savings',
+                                        priority: 'medium',
+                                        title: 'Mejora tu tasa de ahorro',
+                                        description: `Estás ahorrando ${fh.savingsRate.toFixed(1)}%. ¡Buen trabajo! El objetivo es llegar al 20%.`,
+                                        action: 'Busca una categoría de gasto donde puedas reducir para aumentar tu ahorro.',
+                                        impact: 'medium'
+                                    });
+                                }
+
+                                const emergencyFundNeeded = fh.averageMonthlyExpenses * 6;
+                                const currentSavings = fh.averageMonthlySavings * 12;
+                                if (currentSavings < emergencyFundNeeded) {
+                                    recommendations.push({
+                                        category: 'savings',
+                                        priority: 'high',
+                                        title: 'Construye tu fondo de emergencia',
+                                        description: `Necesitas ${emergencyFundNeeded.toFixed(0)}€ para cubrir 6 meses de gastos. Tu ahorro anual proyectado es ${currentSavings.toFixed(0)}€.`,
+                                        action: 'Prioriza construir tu fondo de emergencia antes de otras metas financieras.',
+                                        impact: 'high'
+                                    });
+                                }
+                            }
+
+                            // DEBT RECOMMENDATIONS
+                            if (focusArea === 'all' || focusArea === 'debt') {
+                                if (fh.totalDebt > 0) {
+                                    if (fh.debtToIncomeRatio > 1.5) {
+                                        recommendations.push({
+                                            category: 'debt',
+                                            priority: 'critical',
+                                            title: 'Ratio deuda-ingreso muy alto',
+                                            description: `Tu ratio deuda-ingreso es ${fh.debtToIncomeRatio.toFixed(2)}x (${(fh.debtToIncomeRatio * 100).toFixed(0)}%). Esto es crítico.`,
+                                            action: 'Considera consolidar deudas o buscar ingresos adicionales. Consulta con un asesor financiero.',
+                                            impact: 'critical'
+                                        });
+                                    } else if (fh.debtToIncomeRatio > 0.5) {
+                                        recommendations.push({
+                                            category: 'debt',
+                                            priority: 'high',
+                                            title: 'Acelera el pago de deudas',
+                                            description: `Tienes ${fh.totalDebt.toFixed(0)}€ en deudas. A tu ritmo actual tardarás ${fh.debtPayoffProjection} meses en liquidarlas.`,
+                                            action: 'Usa el método avalancha (paga primero las deudas con mayor interés) o bola de nieve (paga primero las deudas más pequeñas).',
+                                            impact: 'high'
+                                        });
+                                    }
+                                }
+                            }
+
+                            // BUDGET RECOMMENDATIONS
+                            if (focusArea === 'all' || focusArea === 'budget') {
+                                if (fh.budgetAdherenceRate < 60) {
+                                    recommendations.push({
+                                        category: 'budget',
+                                        priority: 'high',
+                                        title: 'Mejora la disciplina presupuestaria',
+                                        description: `Solo cumples tu presupuesto en el ${fh.budgetAdherenceRate.toFixed(0)}% de las categorías.`,
+                                        action: 'Revisa las categorías con sobregasto y ajusta tus hábitos o reasigna el presupuesto de forma más realista.',
+                                        impact: 'high'
+                                    });
+                                }
+
+                                if (fh.overBudgetCategories.length > 0) {
+                                    recommendations.push({
+                                        category: 'budget',
+                                        priority: 'medium',
+                                        title: 'Controla categorías con sobregasto',
+                                        description: `Estás gastando de más en: ${fh.overBudgetCategories.join(', ')}.`,
+                                        action: 'Identifica gastos innecesarios en estas categorías y establece alertas cuando te acerques al límite.',
+                                        impact: 'medium'
+                                    });
+                                }
+
+                                if (fh.expenseTrend === 'increasing') {
+                                    recommendations.push({
+                                        category: 'budget',
+                                        priority: 'medium',
+                                        title: 'Tus gastos están aumentando',
+                                        description: 'Se detecta una tendencia creciente en tus gastos mensuales.',
+                                        action: 'Analiza qué está causando el aumento y toma medidas correctivas antes de que impacte tus ahorros.',
+                                        impact: 'medium'
+                                    });
+                                }
+                            }
+
+                            // INCOME RECOMMENDATIONS
+                            if (focusArea === 'all' || focusArea === 'income') {
+                                if (fh.incomeVariability > 20) {
+                                    recommendations.push({
+                                        category: 'income',
+                                        priority: 'medium',
+                                        title: 'Estabiliza tus ingresos',
+                                        description: `Tus ingresos tienen una variabilidad del ${fh.incomeVariability.toFixed(0)}%, lo que dificulta la planificación.`,
+                                        action: 'Busca fuentes de ingreso más estables o mantén un colchón financiero mayor.',
+                                        impact: 'medium'
+                                    });
+                                }
+
+                                if (fh.incomeGrowthRate < 0) {
+                                    recommendations.push({
+                                        category: 'income',
+                                        priority: 'high',
+                                        title: 'Tus ingresos están disminuyendo',
+                                        description: `Hay una tendencia negativa en tus ingresos (${fh.incomeGrowthRate.toFixed(1)}%).`,
+                                        action: 'Identifica la causa y busca oportunidades para aumentar o diversificar ingresos.',
+                                        impact: 'high'
+                                    });
+                                }
+                            }
+
+                            // GENERAL POSITIVE FEEDBACK
+                            if (fh.overallHealthScore >= 80) {
+                                recommendations.push({
+                                    category: 'general',
+                                    priority: 'low',
+                                    title: '¡Excelente salud financiera!',
+                                    description: `Tu puntuación de salud financiera es ${fh.overallHealthScore.toFixed(0)}/100. ¡Felicidades!`,
+                                    action: 'Mantén tus buenos hábitos y considera invertir para hacer crecer tu patrimonio.',
+                                    impact: 'positive'
+                                });
+                            }
+
+                            newMessages.push({
+                                role: 'tool',
+                                tool_call_id: toolCall.id,
+                                content: JSON.stringify({
+                                    success: true,
+                                    recommendations: recommendations,
+                                    financialScore: fh.overallHealthScore,
+                                    focusArea: focusArea
+                                }),
+                                name: functionName
+                            });
+                            shouldCallAI = true;
+
+                            // Trigger event for Financial Health page to display recommendations
+                            window.dispatchEvent(new CustomEvent('ai-recommendations-generated', {
+                                detail: { recommendations }
+                            }));
+                        }
+                    } catch (err) {
+                        console.error('Error generating personalized recommendations:', err);
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: JSON.stringify({
+                                success: false,
+                                error: "Error al generar recomendaciones personalizadas."
+                            }),
+                            name: functionName
+                        });
+                    }
                 }
             }
 
@@ -556,7 +1248,7 @@ export const AIChat = () => {
             if (shouldCallAI) {
                 const context = await buildFinancialContext();
                 const updatedHistory = [...currentHistory, ...newMessages];
-                const followUpResponse = await aiService.sendMessage(updatedHistory, context);
+                const followUpResponse = await aiService.sendMessage(updatedHistory, context, config.language);
                 await processAIResponse(followUpResponse, updatedHistory);
             } else {
                 setIsLoading(false);
@@ -627,6 +1319,24 @@ export const AIChat = () => {
         const totalBudgeted = Object.values(budgetSummary).reduce((sum, cat) => sum + cat.budgeted, 0);
         const remainingBudget = config.monthlyIncome - totalSpentThisMonth;
 
+        // NEW: Fetch comprehensive financial data
+        let comprehensiveData = undefined;
+        try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (userData?.user?.id) {
+                const financialService = new FinancialDataService();
+                comprehensiveData = await financialService.getComprehensiveFinancialData(userData.user.id);
+                console.log('✅ Comprehensive financial data loaded for AI:', {
+                    transactions: comprehensiveData.allTransactions.length,
+                    income: comprehensiveData.allIncome.length,
+                    debts: comprehensiveData.allDebts.length,
+                    healthScore: comprehensiveData.financialHealth.overallHealthScore
+                });
+            }
+        } catch (e) {
+            console.error("Error fetching comprehensive financial data:", e);
+        }
+
         return {
             transactions,
             budgetCategories,
@@ -636,7 +1346,11 @@ export const AIChat = () => {
             totalSpentThisMonth,
             budgetSummary,
             remainingBudget,
-            daysLeftInMonth
+            daysLeftInMonth,
+            // NEW: Include comprehensive data
+            comprehensiveData,
+            currentMonth: month,
+            currentYear: year
         };
     };
 
@@ -673,7 +1387,7 @@ export const AIChat = () => {
             const context = await buildFinancialContext();
 
             const currentHistory = [...messages, userMessage];
-            const response = await aiService.sendMessage(currentHistory, context);
+            const response = await aiService.sendMessage(currentHistory, context, config.language);
             await processAIResponse(response, currentHistory);
 
         } catch (error) {
@@ -701,7 +1415,7 @@ export const AIChat = () => {
         try {
             const context = await buildFinancialContext();
             const currentHistory = [...messages, hiddenMessage];
-            const response = await aiService.sendMessage(currentHistory, context);
+            const response = await aiService.sendMessage(currentHistory, context, config.language);
             await processAIResponse(response, currentHistory);
         } catch (error) {
             console.error('Error sending message:', error);
@@ -808,7 +1522,7 @@ export const AIChat = () => {
                             <ConversationEmptyState
                                 icon={<Bot className="h-12 w-12 opacity-50" />}
                                 title="Hola, soy tu asistente financiero"
-                                description="Puedo ayudarte a analizar tus gastos o añadir nuevas transacciones. ¡También puedes enviarme fotos de tus recibos!"
+                                description="Puedo ayudarte a analizar tus gastos o añadir nuevos gastos. ¡También puedes enviarme fotos de tus recibos!"
                             />
                             <div className="grid grid-cols-2 gap-2 px-4">
                                 <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("¿Cuánto puedo gastar hoy?")}>

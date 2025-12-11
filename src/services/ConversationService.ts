@@ -21,11 +21,28 @@ export class ConversationService {
     params: CreateConversationParams = {}
   ): Promise<Conversation | null> {
     try {
+      // Get the count of existing conversations to generate a progressive number
+      let title = params.title;
+
+      if (!title || title === 'Nueva conversación') {
+        const { count, error: countError } = await supabase
+          .from('ai_conversations')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId);
+
+        if (!countError) {
+          const conversationNumber = (count || 0) + 1;
+          title = `Conversación #${conversationNumber}`;
+        } else {
+          title = 'Nueva conversación';
+        }
+      }
+
       const { data, error } = await supabase
         .from('ai_conversations')
         .insert({
           user_id: userId,
-          title: params.title || 'Nueva conversación',
+          title: title,
           metadata: params.metadata || {}
         })
         .select()
@@ -84,7 +101,7 @@ export class ConversationService {
 
       // Apply filters
       if (!filters.include_archived) {
-        query = query.eq('archived', false);
+        query = query.eq('is_archived', false);
       }
 
       if (filters.search_query) {
@@ -180,7 +197,7 @@ export class ConversationService {
     try {
       const { error } = await supabase
         .from('ai_conversations')
-        .update({ archived: archived })
+        .update({ is_archived: archived })
         .eq('id', conversationId);
 
       if (error) {

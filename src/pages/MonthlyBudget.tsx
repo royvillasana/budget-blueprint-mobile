@@ -543,7 +543,7 @@ const MonthlyBudget = () => {
                     <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="max-w-xs">Suma de todas las transacciones de gasto registradas en este mes.</p>
+                    <p className="max-w-xs">Suma de todos los gastos registrados en este mes.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -827,14 +827,14 @@ const MonthlyBudget = () => {
             <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CardTitle>Transacciones</CardTitle>
+                  <CardTitle>Gastos</CardTitle>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="max-w-xs">Registro detallado de todos tus gastos del mes. Cada transacción se asigna a una categoría para el análisis.</p>
+                        <p className="max-w-xs">Registro detallado de todos tus gastos del mes. Cada gasto se asigna a una categoría para el análisis.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

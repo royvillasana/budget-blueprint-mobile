@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useConversations } from '@/contexts/ConversationContext';
-import { Plus, X, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, MoreVertical, Edit, Trash2, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const ConversationTabs: React.FC = () => {
@@ -39,20 +45,18 @@ export const ConversationTabs: React.FC = () => {
   const [newTitle, setNewTitle] = useState('');
 
   // Filter to only show non-archived conversations
-  const activeConversations = conversations.filter(c => !c.archived);
+  const activeConversations = conversations.filter(c => !c.is_archived);
 
   /**
    * Handle creating a new conversation
    */
   const handleCreateConversation = async () => {
-    const newConv = await createConversation({
-      title: 'Nueva conversación'
-    });
+    const newConv = await createConversation();
 
     if (newConv) {
       toast({
         title: 'Conversación creada',
-        description: 'Se ha creado una nueva conversación'
+        description: `Se ha creado "${newConv.title}"`
       });
     }
   };
@@ -62,6 +66,10 @@ export const ConversationTabs: React.FC = () => {
    */
   const handleSwitchConversation = async (conversationId: string) => {
     if (conversationId === currentConversation?.id) return;
+    if (conversationId === 'new') {
+      await handleCreateConversation();
+      return;
+    }
     await switchConversation(conversationId);
   };
 
@@ -118,84 +126,75 @@ export const ConversationTabs: React.FC = () => {
     setSelectedConversationId(null);
   };
 
-  // Truncate long titles for tabs
-  const truncateTitle = (title: string, maxLength: number = 20) => {
+  // Truncate long titles for dropdown
+  const truncateTitle = (title: string, maxLength: number = 35) => {
     return title.length > maxLength ? `${title.slice(0, maxLength)}...` : title;
   };
 
   return (
     <>
       <div className="flex items-center gap-2 border-b border-border p-2">
-        {activeConversations.length > 0 ? (
-          <Tabs
+        <div className="flex-1 flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <Select
             value={currentConversation?.id || ''}
             onValueChange={handleSwitchConversation}
-            className="flex-1"
           >
-            <div className="flex items-center gap-2">
-              <TabsList className="flex-1 justify-start overflow-x-auto">
-                {activeConversations.map((conv) => (
-                  <div key={conv.id} className="relative group">
-                    <TabsTrigger
-                      value={conv.id}
-                      className="relative pr-8 max-w-[200px]"
-                    >
-                      <span className="truncate">{truncateTitle(conv.title)}</span>
-                    </TabsTrigger>
-                    {currentConversation?.id === conv.id && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <MoreVertical className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => handleOpenRenameDialog(conv.id, conv.title)}
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Renombrar
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleOpenDeleteDialog(conv.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Eliminar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                ))}
-              </TabsList>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCreateConversation}
-                className="flex-shrink-0"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </Tabs>
-        ) : (
-          <div className="flex-1 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">No hay conversaciones activas</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCreateConversation}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva conversación
-            </Button>
-          </div>
-        )}
+            <SelectTrigger className="flex-1 h-9">
+              <SelectValue placeholder="Selecciona una conversación">
+                {currentConversation?.title || 'Selecciona una conversación'}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="new" className="font-medium text-primary">
+                <div className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Nueva conversación</span>
+                </div>
+              </SelectItem>
+              {activeConversations.length > 0 && (
+                <>
+                  <div className="h-px bg-border my-1" />
+                  {activeConversations.map((conv) => (
+                    <SelectItem key={conv.id} value={conv.id}>
+                      {truncateTitle(conv.title)}
+                    </SelectItem>
+                  ))}
+                </>
+              )}
+            </SelectContent>
+          </Select>
+
+          {/* Actions menu for current conversation */}
+          {currentConversation && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 p-0 flex-shrink-0"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => handleOpenRenameDialog(currentConversation.id, currentConversation.title)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Renombrar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => handleOpenDeleteDialog(currentConversation.id)}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
       {/* Rename Dialog */}

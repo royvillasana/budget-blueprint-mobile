@@ -19,6 +19,7 @@ type Category = {
   emoji: string;
   bucket_50_30_20: 'NEEDS' | 'WANTS' | 'FUTURE' | 'INVESTMENTS' | 'DEBT_PAYMENTS';
   is_active: boolean;
+  monthly_budget: number;
 };
 
 type PaymentMethod = {
@@ -50,11 +51,13 @@ const Catalog = () => {
     emoji: string;
     bucket_50_30_20: 'NEEDS' | 'WANTS' | 'FUTURE' | 'INVESTMENTS' | 'DEBT_PAYMENTS';
     is_active: boolean;
+    monthly_budget: number;
   }>({
     name: '',
     emoji: '📦',
     bucket_50_30_20: 'NEEDS',
     is_active: true,
+    monthly_budget: 0,
   });
 
   // Payment method form state
@@ -198,7 +201,7 @@ const Catalog = () => {
   };
 
   const resetCategoryForm = () => {
-    setCategoryForm({ name: '', emoji: '📦', bucket_50_30_20: 'NEEDS', is_active: true });
+    setCategoryForm({ name: '', emoji: '📦', bucket_50_30_20: 'NEEDS', is_active: true, monthly_budget: 0 });
     setEditingCategory(null);
     setCategoryDialog(false);
   };
@@ -406,6 +409,21 @@ const Catalog = () => {
                           </SelectContent>
                         </Select>
                       </div>
+                      <div>
+                        <Label htmlFor="cat-monthly-budget">Presupuesto Mensual</Label>
+                        <Input
+                          id="cat-monthly-budget"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={categoryForm.monthly_budget}
+                          onChange={(e) => setCategoryForm({ ...categoryForm, monthly_budget: parseFloat(e.target.value) || 0 })}
+                          placeholder="0.00"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Presupuesto mensual asignado para esta categoría
+                        </p>
+                      </div>
                       <div className="flex items-center space-x-2">
                         <Switch
                           id="cat-active"
@@ -430,13 +448,20 @@ const Catalog = () => {
                 ) : (
                   categories.map((cat) => (
                     <div key={cat.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <span className="text-2xl">{cat.emoji}</span>
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium">{cat.name}</p>
-                          <Badge className={getBucketBadge(cat.bucket_50_30_20)} variant="secondary">
-                            {cat.bucket_50_30_20}
-                          </Badge>
+                          <div className="flex gap-2 mt-1 items-center">
+                            <Badge className={getBucketBadge(cat.bucket_50_30_20)} variant="secondary">
+                              {cat.bucket_50_30_20}
+                            </Badge>
+                            {cat.monthly_budget > 0 && (
+                              <span className="text-sm text-muted-foreground">
+                                ${cat.monthly_budget.toFixed(2)}/mes
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -450,6 +475,7 @@ const Catalog = () => {
                               emoji: cat.emoji,
                               bucket_50_30_20: cat.bucket_50_30_20,
                               is_active: cat.is_active,
+                              monthly_budget: cat.monthly_budget || 0,
                             });
                             setCategoryDialog(true);
                           }}

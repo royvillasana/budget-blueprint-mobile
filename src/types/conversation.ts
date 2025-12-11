@@ -4,7 +4,7 @@ export interface Conversation {
   title: string;
   created_at: string;
   updated_at: string;
-  archived: boolean;
+  is_archived: boolean;
   metadata?: Record<string, any>;
 }
 
@@ -43,7 +43,7 @@ export interface CreateConversationParams {
 
 export interface UpdateConversationParams {
   title?: string;
-  archived?: boolean;
+  is_archived?: boolean;
   metadata?: Record<string, any>;
 }
 

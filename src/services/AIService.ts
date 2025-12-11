@@ -1,17 +1,18 @@
 import OpenAI from 'openai';
 import { Transaction, Category } from '@/contexts/AppContext';
+import { ComprehensiveFinancialData } from './FinancialDataService';
 
 // Placeholder for the default API key - In a real app this should be an env var
 // The user promised to provide this, but hasn't yet.
 const DEFAULT_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
 
 export interface AIContext {
+  // Legacy context (for backward compatibility)
   transactions: Transaction[];
   budgetCategories: any;
   monthlyIncome: number;
   currency: string;
   currentMonthTransactions?: Transaction[];
-  monthlyIncome?: number;
   totalSpentThisMonth?: number;
   budgetSummary?: {
     needs: { budgeted: number; spent: number };
@@ -21,6 +22,11 @@ export interface AIContext {
   };
   remainingBudget?: number;
   daysLeftInMonth?: number;
+
+  // NEW: Comprehensive financial data
+  comprehensiveData?: ComprehensiveFinancialData;
+  currentMonth?: number;
+  currentYear?: number;
 }
 
 export interface AIMessage {
@@ -32,46 +38,154 @@ export interface AIMessage {
   name?: string;
 }
 
-const SYSTEM_PROMPT = `
-You are a helpful and knowledgeable financial advisor assistant for the "Budget Pro" application.
-Your goal is to help the user manage their finances, track their budget, and provide insights.
+const getSystemPrompt = (language: 'es' | 'en'): string => {
+  if (language === 'es') {
+    return `
+Eres un asistente financiero integral para la aplicación Budget Pro, con capacidades avanzadas de comprensión de lenguaje natural y análisis de datos. Tu misión es ayudar al usuario a gestionar sus finanzas, seguir su presupuesto y ofrecer orientación personalizada basada en sus datos históricos.
 
-You have access to the user's COMPLETE financial data, including:
-- Monthly Income and Currency
-- Budget Categories (Needs, Desires, Future, Debts) with allocated budgets and current spending
-- ALL transactions from the current month
-- Budget Summary showing how much has been spent in each category vs. budgeted amounts
-- Total spent this month
-- Remaining budget
-- Days left in the month
+🔒 DESCARGOS DE RESPONSABILIDAD Y RESPONSABILIDADES:
+- Tus respuestas son educativas y no sustituyen el asesoramiento de un profesional licenciado.
+- Para decisiones financieras importantes (inversiones, compras grandes, consolidación de deudas), invita al usuario a consultar a un experto certificado.
+- Nunca garantices resultados ni prometas rendimientos futuros; sé transparente sobre tus limitaciones y la calidad de los datos.
+- Fomenta la responsabilidad financiera y evita promover comportamientos riesgosos.
 
-Use this comprehensive data to provide CONTEXTUAL and PERSONALIZED advice.
-For example:
-- When asked "How much can I spend today?", consider the remaining budget, days left, and pending bills
-- When analyzing spending, look at actual transactions and compare against budget
-- When giving recommendations, base them on the user's real spending patterns
+🧠 COMPRENSIÓN DE CONTEXTO E IDENTIFICACIÓN DE PALABRAS CLAVE:
+1. Detecta la intención y palabras clave del mensaje del usuario (por ejemplo: ingresos, gastos, deudas, inversiones, metas, cálculos, ahorro, borrar, eliminar). Esto te permitirá seleccionar la función o el análisis adecuado.
+2. Analiza el contexto temporal: si se mencionan meses específicos, frases como "este mes", "últimos seis meses" o "anual", ajusta tu análisis a ese periodo. Si la información temporal falta, pregunta brevemente para aclararla.
+3. Recoge detalles necesarios cuando el usuario solicite acciones concretas (fecha, monto, descripción, categoría) mediante preguntas claras. Usa listas con viñetas para facilitar la comprensión.
 
-You can also perform actions on behalf of the user, such as adding new transactions.
-You can analyze images provided by the user, such as receipts or invoices, to extract transaction details.
+📊 ACCESO COMPLETO Y USO DE DATOS FINANCIEROS:
 
-When the user asks to add a transaction, follow this STRICT multi-step process:
-1. Gather Details: Ask for date, amount, and description if not provided. Accept natural language dates (e.g., "hoy", "ayer", "lunes pasado") without asking for a specific format. ALWAYS use a bulleted list to ask for missing details or summarize what you understood so far.
-2. Category Selection: Call 'requestCategorySelection' to let the user pick a category. Analyze the description and provide 'suggestedCategories' (IDs) that match.
-3. Confirmation: Call 'requestConfirmation' with a summary.
-4. Execution: ONLY call 'addTransaction' if the user explicitly confirms (e.g., clicks "Ingresar").
+Tienes acceso al historial financiero completo del usuario, que incluye transacciones, ingresos, presupuestos, deudas, inversiones, métricas de salud financiera y resúmenes mensuales/anuales. Debes:
+- Identificar patrones de ingresos y gastos a lo largo del tiempo, no solo en el mes actual.
+- Calcular promedios, porcentajes y tendencias para ofrecer referencias precisas. Por ejemplo, si el gasto en alimentación representa el 35% de los ingresos mensuales, compáralo con la distribución 50/30/20.
+- Referenciar transacciones, categorías o periodos específicos al dar recomendaciones. Cita cifras concretas y explica siempre el "por qué" de cada sugerencia.
+- Cuando analices deudas, considera saldos, tasas de interés y pagos para ofrecer estrategias como Bola de Nieve o Avalancha.
+- Evalúa la salud financiera y usa sus métricas para personalizar consejos.
 
-If the user clicks "Modificar", restart the relevant step.
-Be concise and direct. Do not be conversational.
-If the user asks for advice, analyze their spending patterns and budget status to provide personalized recommendations.
-Important: Always use the provided Category IDs (UUIDs) for the 'category' parameter.
-Important: NEVER display Category IDs to the user in your text response. Only use the Name.
+🛠️ CAPACIDADES Y FUNCIONES DISPONIBLES:
 
-You have advanced capabilities:
-- "How much can I spend today?": Use 'getDailySpendingLimit'.
-- Budget Optimization: Use 'getSpendingAnalysis' to find trends, then suggest changes. If user agrees, use 'updateBudget'.
-- Savings & Investments: Analyze 'future' bucket and suggest increasing contributions based on 'getSpendingAnalysis'. Provide general investment advice based on risk profiles (Conservative, Moderate, Aggressive).
-- Expense Cutting: Identify recurring/high expenses in 'desires' via 'getSpendingAnalysis' and suggest cuts.
+Selecciona la función adecuada en función de la intención y contexto detectados:
+- **getSpendingAnalysis**: Analiza gastos por categoría, identifica excesos y oportunidades de ahorro.
+- **getDebtAnalysis**: Genera estrategias de pago (Bola de Nieve, Avalancha, Saldo Mayor) según las deudas del usuario.
+- **getFinancialHealthScore**: Obtiene puntuaciones de salud financiera y recomendaciones.
+- **getInvestmentAdvice**: Proporciona orientación de inversión acorde al perfil de riesgo y liquidez del usuario.
+- **calculateSavingsGoal**: Ayuda a fijar y seguir objetivos de ahorro; compara progreso frente a metas.
+- **updateBudget / getDailySpendingLimit**: Optimiza presupuestos y calcula cuánto puede gastar hoy sin sobrepasar su presupuesto.
+- **createFinancialGoal / updateFinancialGoal / deleteFinancialGoal**: Gestiona metas financieras (ahorrar para vacaciones, reducir deudas, etc.).
+- **requestCategorySelection / requestConfirmation / addTransaction**: Gestiona transacciones siguiendo un flujo en varios pasos.
+- **deleteTransaction**: Elimina transacciones específicas cuando el usuario lo solicite explícitamente.
+- **generatePersonalizedRecommendations**: Compila recomendaciones amplias para mejorar la salud financiera.
+
+🧾 GESTIÓN DE TRANSACCIONES Y CÁLCULOS:
+
+**Para AGREGAR transacciones:**
+1. Recopila la información faltante (fecha, monto, descripción) en formato de lista con viñetas y acepta fechas en lenguaje natural (ej. "ayer", "15 de agosto").
+2. Sugiere la categoría adecuada con requestCategorySelection basándote en la descripción.
+3. Confirma con el usuario el resumen usando requestConfirmation.
+4. Solo tras la confirmación explícita, ejecuta addTransaction.
+
+**Para ELIMINAR transacciones:**
+1. Cuando el usuario pida borrar/eliminar una transacción, identifica primero qué transacción específica (por descripción, monto, fecha).
+2. Usa getMonthlyTransactions para buscar la transacción exacta.
+3. Confirma con el usuario que desea eliminar ESA transacción específica mostrando todos sus detalles.
+4. Solo tras confirmación explícita, ejecuta deleteTransaction con el ID de la transacción.
+5. Informa al usuario del resultado.
+
+**Para CÁLCULOS:**
+- Utiliza los datos históricos relevantes y detalla el método utilizado.
+- Muestra porcentajes, totales, promedios de ingresos con explicaciones claras.
+
+💬 COMUNICACIÓN Y MULTILINGÜISMO:
+- Responde siempre en ESPAÑOL, que es el idioma configurado del sistema.
+- Sé claro, conciso y orientado a la acción. Evita relleno conversacional; usa oraciones cortas y listas con viñetas cuando corresponda.
+- Aporta contexto numérico: cifras, porcentajes y comparaciones que apoyen tu análisis.
+- Usa emojis con moderación para resaltar secciones (p. ej., 💡 para consejos), sin abusar.
+- NUNCA muestres identificadores internos (UUID) ni datos sensibles; solo nombres de categorías o etiquetas comprensibles para el usuario.
+
+🎯 EJEMPLOS DE INTERACCIONES ENRIQUECIDAS:
+- "¿Cuánto he ingresado en promedio los últimos seis meses?" → Calcula el promedio mensual de ingresos en ese periodo y compáralo con los seis meses anteriores. Si no se especifica un rango, pregunta.
+- "¿Cuál es mi porcentaje de gastos en ocio este mes?" → Usa getSpendingAnalysis para obtener el gasto en ocio y divídelo entre el ingreso total del mes actual; muéstralo como porcentaje y ofrece recomendaciones si supera el 30% de la categoría "Deseos".
+- "Necesito saber cuánto puedo gastar mañana para no exceder mi presupuesto." → Emplea getDailySpendingLimit tomando en cuenta el presupuesto restante y los patrones de gasto habituales.
+- "Quiero invertir 5,000€ en un fondo de bajo riesgo." → Consulta getInvestmentAdvice y, según su perfil de riesgo y liquidez, presenta varias opciones. Recuerda incluir una nota sobre consultar a un asesor profesional.
+- "Ayúdame a calcular cuánto ahorraré si reduzco mis gastos en restaurantes un 10%." → Calcula el ahorro proyectado con base en el gasto actual en restaurantes; ofrece alternativas de distribución del ahorro.
+- "Borra la transacción de 50€ en Mercadona del lunes pasado" → Busca la transacción, confirma los detalles con el usuario y elimínala tras su aprobación.
 `;
+  } else {
+    return `
+You are a comprehensive financial advisor assistant for Budget Pro, with advanced natural language understanding and data analysis capabilities. Your mission is to help users manage their finances, track their budgets, and provide personalized guidance based on their historical data.
+
+🔒 DISCLAIMERS & RESPONSIBILITIES:
+- Your responses are educational and do not substitute advice from a licensed professional.
+- For major financial decisions (investments, large purchases, debt consolidation), encourage users to consult a certified expert.
+- Never guarantee results or promise future returns; be transparent about your limitations and data quality.
+- Promote financial responsibility and avoid encouraging risky behaviors.
+
+🧠 CONTEXT UNDERSTANDING & KEYWORD IDENTIFICATION:
+1. Detect intent and keywords from user messages (e.g., income, expenses, debts, investments, goals, calculations, savings, delete, remove). This will help you select the appropriate function or analysis.
+2. Analyze temporal context: if specific months, phrases like "this month", "last six months" or "annual" are mentioned, adjust your analysis to that period. If temporal information is missing, ask briefly to clarify.
+3. Collect necessary details when users request specific actions (date, amount, description, category) through clear questions. Use bulleted lists for easier understanding.
+
+📊 COMPREHENSIVE FINANCIAL DATA ACCESS AND USAGE:
+
+You have access to the user's complete financial history, including transactions, income, budgets, debts, investments, financial health metrics, and monthly/annual summaries. You must:
+- Identify income and expense patterns over time, not just the current month.
+- Calculate averages, percentages, and trends to provide accurate references. For example, if food spending represents 35% of monthly income, compare it to the 50/30/20 distribution.
+- Reference specific transactions, categories, or time periods when making recommendations. Cite concrete figures and always explain the "why" behind each suggestion.
+- When analyzing debts, consider balances, interest rates, and payments to offer strategies like Snowball or Avalanche.
+- Evaluate financial health and use its metrics to personalize advice.
+
+🛠️ AVAILABLE CAPABILITIES AND FUNCTIONS:
+
+Select the appropriate function based on detected intent and context:
+- **getSpendingAnalysis**: Analyzes expenses by category, identifies excesses and savings opportunities.
+- **getDebtAnalysis**: Generates payment strategies (Snowball, Avalanche, Highest Balance) based on user's debts.
+- **getFinancialHealthScore**: Gets financial health scores and recommendations.
+- **getInvestmentAdvice**: Provides investment guidance appropriate to risk profile and liquidity.
+- **calculateSavingsGoal**: Helps set and track savings objectives; compares progress against goals.
+- **updateBudget / getDailySpendingLimit**: Optimizes budgets and calculates how much can be spent today without exceeding budget.
+- **createFinancialGoal / updateFinancialGoal / deleteFinancialGoal**: Manages financial goals (save for vacation, reduce debts, etc.).
+- **requestCategorySelection / requestConfirmation / addTransaction**: Manages transactions following a multi-step flow.
+- **deleteTransaction**: Deletes specific transactions when explicitly requested by the user.
+- **generatePersonalizedRecommendations**: Compiles comprehensive recommendations to improve financial health.
+
+🧾 TRANSACTION MANAGEMENT AND CALCULATIONS:
+
+**To ADD transactions:**
+1. Collect missing information (date, amount, description) in bulleted list format and accept natural language dates (e.g., "yesterday", "August 15th").
+2. Suggest appropriate category with requestCategorySelection based on description.
+3. Confirm with user using requestConfirmation showing summary.
+4. Only after explicit confirmation, execute addTransaction.
+
+**To DELETE transactions:**
+1. When user asks to delete/remove a transaction, first identify which specific transaction (by description, amount, date).
+2. Use getMonthlyTransactions to find the exact transaction.
+3. Confirm with user they want to delete THAT specific transaction showing all its details.
+4. Only after explicit confirmation, execute deleteTransaction with transaction ID.
+5. Inform user of the result.
+
+**For CALCULATIONS:**
+- Use relevant historical data and detail the method used.
+- Show percentages, totals, income averages with clear explanations.
+
+💬 COMMUNICATION AND MULTILINGUALISM:
+- Always respond in ENGLISH, which is the configured system language.
+- Be clear, concise, and action-oriented. Avoid conversational filler; use short sentences and bulleted lists when appropriate.
+- Provide numerical context: figures, percentages, and comparisons that support your analysis.
+- Use emojis sparingly to highlight sections (e.g., 💡 for tips), without overuse.
+- NEVER show internal identifiers (UUIDs) or sensitive data; only user-friendly category names or labels.
+
+🎯 ENRICHED INTERACTION EXAMPLES:
+- "How much have I earned on average in the last six months?" → Calculate monthly income average for that period and compare to previous six months. If range not specified, ask.
+- "What's my entertainment spending percentage this month?" → Use getSpendingAnalysis to get entertainment spending and divide by total monthly income; show as percentage and offer recommendations if it exceeds 30% of "Wants" category.
+- "I need to know how much I can spend tomorrow without exceeding my budget." → Use getDailySpendingLimit considering remaining budget and usual spending patterns.
+- "I want to invest $5,000 in a low-risk fund." → Check getInvestmentAdvice and based on risk profile and liquidity, present various options. Remember to include note about consulting professional advisor.
+- "Help me calculate how much I'll save if I reduce restaurant spending by 10%." → Calculate projected savings based on current restaurant spending; offer alternatives for distributing savings.
+- "Delete the $50 transaction at Walmart from last Monday" → Find transaction, confirm details with user, and delete after approval.
+`;
+  }
+}
+
 
 export class AIService {
   private openai: OpenAI;
@@ -84,7 +198,7 @@ export class AIService {
     });
   }
 
-  async sendMessage(messages: AIMessage[], context: AIContext) {
+  async sendMessage(messages: AIMessage[], context: AIContext, language: 'es' | 'en' = 'es') {
     // Prepare the context message
     // Helper to format categories for the AI
     const formatCategories = (categories: any) => {
@@ -115,11 +229,72 @@ export class AIService {
       Days Left in Month: ${context.daysLeftInMonth || 0}`
       : '';
 
+    // NEW: Build comprehensive financial data summary if available
+    let comprehensiveDataSummary = '';
+    if (context.comprehensiveData) {
+      const cd = context.comprehensiveData;
+
+      // Helper function to safely format numbers
+      const safeFixed = (value: any, decimals: number = 2): string => {
+        return value != null && !isNaN(Number(value)) ? Number(value).toFixed(decimals) : '0';
+      };
+
+      comprehensiveDataSummary = `
+═══════════════════════════════════════════════════════════
+📊 COMPREHENSIVE FINANCIAL DATA SUMMARY
+═══════════════════════════════════════════════════════════
+
+🏦 ANNUAL SUMMARY:
+${cd.annualSummary ? `
+  - Annual Income: ${safeFixed(cd.annualSummary.annual_income, 2)} ${context.currency}
+  - Annual Expenses: ${safeFixed(cd.annualSummary.annual_expenses, 2)} ${context.currency}
+  - Annual Net Cash Flow: ${safeFixed(cd.annualSummary.annual_net_cash_flow, 2)} ${context.currency}
+  - Annual Savings Rate: ${safeFixed(cd.annualSummary.annual_savings_rate, 1)}%
+  - Annual Total Debt: ${safeFixed(cd.annualSummary.annual_total_debt, 2)} ${context.currency}
+` : 'No annual data available'}
+
+💳 FINANCIAL HEALTH SCORE: ${safeFixed(cd.financialHealth.overallHealthScore, 1)}/100
+  - Debt Management: ${safeFixed(cd.financialHealth.healthScoreBreakdown.debtManagement, 1)}/100
+  - Savings Habits: ${safeFixed(cd.financialHealth.healthScoreBreakdown.savingsHabits, 1)}/100
+  - Budget Discipline: ${safeFixed(cd.financialHealth.healthScoreBreakdown.budgetDiscipline, 1)}/100
+  - Income Stability: ${safeFixed(cd.financialHealth.healthScoreBreakdown.incomeStability, 1)}/100
+
+💰 KEY METRICS:
+  - Debt-to-Income Ratio: ${safeFixed(cd.financialHealth.debtToIncomeRatio, 2)}
+  - Total Debt: ${safeFixed(cd.financialHealth.totalDebt, 2)} ${context.currency}
+  - Average Monthly Expenses: ${safeFixed(cd.financialHealth.averageMonthlyExpenses, 2)} ${context.currency}
+  - Average Monthly Income: ${safeFixed(cd.financialHealth.averageMonthlyIncome, 2)} ${context.currency}
+  - Average Monthly Savings: ${safeFixed(cd.financialHealth.averageMonthlySavings, 2)} ${context.currency}
+  - Savings Rate: ${safeFixed(cd.financialHealth.savingsRate, 1)}%
+  - Expense Trend: ${cd.financialHealth.expenseTrend || 'stable'}
+
+📈 HISTORICAL DATA AVAILABLE:
+  - Total Transactions: ${cd.allTransactions.length}
+  - Total Income Entries: ${cd.allIncome.length}
+  - Total Budget Entries: ${cd.allBudgets.length}
+  - Total Debt Entries: ${cd.allDebts.length}
+  - Monthly Summaries: ${cd.monthlySummaries.length} months
+  - Categories: ${cd.categories.length}
+  - Accounts: ${cd.accounts.length}
+  - Payment Methods: ${cd.paymentMethods.length}
+
+⚠️ ALERTS:
+  ${cd.financialHealth.overBudgetCategories.length > 0 ? `- Over Budget Categories: ${cd.financialHealth.overBudgetCategories.join(', ')}` : ''}
+  ${cd.financialHealth.underutilizedCategories.length > 0 ? `- Underutilized Categories: ${cd.financialHealth.underutilizedCategories.join(', ')}` : ''}
+  ${cd.financialHealth.highestExpenseCategory ? `- Highest Expense Category: ${cd.financialHealth.highestExpenseCategory.name} (${safeFixed(cd.financialHealth.highestExpenseCategory.amount, 2)} ${context.currency})` : ''}
+
+💡 Use this comprehensive data to provide deeply personalized financial advice!
+═══════════════════════════════════════════════════════════
+`;
+    }
+
     // Prepare the context message
     const contextMessage = {
       role: 'system',
       content: `Current Financial Context:
       Monthly Income: ${context.monthlyIncome} ${context.currency}
+      Current Month: ${context.currentMonth || 'N/A'}
+      Current Year: ${context.currentYear || 'N/A'}
 
       ${budgetSummaryText}
 
@@ -128,6 +303,8 @@ export class AIService {
 
       Current Month Transactions (${context.currentMonthTransactions?.length || 0} total):
       ${JSON.stringify(context.currentMonthTransactions || context.transactions.slice(-10))}
+
+      ${comprehensiveDataSummary}
       `
     };
 
@@ -156,7 +333,7 @@ export class AIService {
     });
 
     const allMessages = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: getSystemPrompt(language) },
       contextMessage,
       ...formattedMessages
     ];
@@ -329,6 +506,228 @@ export class AIService {
                   }
                 },
                 required: ['categoryType', 'categoryId', 'updates']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getDebtAnalysis',
+              description: 'Get comprehensive debt analysis including total debt, individual debt details, and payoff strategies (Snowball, Avalanche, Highest Balance methods) with estimated timelines and interest calculations.',
+              parameters: {
+                type: 'object',
+                properties: {},
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getFinancialHealthScore',
+              description: 'Get comprehensive financial health metrics including overall score (0-100), debt management score, savings habits score, budget discipline score, income stability score, and personalized recommendations.',
+              parameters: {
+                type: 'object',
+                properties: {},
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getInvestmentAdvice',
+              description: 'Get personalized investment recommendations based on the user\'s financial situation, risk profile, savings rate, and debt status. Provides general investment strategies for different risk levels.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  riskProfile: {
+                    type: 'string',
+                    enum: ['conservative', 'moderate', 'aggressive'],
+                    description: 'The user\'s risk tolerance for investments. Ask the user if not specified.'
+                  },
+                  investmentHorizon: {
+                    type: 'string',
+                    enum: ['short', 'medium', 'long'],
+                    description: 'Investment time horizon: short (<3 years), medium (3-10 years), long (>10 years)'
+                  },
+                  monthlyInvestmentAmount: {
+                    type: 'number',
+                    description: 'Optional: Amount user wants to invest monthly'
+                  }
+                },
+                required: ['riskProfile', 'investmentHorizon']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'calculateSavingsGoal',
+              description: 'Calculate how to achieve a savings goal based on target amount, timeline, and current savings rate. Provides monthly savings needed and feasibility assessment.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  targetAmount: {
+                    type: 'number',
+                    description: 'Target savings amount'
+                  },
+                  timelineMonths: {
+                    type: 'number',
+                    description: 'Number of months to achieve the goal'
+                  },
+                  currentSavings: {
+                    type: 'number',
+                    description: 'Current amount already saved towards this goal (optional)'
+                  },
+                  purpose: {
+                    type: 'string',
+                    description: 'Purpose of savings (e.g., "emergency fund", "vacation", "down payment")'
+                  }
+                },
+                required: ['targetAmount', 'timelineMonths', 'purpose']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getExpenseForecast',
+              description: 'Forecast future expenses based on historical spending patterns. Predicts likely expenses for upcoming months and identifies seasonal trends.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  forecastMonths: {
+                    type: 'number',
+                    description: 'Number of months to forecast (default: 3)'
+                  },
+                  categoryId: {
+                    type: 'string',
+                    description: 'Optional: specific category to forecast. If omitted, forecasts all expenses.'
+                  }
+                },
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'createFinancialGoal',
+              description: 'Create a new financial goal for the user. Goals can be savings targets, debt reduction, expense limits, or income increases. The goal will be tracked in the Financial Health section.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  goalType: {
+                    type: 'string',
+                    enum: ['savings', 'debt_reduction', 'expense_limit', 'income_increase'],
+                    description: 'Type of financial goal'
+                  },
+                  targetAmount: {
+                    type: 'number',
+                    description: 'Target amount for the goal'
+                  },
+                  description: {
+                    type: 'string',
+                    description: 'Clear description of the goal (e.g., "Ahorrar para fondo de emergencia")'
+                  },
+                  monthId: {
+                    type: 'number',
+                    description: 'Month ID (1-12) for which this goal applies. Defaults to current month if not specified.'
+                  }
+                },
+                required: ['goalType', 'targetAmount', 'description']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'updateFinancialGoal',
+              description: 'Update an existing financial goal progress or details. Use this to mark progress towards goals or modify goal parameters.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  goalId: {
+                    type: 'string',
+                    description: 'The UUID of the goal to update'
+                  },
+                  updates: {
+                    type: 'object',
+                    description: 'Fields to update',
+                    properties: {
+                      currentAmount: {
+                        type: 'number',
+                        description: 'Current progress amount'
+                      },
+                      targetAmount: {
+                        type: 'number',
+                        description: 'New target amount'
+                      },
+                      description: {
+                        type: 'string',
+                        description: 'Updated description'
+                      },
+                      isCompleted: {
+                        type: 'boolean',
+                        description: 'Mark goal as completed'
+                      }
+                    }
+                  }
+                },
+                required: ['goalId', 'updates']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'deleteFinancialGoal',
+              description: 'Delete a financial goal. Use this when the user no longer wants to track a specific goal.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  goalId: {
+                    type: 'string',
+                    description: 'The UUID of the goal to delete'
+                  }
+                },
+                required: ['goalId']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getFinancialGoals',
+              description: 'Get all financial goals for the user, optionally filtered by month.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  monthId: {
+                    type: 'number',
+                    description: 'Optional: filter goals by specific month (1-12)'
+                  }
+                },
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'generatePersonalizedRecommendations',
+              description: 'Generate comprehensive personalized financial recommendations based on the user\'s complete financial profile, health score, spending patterns, and goals. Returns actionable recommendations that can be displayed in the Financial Health Analysis tab.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  focusArea: {
+                    type: 'string',
+                    enum: ['all', 'savings', 'debt', 'budget', 'income'],
+                    description: 'Optional: focus recommendations on a specific area. Defaults to "all" for comprehensive recommendations.'
+                  }
+                },
+                required: []
               }
             }
           }
