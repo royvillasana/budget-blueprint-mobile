@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Trash2, Save, ChevronDown, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { Trash2, Save, ChevronDown, Eye, EyeOff, HelpCircle, Pencil, Check, ChevronsUpDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,6 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { getMonthName, getTableName } from '@/utils/monthUtils';
 import { IncomeExpenseChart } from '@/components/charts/IncomeExpenseChart';
 import { BudgetPieChart } from '@/components/charts/BudgetPieChart';
@@ -106,6 +108,20 @@ const MonthlyBudget = () => {
   // Data masking state
   const [dataMasked, setDataMasked] = useState(false);
   const [selectedAddType, setSelectedAddType] = useState<'income' | 'transaction' | 'debt' | 'wishlist' | null>(null);
+
+  // Edit states
+  const [editTransactionDialog, setEditTransactionDialog] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  const [editIncomeDialog, setEditIncomeDialog] = useState(false);
+  const [editingIncome, setEditingIncome] = useState<any>(null);
+  const [editDebtDialog, setEditDebtDialog] = useState(false);
+  const [editingDebt, setEditingDebt] = useState<any>(null);
+  const [editWishDialog, setEditWishDialog] = useState(false);
+  const [editingWish, setEditingWish] = useState<any>(null);
+
+  // Combobox states
+  const [categoryComboOpen, setCategoryComboOpen] = useState(false);
+  const [editCategoryComboOpen, setEditCategoryComboOpen] = useState(false);
 
   useEffect(() => {
     const handleOpenAddTransaction = () => {
@@ -264,7 +280,15 @@ const MonthlyBudget = () => {
     const {
       data
     } = await supabase.from('categories').select('*').eq('is_active', true);
-    setCategories(data || []);
+
+    // Remove duplicates by keeping only the first occurrence of each name+emoji combination
+    const uniqueCategories = data ? data.filter((category, index, self) =>
+      index === self.findIndex((c) =>
+        c.name === category.name && c.emoji === category.emoji
+      )
+    ) : [];
+
+    setCategories(uniqueCategories);
   };
   const loadPaymentMethods = async () => {
     const {
@@ -310,6 +334,7 @@ const MonthlyBudget = () => {
   const resetFabDialog = () => {
     setFabDialogOpen(false);
     setSelectedAddType(null);
+    setCategoryComboOpen(false);
     setNewIncome({
       source: '',
       amount: 0,
@@ -362,6 +387,22 @@ const MonthlyBudget = () => {
       description: 'Ingreso eliminado'
     });
   };
+  const updateIncome = async () => {
+    if (!editingIncome) return;
+    const tableName = getTableName('monthly_income', currentMonth) as any;
+    await supabase.from(tableName).update({
+      source: editingIncome.source,
+      amount: editingIncome.amount,
+      date: editingIncome.date
+    }).eq('id', editingIncome.id);
+    setEditIncomeDialog(false);
+    setEditingIncome(null);
+    loadIncome(monthId, currentMonth);
+    toast({
+      title: 'Actualizado',
+      description: 'Ingreso actualizado'
+    });
+  };
   const updateBudgetItem = async (id: string, field: string, value: number) => {
     const tableName = getTableName('monthly_budget', currentMonth) as any;
     await supabase.from(tableName).update({
@@ -400,6 +441,26 @@ const MonthlyBudget = () => {
       description: 'Transacción eliminada'
     });
   };
+  const updateTransaction = async () => {
+    if (!editingTransaction) return;
+    const tableName = getTableName('monthly_transactions', currentMonth) as any;
+    await supabase.from(tableName).update({
+      category_id: editingTransaction.category_id,
+      description: editingTransaction.description,
+      amount: -Math.abs(editingTransaction.amount),
+      date: editingTransaction.date,
+      payment_method_id: editingTransaction.payment_method_id || null,
+      account_id: editingTransaction.account_id || null
+    }).eq('id', editingTransaction.id);
+    setEditTransactionDialog(false);
+    setEditingTransaction(null);
+    setEditCategoryComboOpen(false);
+    loadTransactions(monthId, userId, currentMonth);
+    toast({
+      title: 'Actualizado',
+      description: 'Transacción actualizada'
+    });
+  };
   const addDebt = async () => {
     const tableName = getTableName('monthly_debts', currentMonth) as any;
     await supabase.from(tableName).insert([{
@@ -427,6 +488,24 @@ const MonthlyBudget = () => {
       description: 'Deuda eliminada'
     });
   };
+  const updateDebt = async () => {
+    if (!editingDebt) return;
+    const tableName = getTableName('monthly_debts', currentMonth) as any;
+    await supabase.from(tableName).update({
+      debt_account_id: editingDebt.debt_account_id,
+      starting_balance: editingDebt.starting_balance,
+      interest_rate_apr: editingDebt.interest_rate_apr,
+      payment_made: editingDebt.payment_made,
+      min_payment: editingDebt.min_payment
+    }).eq('id', editingDebt.id);
+    setEditDebtDialog(false);
+    setEditingDebt(null);
+    loadDebts(monthId, userId, currentMonth);
+    toast({
+      title: 'Actualizado',
+      description: 'Deuda actualizada'
+    });
+  };
   const addWish = async () => {
     const tableName = getTableName('monthly_wishlist', currentMonth) as any;
     await supabase.from(tableName).insert([{
@@ -450,6 +529,22 @@ const MonthlyBudget = () => {
     toast({
       title: 'Eliminado',
       description: 'Deseo eliminado'
+    });
+  };
+  const updateWish = async () => {
+    if (!editingWish) return;
+    const tableName = getTableName('monthly_wishlist', currentMonth) as any;
+    await supabase.from(tableName).update({
+      item: editingWish.item,
+      estimated_cost: editingWish.estimated_cost,
+      priority: String(editingWish.priority)
+    }).eq('id', editingWish.id);
+    setEditWishDialog(false);
+    setEditingWish(null);
+    loadWishlist(monthId, currentMonth);
+    toast({
+      title: 'Actualizado',
+      description: 'Deseo actualizado'
     });
   };
   const formatCurrency = (amount: number) => {
@@ -807,9 +902,17 @@ const MonthlyBudget = () => {
                     <TableCell>{item.date}</TableCell>
                     <TableCell className="text-right">{formatCurrency(item.amount)}</TableCell>
                     <TableCell className="text-center">
-                      <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1 justify-center">
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setEditingIncome(item);
+                          setEditIncomeDialog(true);
+                        }}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteIncome(item.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>)}
                 </TableBody>
@@ -861,9 +964,17 @@ const MonthlyBudget = () => {
                     <TableCell>{txn.description}</TableCell>
                     <TableCell className="text-right text-desires">{formatCurrency(txn.amount)}</TableCell>
                     <TableCell className="text-center">
-                      <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1 justify-center">
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setEditingTransaction(txn);
+                          setEditTransactionDialog(true);
+                        }}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>)}
                 </TableBody>
@@ -917,9 +1028,17 @@ const MonthlyBudget = () => {
                     <TableCell className="text-right">{formatCurrency(debt.payment_made)}</TableCell>
                     <TableCell className="text-right">{formatCurrency(debt.ending_balance)}</TableCell>
                     <TableCell className="text-center">
-                      <Button size="sm" variant="ghost" onClick={() => deleteDebt(debt.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1 justify-center">
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setEditingDebt(debt);
+                          setEditDebtDialog(true);
+                        }}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteDebt(debt.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>)}
                 </TableBody>
@@ -969,9 +1088,17 @@ const MonthlyBudget = () => {
                     <TableCell className="text-right">{formatCurrency(wish.estimated_cost)}</TableCell>
                     <TableCell className="text-center">{wish.priority}</TableCell>
                     <TableCell className="text-center">
-                      <Button size="sm" variant="ghost" onClick={() => deleteWish(wish.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex gap-1 justify-center">
+                        <Button size="sm" variant="ghost" onClick={() => {
+                          setEditingWish(wish);
+                          setEditWishDialog(true);
+                        }}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => deleteWish(wish.id)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>)}
                 </TableBody>
@@ -1039,19 +1166,54 @@ const MonthlyBudget = () => {
         </div> : selectedAddType === 'transaction' ? <div className="space-y-4">
           <div>
             <Label>Categoría</Label>
-            <Select value={newTxn.category_id} onValueChange={v => setNewTxn({
-              ...newTxn,
-              category_id: v
-            })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>
-                  {cat.emoji} {cat.name}
-                </SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Popover open={categoryComboOpen} onOpenChange={setCategoryComboOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={categoryComboOpen}
+                  className="w-full justify-between"
+                >
+                  {newTxn.category_id
+                    ? (() => {
+                        const cat = categories.find(c => c.id === newTxn.category_id);
+                        return cat ? `${cat.emoji} ${cat.name}` : "Seleccionar categoría...";
+                      })()
+                    : "Seleccionar categoría..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar categoría..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontró la categoría.</CommandEmpty>
+                    <CommandGroup>
+                      {categories.map(cat => (
+                        <CommandItem
+                          key={cat.id}
+                          value={`${cat.emoji} ${cat.name}`}
+                          onSelect={() => {
+                            setNewTxn({
+                              ...newTxn,
+                              category_id: cat.id
+                            });
+                            setCategoryComboOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              newTxn.category_id === cat.id ? "opacity-100" : "opacity-0"
+                            }`}
+                          />
+                          {cat.emoji} {cat.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
             <Label>Descripción</Label>
@@ -1152,6 +1314,237 @@ const MonthlyBudget = () => {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
             <Button className="flex-1" onClick={addWish}>Agregar</Button>
+          </div>
+        </div>}
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Transaction Dialog */}
+    <Dialog open={editTransactionDialog} onOpenChange={setEditTransactionDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Gasto</DialogTitle>
+        </DialogHeader>
+        {editingTransaction && <div className="space-y-4">
+          <div>
+            <Label>Categoría</Label>
+            <Popover open={editCategoryComboOpen} onOpenChange={setEditCategoryComboOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={editCategoryComboOpen}
+                  className="w-full justify-between"
+                >
+                  {editingTransaction.category_id
+                    ? (() => {
+                        const cat = categories.find(c => c.id === editingTransaction.category_id);
+                        return cat ? `${cat.emoji} ${cat.name}` : "Seleccionar categoría...";
+                      })()
+                    : "Seleccionar categoría..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar categoría..." />
+                  <CommandList>
+                    <CommandEmpty>No se encontró la categoría.</CommandEmpty>
+                    <CommandGroup>
+                      {categories.map(cat => (
+                        <CommandItem
+                          key={cat.id}
+                          value={`${cat.emoji} ${cat.name}`}
+                          onSelect={() => {
+                            setEditingTransaction({
+                              ...editingTransaction,
+                              category_id: cat.id
+                            });
+                            setEditCategoryComboOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              editingTransaction.category_id === cat.id ? "opacity-100" : "opacity-0"
+                            }`}
+                          />
+                          {cat.emoji} {cat.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div>
+            <Label>Descripción</Label>
+            <Input value={editingTransaction.description} onChange={e => setEditingTransaction({
+              ...editingTransaction,
+              description: e.target.value
+            })} />
+          </div>
+          <div>
+            <Label>Monto</Label>
+            <Input type="number" value={Math.abs(editingTransaction.amount)} onChange={e => setEditingTransaction({
+              ...editingTransaction,
+              amount: Number(e.target.value)
+            })} />
+          </div>
+          <div>
+            <Label>Fecha</Label>
+            <Input type="date" value={editingTransaction.date} onChange={e => setEditingTransaction({
+              ...editingTransaction,
+              date: e.target.value
+            })} />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setEditTransactionDialog(false);
+              setEditingTransaction(null);
+              setEditCategoryComboOpen(false);
+            }}>Cancelar</Button>
+            <Button className="flex-1" onClick={updateTransaction}>Actualizar</Button>
+          </div>
+        </div>}
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Income Dialog */}
+    <Dialog open={editIncomeDialog} onOpenChange={setEditIncomeDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Ingreso</DialogTitle>
+        </DialogHeader>
+        {editingIncome && <div className="space-y-4">
+          <div>
+            <Label>Fuente</Label>
+            <Input value={editingIncome.source} onChange={e => setEditingIncome({
+              ...editingIncome,
+              source: e.target.value
+            })} />
+          </div>
+          <div>
+            <Label>Monto</Label>
+            <Input type="number" value={editingIncome.amount} onChange={e => setEditingIncome({
+              ...editingIncome,
+              amount: Number(e.target.value)
+            })} />
+          </div>
+          <div>
+            <Label>Fecha</Label>
+            <Input type="date" value={editingIncome.date} onChange={e => setEditingIncome({
+              ...editingIncome,
+              date: e.target.value
+            })} />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setEditIncomeDialog(false);
+              setEditingIncome(null);
+            }}>Cancelar</Button>
+            <Button className="flex-1" onClick={updateIncome}>Actualizar</Button>
+          </div>
+        </div>}
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Debt Dialog */}
+    <Dialog open={editDebtDialog} onOpenChange={setEditDebtDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Deuda</DialogTitle>
+        </DialogHeader>
+        {editingDebt && <div className="space-y-4">
+          <div>
+            <Label>Cuenta de deuda</Label>
+            <Select value={editingDebt.debt_account_id} onValueChange={v => setEditingDebt({
+              ...editingDebt,
+              debt_account_id: v
+            })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => <SelectItem key={acc.id} value={acc.id}>
+                  {acc.name}
+                </SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Saldo inicial</Label>
+            <Input type="number" value={editingDebt.starting_balance} onChange={e => setEditingDebt({
+              ...editingDebt,
+              starting_balance: Number(e.target.value)
+            })} />
+          </div>
+          <div>
+            <Label>Tasa de interés (APR %)</Label>
+            <Input type="number" value={editingDebt.interest_rate_apr} onChange={e => setEditingDebt({
+              ...editingDebt,
+              interest_rate_apr: Number(e.target.value)
+            })} />
+          </div>
+          <div>
+            <Label>Pago mínimo</Label>
+            <Input type="number" value={editingDebt.min_payment} onChange={e => setEditingDebt({
+              ...editingDebt,
+              min_payment: Number(e.target.value)
+            })} />
+          </div>
+          <div>
+            <Label>Pago realizado</Label>
+            <Input type="number" value={editingDebt.payment_made} onChange={e => setEditingDebt({
+              ...editingDebt,
+              payment_made: Number(e.target.value)
+            })} />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setEditDebtDialog(false);
+              setEditingDebt(null);
+            }}>Cancelar</Button>
+            <Button className="flex-1" onClick={updateDebt}>Actualizar</Button>
+          </div>
+        </div>}
+      </DialogContent>
+    </Dialog>
+
+    {/* Edit Wishlist Dialog */}
+    <Dialog open={editWishDialog} onOpenChange={setEditWishDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar Deseo</DialogTitle>
+        </DialogHeader>
+        {editingWish && <div className="space-y-4">
+          <div>
+            <Label>Artículo</Label>
+            <Input value={editingWish.item} onChange={e => setEditingWish({
+              ...editingWish,
+              item: e.target.value
+            })} />
+          </div>
+          <div>
+            <Label>Costo estimado</Label>
+            <Input type="number" value={editingWish.estimated_cost} onChange={e => setEditingWish({
+              ...editingWish,
+              estimated_cost: Number(e.target.value)
+            })} />
+          </div>
+          <div>
+            <Label>Prioridad (1-5)</Label>
+            <Input type="number" min={1} max={5} value={editingWish.priority} onChange={e => setEditingWish({
+              ...editingWish,
+              priority: Number(e.target.value)
+            })} />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => {
+              setEditWishDialog(false);
+              setEditingWish(null);
+            }}>Cancelar</Button>
+            <Button className="flex-1" onClick={updateWish}>Actualizar</Button>
           </div>
         </div>}
       </DialogContent>

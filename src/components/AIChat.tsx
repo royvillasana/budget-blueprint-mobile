@@ -440,6 +440,113 @@ export const AIChat = () => {
                         }
                     });
 
+                } else if (functionName === 'updateTransaction') {
+                    // Update transaction based on type
+                    const { transactionId, transactionType, updates } = functionArgs;
+
+                    try {
+                        let result;
+                        const month = updates.date ? new Date(updates.date).getMonth() + 1 : new Date().getMonth() + 1;
+                        const year = updates.date ? new Date(updates.date).getFullYear() : new Date().getFullYear();
+
+                        if (transactionType === 'income') {
+                            const tableName = getTableName('monthly_income', month);
+                            const { data, error } = await supabase
+                                .from(tableName as any)
+                                .update({
+                                    source: updates.description || undefined,
+                                    amount: updates.amount || undefined,
+                                    date: updates.date || undefined
+                                })
+                                .eq('id', transactionId)
+                                .select()
+                                .single();
+
+                            if (error) throw error;
+                            result = data;
+                        } else if (transactionType === 'expense') {
+                            const tableName = getTableName('monthly_transactions', month);
+                            const { data, error } = await supabase
+                                .from(tableName as any)
+                                .update({
+                                    description: updates.description || undefined,
+                                    amount: updates.amount || undefined,
+                                    category_id: updates.category || undefined,
+                                    date: updates.date || undefined
+                                })
+                                .eq('id', transactionId)
+                                .select()
+                                .single();
+
+                            if (error) throw error;
+                            result = data;
+                        } else if (transactionType === 'debt') {
+                            const tableName = getTableName('monthly_debts', month);
+                            const { data, error } = await supabase
+                                .from(tableName as any)
+                                .update({
+                                    starting_balance: updates.starting_balance || undefined,
+                                    payment_made: updates.payment_made || undefined,
+                                    interest_rate_apr: updates.interest_rate_apr || undefined,
+                                    min_payment: updates.min_payment || undefined
+                                })
+                                .eq('id', transactionId)
+                                .select()
+                                .single();
+
+                            if (error) throw error;
+                            result = data;
+                        } else if (transactionType === 'wishlist') {
+                            const tableName = getTableName('monthly_wishlist', month);
+                            const { data, error } = await supabase
+                                .from(tableName as any)
+                                .update({
+                                    item: updates.item || undefined,
+                                    estimated_cost: updates.estimated_cost || undefined,
+                                    priority: updates.priority || undefined
+                                })
+                                .eq('id', transactionId)
+                                .select()
+                                .single();
+
+                            if (error) throw error;
+                            result = data;
+                        }
+
+                        toast({
+                            title: "Actualizado exitosamente",
+                            description: `Se ha actualizado el ${transactionType === 'income' ? 'ingreso' : transactionType === 'expense' ? 'gasto' : transactionType === 'debt' ? 'deuda' : 'deseo'}`,
+                        });
+
+                        // Add tool result message
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: `Transaction updated successfully. ID: ${transactionId}`,
+                            name: functionName
+                        });
+
+                        // Add visible assistant message
+                        newMessages.push({
+                            role: 'assistant',
+                            content: `He actualizado la transacción correctamente.`
+                        });
+                    } catch (error: any) {
+                        console.error('Error updating transaction:', error);
+                        toast({
+                            title: "Error",
+                            description: error.message || "No se pudo actualizar la transacción",
+                            variant: "destructive"
+                        });
+
+                        newMessages.push({
+                            role: 'tool',
+                            tool_call_id: toolCall.id,
+                            content: `Error updating transaction: ${error.message}`,
+                            name: functionName
+                        });
+                    }
+
                 } else if (functionName === 'getDailySpendingLimit') {
                     const today = new Date();
                     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();

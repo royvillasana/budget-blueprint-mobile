@@ -159,6 +159,14 @@ Select the appropriate function based on detected intent and context:
 3. Confirm with user using requestConfirmation showing summary (including category if it's an expense).
 4. Only after explicit confirmation, execute addTransaction (with category only if it's an expense).
 
+**To EDIT/UPDATE transactions:**
+1. When user asks to edit/modify/update a transaction, first identify which specific transaction (by description, amount, date).
+2. Use getMonthlyTransactions to find the exact transaction.
+3. Ask user what fields they want to update (amount, description, category, date, etc.).
+4. Confirm the changes with user showing old vs new values.
+5. Only after explicit confirmation, execute updateTransaction with transaction ID, type, and updates.
+6. Inform user of the result.
+
 **To DELETE transactions:**
 1. When user asks to delete/remove a transaction, first identify which specific transaction (by description, amount, date).
 2. Use getMonthlyTransactions to find the exact transaction.
@@ -715,6 +723,45 @@ ${cd.annualSummary ? `
                   }
                 },
                 required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'updateTransaction',
+              description: 'Update an existing transaction (income, expense, debt, or wishlist item). Use this when the user wants to edit or modify a transaction. First use getMonthlyTransactions to find the transaction, then call this function to update it.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  transactionId: {
+                    type: 'string',
+                    description: 'The ID of the transaction to update'
+                  },
+                  transactionType: {
+                    type: 'string',
+                    enum: ['income', 'expense', 'debt', 'wishlist'],
+                    description: 'The type of transaction being updated'
+                  },
+                  updates: {
+                    type: 'object',
+                    description: 'Fields to update. For expenses: description, amount, category, date. For income: description, amount, date (no category). For debts: starting_balance, payment_made, interest_rate_apr, min_payment. For wishlist: item, estimated_cost, priority.',
+                    properties: {
+                      description: { type: 'string' },
+                      amount: { type: 'number' },
+                      category: { type: 'string', description: 'Only for expenses' },
+                      date: { type: 'string' },
+                      starting_balance: { type: 'number', description: 'Only for debts' },
+                      payment_made: { type: 'number', description: 'Only for debts' },
+                      interest_rate_apr: { type: 'number', description: 'Only for debts' },
+                      min_payment: { type: 'number', description: 'Only for debts' },
+                      item: { type: 'string', description: 'Only for wishlist' },
+                      estimated_cost: { type: 'number', description: 'Only for wishlist' },
+                      priority: { type: 'number', description: 'Only for wishlist (1-5)' }
+                    }
+                  }
+                },
+                required: ['transactionId', 'transactionType', 'updates']
               }
             }
           },
