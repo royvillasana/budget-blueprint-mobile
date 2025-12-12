@@ -153,9 +153,11 @@ Select the appropriate function based on detected intent and context:
 
 **To ADD transactions:**
 1. Collect missing information (date, amount, description) in bulleted list format and accept natural language dates (e.g., "yesterday", "August 15th").
-2. Suggest appropriate category with requestCategorySelection based on description.
-3. Confirm with user using requestConfirmation showing summary.
-4. Only after explicit confirmation, execute addTransaction.
+2. **IMPORTANT: Determine if it's an INCOME or EXPENSE**
+   - **Income (ingresos)**: Money received (salary, freelance, gifts, etc.) - **NO CATEGORY NEEDED**. Skip directly to step 3.
+   - **Expense (gastos)**: Money spent - **REQUIRES A CATEGORY**. Use requestCategorySelection to suggest appropriate category based on description.
+3. Confirm with user using requestConfirmation showing summary (including category if it's an expense).
+4. Only after explicit confirmation, execute addTransaction (with category only if it's an expense).
 
 **To DELETE transactions:**
 1. When user asks to delete/remove a transaction, first identify which specific transaction (by description, amount, date).
@@ -347,13 +349,13 @@ ${cd.annualSummary ? `
             type: 'function',
             function: {
               name: 'addTransaction',
-              description: 'Add a new transaction (income or expense) to the budget. ONLY call this after the user has explicitly confirmed the details via the requestConfirmation tool.',
+              description: 'Add a new transaction (income or expense) to the budget. IMPORTANT: Income transactions do NOT require a category - only expenses need categories. ONLY call this after the user has explicitly confirmed the details via the requestConfirmation tool.',
               parameters: {
                 type: 'object',
                 properties: {
                   description: {
                     type: 'string',
-                    description: 'Description of the transaction'
+                    description: 'Description of the transaction (e.g., "Salary", "Freelance work", "Groceries")'
                   },
                   amount: {
                     type: 'number',
@@ -362,18 +364,18 @@ ${cd.annualSummary ? `
                   type: {
                     type: 'string',
                     enum: ['income', 'expense'],
-                    description: 'Type of transaction'
+                    description: 'Type of transaction - use "income" for money received, "expense" for money spent'
                   },
                   category: {
                     type: 'string',
-                    description: 'Category ID'
+                    description: 'Category ID - ONLY required for expenses (type="expense"). Do NOT provide for income (type="income").'
                   },
                   date: {
                     type: 'string',
                     description: 'Date of transaction (YYYY-MM-DD)'
                   }
                 },
-                required: ['description', 'amount', 'type', 'category', 'date']
+                required: ['description', 'amount', 'type', 'date']
               }
             }
           },
@@ -381,19 +383,19 @@ ${cd.annualSummary ? `
             type: 'function',
             function: {
               name: 'requestCategorySelection',
-              description: 'Ask the user to select a category from a list. Call this when you have the amount and description but need the category.',
+              description: 'Ask the user to select a category from a list. ONLY use this for EXPENSES - income does NOT need a category. Call this when you have the expense amount and description but need the user to select a category.',
               parameters: {
                 type: 'object',
                 properties: {
                   type: {
                     type: 'string',
-                    enum: ['income', 'expense'],
-                    description: 'The type of categories to show'
+                    enum: ['expense'],
+                    description: 'The type must always be "expense" - this function is only for expenses'
                   },
                   suggestedCategories: {
                     type: 'array',
                     items: { type: 'string' },
-                    description: 'List of category IDs that match the transaction description (e.g., ["transport", "dining"])'
+                    description: 'List of category IDs that match the expense description (e.g., ["transport", "dining", "groceries"])'
                   }
                 },
                 required: ['type']
@@ -404,25 +406,28 @@ ${cd.annualSummary ? `
             type: 'function',
             function: {
               name: 'requestConfirmation',
-              description: 'Ask the user to confirm the transaction details before adding it. Call this after category selection.',
+              description: 'Ask the user to confirm the transaction details before adding it. For expenses, call this after category selection. For income, call this after collecting amount, description, and date.',
               parameters: {
                 type: 'object',
                 properties: {
                   summary: {
                     type: 'string',
-                    description: 'A summary of the transaction to be added (e.g., "Gasto de 50€ en Alimentación para hoy")'
+                    description: 'A summary of the transaction to be added (e.g., "Gasto de 50€ en Alimentación para hoy" for expense, or "Ingreso de 1000€ de Salario para hoy" for income)'
                   },
                   transactionData: {
                     type: 'object',
-                    description: 'The full transaction data to be passed back to addTransaction if confirmed',
+                    description: 'The full transaction data to be passed back to addTransaction if confirmed. Note: category is only required for expenses.',
                     properties: {
                       description: { type: 'string' },
                       amount: { type: 'number' },
                       type: { type: 'string' },
-                      category: { type: 'string' },
+                      category: {
+                        type: 'string',
+                        description: 'Category ID - only required if type is "expense". Omit for income.'
+                      },
                       date: { type: 'string' }
                     },
-                    required: ['description', 'amount', 'type', 'category', 'date']
+                    required: ['description', 'amount', 'type', 'date']
                   }
                 },
                 required: ['summary', 'transactionData']

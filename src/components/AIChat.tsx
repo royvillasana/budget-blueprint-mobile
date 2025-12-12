@@ -396,16 +396,23 @@ export const AIChat = () => {
 
                 if (functionName === 'addTransaction') {
                     // Execute the action
-                    const newTxn = await addTransaction({
+                    // Income doesn't need a category, only expenses do
+                    const transactionData: any = {
                         description: functionArgs.description,
                         amount: functionArgs.amount,
                         type: functionArgs.type,
-                        category: functionArgs.category || 'others',
                         date: functionArgs.date || new Date().toISOString().split('T')[0]
-                    });
+                    };
+
+                    // Only add category for expenses
+                    if (functionArgs.type === 'expense') {
+                        transactionData.category = functionArgs.category || 'others';
+                    }
+
+                    const newTxn = await addTransaction(transactionData);
 
                     toast({
-                        title: "Transacción añadida",
+                        title: functionArgs.type === 'income' ? "Ingreso añadido" : "Gasto añadido",
                         description: `${functionArgs.description} - ${functionArgs.amount} ${config.currency}`,
                     });
 

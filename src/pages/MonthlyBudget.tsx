@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save, ChevronDown, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { Trash2, Save, ChevronDown, Eye, EyeOff, HelpCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -110,7 +110,6 @@ const MonthlyBudget = () => {
   useEffect(() => {
     const handleOpenAddTransaction = () => {
       setFabDialogOpen(true);
-      setSelectedAddType('transaction');
     };
 
     window.addEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
@@ -226,7 +225,7 @@ const MonthlyBudget = () => {
             user_id: userIdToUse,
             category_id: cat.id,
             bucket_50_30_20: cat.bucket_50_30_20,
-            planned_amount: 0,
+            planned_amount: cat.monthly_budget || 0,
             spent_amount: 0,
             variance: 0
           }));
@@ -702,7 +701,7 @@ const MonthlyBudget = () => {
                       {needsBudget.map(item => <TableRow key={item.id}>
                         <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.category_emoji || item.categories?.emoji} {item.category_name || item.categories?.name}</span></TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="w-24 text-center mx-auto" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
+                          <Input type="number" className="w-24 text-center mx-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
                         </TableCell>
                         <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                         <TableCell className="text-center text-primary">
@@ -727,7 +726,7 @@ const MonthlyBudget = () => {
                       {wantsBudget.map(item => <TableRow key={item.id}>
                         <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.category_emoji || item.categories?.emoji} {item.category_name || item.categories?.name}</span></TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="w-24 text-center mx-auto" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
+                          <Input type="number" className="w-24 text-center mx-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
                         </TableCell>
                         <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                         <TableCell className="text-center text-primary">
@@ -752,7 +751,7 @@ const MonthlyBudget = () => {
                       {futureBudget.map(item => <TableRow key={item.id}>
                         <TableCell className="text-center"><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{item.category_emoji || item.categories?.emoji} {item.category_name || item.categories?.name}</span></TableCell>
                         <TableCell className="text-center">
-                          <Input type="number" className="w-24 text-center mx-auto" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
+                          <Input type="number" className="w-24 text-center mx-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={item.planned_amount || 0} onChange={e => updateBudgetItem(item.id, 'planned_amount', Number(e.target.value))} />
                         </TableCell>
                         <TableCell className="text-center">{formatCurrency(item.calculatedActual || 0)}</TableCell>
                         <TableCell className="text-center text-primary">
@@ -983,8 +982,6 @@ const MonthlyBudget = () => {
       </Collapsible>
     </main>
 
-
-
     {/* Unified Add Dialog */}
     <Dialog open={fabDialogOpen} onOpenChange={open => {
       if (!open) resetFabDialog(); else setFabDialogOpen(true);
@@ -992,7 +989,7 @@ const MonthlyBudget = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {!selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nueva Transacción' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
+            {!selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nuevo Gasto' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
           </DialogTitle>
         </DialogHeader>
 
@@ -1003,7 +1000,7 @@ const MonthlyBudget = () => {
           </Button>
           <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('transaction')}>
             <span className="text-2xl">💸</span>
-            <span>Transacción</span>
+            <span>Gasto</span>
           </Button>
           <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('debt')}>
             <span className="text-2xl">💳</span>

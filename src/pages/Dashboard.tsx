@@ -97,7 +97,6 @@ const Dashboard = () => {
   useEffect(() => {
     const handleOpenAddTransaction = () => {
       setFabDialogOpen(true);
-      setSelectedAddType('transaction');
     };
 
     window.addEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
@@ -809,7 +808,7 @@ const Dashboard = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {!selectedMonth ? 'Seleccionar mes' : !selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nueva Transacción' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
+            {!selectedMonth ? 'Seleccionar mes' : !selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nuevo Gasto' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
           </DialogTitle>
         </DialogHeader>
 
@@ -834,7 +833,7 @@ const Dashboard = () => {
             </Button>
             <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('transaction')}>
               <span className="text-2xl">💸</span>
-              <span>Transacción</span>
+              <span>Gasto</span>
             </Button>
             <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('debt')}>
               <span className="text-2xl">💳</span>

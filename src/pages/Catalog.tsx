@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
@@ -337,7 +338,7 @@ const Catalog = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Catalog Management</h1>
           <p className="text-muted-foreground">
@@ -345,9 +346,16 @@ const Catalog = () => {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Categories */}
-          <Card>
+        <Tabs defaultValue="categories" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="categories">Categorías</TabsTrigger>
+            <TabsTrigger value="payments">Métodos de Pago</TabsTrigger>
+            <TabsTrigger value="accounts">Cuentas</TabsTrigger>
+          </TabsList>
+
+          {/* Categories Tab */}
+          <TabsContent value="categories">
+            <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -496,9 +504,11 @@ const Catalog = () => {
               </div>
             </CardContent>
           </Card>
+          </TabsContent>
 
-          {/* Payment Methods */}
-          <Card>
+          {/* Payment Methods Tab */}
+          <TabsContent value="payments">
+            <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -596,9 +606,11 @@ const Catalog = () => {
               </div>
             </CardContent>
           </Card>
+          </TabsContent>
 
-          {/* Accounts */}
-          <Card className="lg:col-span-2">
+          {/* Accounts Tab */}
+          <TabsContent value="accounts">
+            <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -675,7 +687,7 @@ const Catalog = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-2">
                 {accounts.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No accounts yet</p>
                 ) : (
@@ -718,7 +730,8 @@ const Catalog = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
