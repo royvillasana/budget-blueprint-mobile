@@ -261,13 +261,16 @@ export const AIChat = () => {
         if (currentConversation && currentMessages) {
             // Convert ConversationMessage[] to ExtendedAIMessage[]
             const loadedMessages: ExtendedAIMessage[] = currentMessages.map(msg => ({
-                role: msg.role,
+                id: msg.id,
+                role: msg.role as any,
                 content: msg.content,
                 tool_calls: msg.tool_calls,
                 tool_call_id: msg.tool_call_id,
                 name: msg.name,
                 attachments: msg.attachments,
-                isHidden: msg.is_hidden
+                isHidden: msg.is_hidden,
+                options: msg.metadata?.options,
+                action: msg.metadata?.action
             }));
             setMessages(loadedMessages);
         }
@@ -353,7 +356,11 @@ export const AIChat = () => {
                 tool_call_id: message.tool_call_id,
                 name: message.name,
                 attachments: message.attachments,
-                is_hidden: message.isHidden || false
+                isHidden: message.isHidden || false,
+                metadata: {
+                    options: message.options,
+                    action: message.action
+                }
             });
         }
     };
@@ -374,7 +381,11 @@ export const AIChat = () => {
                     tool_call_id: msg.tool_call_id,
                     name: msg.name,
                     attachments: msg.attachments,
-                    is_hidden: msg.isHidden || false
+                    is_hidden: msg.isHidden || false,
+                    metadata: {
+                        options: msg.options,
+                        action: msg.action
+                    }
                 });
             }
         }
@@ -1560,10 +1571,7 @@ export const AIChat = () => {
         setSystemPromptType('expert_advisor');
 
         // Initial trigger for the expert advisor
-        // We set isHidden: true because we want to fake the interaction start
-        handleSend({ text: "Quiero hablar con el Asesor Experto." }, true);
-
-        // Add the fake assistant message with options immediately
+        // We add the welcome message directly
         const expertWelcomeMessage: ExtendedAIMessage = {
             role: 'assistant',
             content: "Hola. Soy tu Asesor Financiero Experto. Estoy aquí para analizar tu situación y trazar un plan concreto. ¿Por dónde te gustaría empezar?",
@@ -1601,7 +1609,7 @@ export const AIChat = () => {
             ]
         };
 
-        setMessages(prev => [...prev, expertWelcomeMessage]);
+        addMessageToConversation(expertWelcomeMessage);
     };
 
     const handleActionClick = (path: string, transactionId?: string) => {
@@ -1787,7 +1795,7 @@ export const AIChat = () => {
                                                             <Button
                                                                 key={idx}
                                                                 variant="outline"
-                                                                className="h-auto py-3 px-4 justify-start text-left whitespace-normal bg-card hover:bg-accent hover:text-accent-foreground border-border/50"
+                                                                className="h-auto py-3 px-4 justify-start text-left whitespace-normal bg-card hover:bg-secondary/50 border-border/50 transition-colors"
                                                                 onClick={() => handlePillClick(option.value)}
                                                             >
                                                                 <div className="flex flex-col gap-1 w-full">
