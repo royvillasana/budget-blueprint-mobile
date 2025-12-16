@@ -7,7 +7,13 @@ import { AIService, AIMessage } from '@/services/AIService';
 import { FinancialDataService } from '@/services/FinancialDataService';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from '@/components/ui/sheet';
-import { Bot, Sparkles, ExternalLink, Mic, Square, Paperclip, History } from 'lucide-react';
+import {
+    Bot, Sparkles, ExternalLink, Mic,
+    Paperclip,
+    X,
+    Briefcase,
+    History
+} from 'lucide-react';
 import { useConversations } from '@/contexts/ConversationContext';
 import { ConversationTabs } from '@/components/ConversationTabs';
 import { ConversationHistory } from '@/components/ConversationHistory';
@@ -61,6 +67,11 @@ interface ExtendedAIMessage extends AIMessage {
     isConfirmation?: boolean;
     confirmationData?: any;
     isHidden?: boolean;
+    options?: Array<{
+        label: string;
+        description: string;
+        value: string;
+    }>;
 }
 
 // Small component to access attachment hook
@@ -208,6 +219,7 @@ export const AIChat = () => {
     const { config, transactions, budgetCategories, addTransaction, updateCategory } = useApp();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<ExtendedAIMessage[]>([]);
+    const [systemPromptType, setSystemPromptType] = useState<'standard' | 'expert_advisor'>('standard');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     const navigate = useNavigate();
@@ -1337,6 +1349,13 @@ export const AIChat = () => {
                             });
                             shouldCallAI = true;
 
+                            // Validar `userInfo` antes de usarlo. Si no está disponible, no guardar en localStorage.
+                            const { data: authData } = await supabase.auth.getUser();
+                            const userId = authData?.user?.id;
+                            if (userId) {
+                                localStorage.setItem(`ai_recommendations_${userId}`, JSON.stringify(recommendations));
+                            }
+
                             // Trigger event for Financial Health page to display recommendations
                             window.dispatchEvent(new CustomEvent('ai-recommendations-generated', {
                                 detail: { recommendations }
@@ -1362,7 +1381,7 @@ export const AIChat = () => {
             if (shouldCallAI) {
                 const context = await buildFinancialContext();
                 const updatedHistory = [...currentHistory, ...newMessages];
-                const followUpResponse = await aiService.sendMessage(updatedHistory, context, config.language);
+                const followUpResponse = await aiService.sendMessage(updatedHistory, context, config.language, systemPromptType);
                 await processAIResponse(followUpResponse, updatedHistory);
             } else {
                 setIsLoading(false);
@@ -1501,7 +1520,7 @@ export const AIChat = () => {
             const context = await buildFinancialContext();
 
             const currentHistory = [...messages, userMessage];
-            const response = await aiService.sendMessage(currentHistory, context, config.language);
+            const response = await aiService.sendMessage(currentHistory, context, config.language, systemPromptType);
             await processAIResponse(response, currentHistory);
 
         } catch (error) {
@@ -1529,12 +1548,60 @@ export const AIChat = () => {
         try {
             const context = await buildFinancialContext();
             const currentHistory = [...messages, hiddenMessage];
-            const response = await aiService.sendMessage(currentHistory, context, config.language);
+            const response = await aiService.sendMessage(currentHistory, context, config.language, systemPromptType);
             await processAIResponse(response, currentHistory);
         } catch (error) {
             console.error('Error sending message:', error);
             setIsLoading(false);
         }
+    };
+
+    const handleExpertAdvisorClick = () => {
+        setSystemPromptType('expert_advisor');
+
+        // Initial trigger for the expert advisor
+        // We set isHidden: true because we want to fake the interaction start
+        handleSend({ text: "Quiero hablar con el Asesor Experto." }, true);
+
+        // Add the fake assistant message with options immediately
+        const expertWelcomeMessage: ExtendedAIMessage = {
+            role: 'assistant',
+            content: "Hola. Soy tu Asesor Financiero Experto. Estoy aquí para analizar tu situación y trazar un plan concreto. ¿Por dónde te gustaría empezar?",
+            options: [
+                {
+                    label: "Análisis Financiero",
+                    description: "Puedo analizar tus ingresos y gastos para identificar áreas donde puedes ahorrar más.",
+                    value: "Realiza un análisis financiero detallado de mis ingresos y gastos."
+                },
+                {
+                    label: "Gestión de Deudas",
+                    description: "Si tienes deudas, puedo proporcionarte estrategias efectivas para pagarlas de manera eficiente.",
+                    value: "Ayúdame con la gestión de mis deudas y estrategias de pago."
+                },
+                {
+                    label: "Inversiones",
+                    description: "Puedo darte orientación sobre inversiones adecuadas según tu perfil de riesgo.",
+                    value: "Dame orientación sobre inversiones según mi perfil."
+                },
+                {
+                    label: "Metas Financieras",
+                    description: "Juntos podemos establecer metas, como un fondo de emergencia o vacacional.",
+                    value: "Quiero establecer y planificar mis metas financieras."
+                },
+                {
+                    label: "Optimización de Presupuesto",
+                    description: "Te ofreceré recomendaciones para ajustar tu presupuesto a tus prioridades.",
+                    value: "Ayúdame a optimizar mi presupuesto actual."
+                },
+                {
+                    label: "Análisis de Salud Financiera",
+                    description: "Te proporcionaré un estado de salud financiera con sugerencias de mejora.",
+                    value: "Haz un análisis completo de mi salud financiera."
+                }
+            ]
+        };
+
+        setMessages(prev => [...prev, expertWelcomeMessage]);
     };
 
     const handleActionClick = (path: string, transactionId?: string) => {
@@ -1632,220 +1699,256 @@ export const AIChat = () => {
                         {/* Messages Area */}
                         <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                             {messages.length === 0 ? (
-                        <div className="flex flex-col gap-4">
-                            <ConversationEmptyState
-                                icon={<Bot className="h-12 w-12 opacity-50" />}
-                                title="Hola, soy tu asistente financiero"
-                                description="Puedo ayudarte a analizar tus gastos o añadir nuevos gastos. ¡También puedes enviarme fotos de tus recibos!"
-                            />
-                            <div className="grid grid-cols-2 gap-2 px-4">
-                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("¿Cuánto puedo gastar hoy?")}>
-                                    💰 Límite diario
-                                </Button>
-                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Analiza mis gastos de los últimos 3 meses")}>
-                                    📊 Analizar gastos
-                                </Button>
-                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Ayúdame a optimizar mi presupuesto")}>
-                                    ⚖️ Optimizar presupuesto
-                                </Button>
-                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Dame consejos de inversión")}>
-                                    📈 Inversión
-                                </Button>
-                                <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal col-span-2 bg-secondary/20 hover:bg-secondary/30 border-secondary/50" onClick={() => {
-                                    setIsOpen(false);
-                                    window.dispatchEvent(new Event('open-add-transaction-dialog'));
-                                }}>
-                                    ➕ Añadir manualmente
-                                </Button>
-                            </div>
-                        </div>
-                    ) : (
-                        messages.filter(m => !m.isHidden && m.role !== 'tool').map((msg, i) => (
-                            <Message key={i} from={msg.role === 'user' ? 'user' : 'assistant'}>
-                                <MessageContent>
-                                    {msg.attachments && msg.attachments.length > 0 && (
-                                        <MessageAttachments>
-                                            {msg.attachments.map((att, idx) => (
-                                                <MessageAttachment key={idx} data={{ type: 'file', url: att.url, mediaType: 'image/png' }} />
-                                            ))}
-                                        </MessageAttachments>
-                                    )}
-                                    <div className="prose dark:prose-invert text-foreground text-sm max-w-none">
-                                        <ReactMarkdown
-                                            components={{
-                                                ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2" {...props} />,
-                                                ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2" {...props} />,
-                                                li: ({ node, ...props }) => <li className="mb-1" {...props} />,
-                                                p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
-                                                strong: ({ node, ...props }) => <span className="font-bold text-primary" {...props} />
-                                            }}
+                                <div className="flex flex-col gap-4">
+                                    <ConversationEmptyState
+                                        icon={<Bot className="h-12 w-12 opacity-50" />}
+                                        title="Hola, soy tu asistente financiero"
+                                        description="Puedo ayudarte a analizar tus gastos o añadir nuevos gastos. ¡También puedes enviarme fotos de tus recibos!"
+                                    />
+                                    <div className="grid grid-cols-2 gap-2 px-4">
+                                        <Button
+                                            variant="outline"
+                                            className="h-auto py-4 px-4 justify-start text-left whitespace-normal col-span-2 bg-primary/10 hover:bg-primary/20 border-primary/40"
+                                            onClick={handleExpertAdvisorClick}
                                         >
-                                            {Array.isArray(msg.content)
-                                                ? msg.content.filter(c => c.type === 'text').map(c => (c as any).text).join('')
-                                                : msg.content || ''}
-                                        </ReactMarkdown>
-
-                                        {msg.action && (
-                                            <div className="mt-3">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="gap-2 text-xs"
-                                                    onClick={() => handleActionClick(msg.action!.path, msg.action!.transactionId)}
-                                                >
-                                                    <ExternalLink className="h-3 w-3" />
-                                                    {msg.action.label}
-                                                </Button>
+                                            <div className="flex items-center gap-3 w-full">
+                                                <div className="p-2 bg-primary/20 rounded-full">
+                                                    <Briefcase className="h-5 w-5 text-primary" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <span className="font-semibold text-primary block text-base">Asesor Financiero Experto</span>
+                                                    <span className="text-xs text-muted-foreground">Análisis profundo y plan de acción</span>
+                                                </div>
                                             </div>
-                                        )}
-
-                                        {msg.isCategorySelection && (
-                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                {(() => {
-                                                    const allCats = getAllCategories();
-                                                    const suggested = msg.suggestedCategories || [];
-
-                                                    // Sort: Suggested first, then others
-                                                    const sortedCats = [...allCats].sort((a, b) => {
-                                                        const isASuggested = suggested.includes(a.id);
-                                                        const isBSuggested = suggested.includes(b.id);
-                                                        if (isASuggested && !isBSuggested) return -1;
-                                                        if (!isASuggested && isBSuggested) return 1;
-                                                        return 0;
-                                                    });
-
-                                                    return sortedCats.map(cat => {
-                                                        const isSuggested = suggested.includes(cat.id);
-                                                        return (
-                                                            <Button
-                                                                key={cat.id}
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className={`text-xs transition-colors ${isSuggested
-                                                                    ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
-                                                                    : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
-                                                                    }`}
-                                                                onClick={() => handleCategorySelect(cat.name, cat.id)}
-                                                            >
-                                                                {isSuggested && <Sparkles className="w-3 h-3 mr-1 inline text-primary group-hover:text-primary-foreground" />}
-                                                                {cat.name}
-                                                            </Button>
-                                                        );
-                                                    });
-                                                })()}
-                                            </div>
-                                        )}
-
-                                        {msg.isConfirmation && (
-                                            <div className="mt-3 flex gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                                    onClick={() => handleConfirmation(true)}
-                                                >
-                                                    Ingresar
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleConfirmation(false)}
-                                                >
-                                                    Modificar
-                                                </Button>
-                                            </div>
-                                        )}
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("¿Cuánto puedo gastar hoy?")}>
+                                            💰 Límite diario
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Analiza mis gastos de los últimos 3 meses")}>
+                                            📊 Analizar gastos
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Ayúdame a optimizar mi presupuesto")}>
+                                            ⚖️ Optimizar presupuesto
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal" onClick={() => handlePillClick("Dame consejos de inversión")}>
+                                            📈 Inversión
+                                        </Button>
+                                        <Button variant="outline" className="h-auto py-3 px-4 justify-start text-left whitespace-normal col-span-2 bg-secondary/20 hover:bg-secondary/30 border-secondary/50" onClick={() => {
+                                            setIsOpen(false);
+                                            window.dispatchEvent(new Event('open-add-transaction-dialog'));
+                                        }}>
+                                            ➕ Añadir manualmente
+                                        </Button>
                                     </div>
-                                </MessageContent>
-                            </Message>
-                        ))
-                    )}
-
-                    {/* AI Loading Indicator */}
-                    {isLoading && (
-                        <div className="flex items-start gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                                <Bot className="h-4 w-4 text-primary" />
-                            </div>
-                            <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
-                                {/* AI Chip Icon with Animation */}
-                                <div className="relative w-12 h-12 animate-pulse">
-                                    {/* Chip body */}
-                                    <div className="absolute inset-2 rounded-lg border-2 border-primary bg-background flex items-center justify-center">
-                                        <span className="text-primary font-bold text-xs">AI</span>
-                                    </div>
-
-                                    {/* Connection pins - top */}
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-2 bg-primary rounded-t animate-pulse" style={{ animationDelay: '0ms' }} />
-                                    <div className="absolute top-0 left-1/3 -translate-x-1/2 w-1 h-2 bg-accent rounded-t animate-pulse" style={{ animationDelay: '100ms' }} />
-                                    <div className="absolute top-0 left-2/3 -translate-x-1/2 w-1 h-2 bg-primary rounded-t animate-pulse" style={{ animationDelay: '200ms' }} />
-
-                                    {/* Connection pins - bottom */}
-                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-2 bg-primary rounded-b animate-pulse" style={{ animationDelay: '300ms' }} />
-                                    <div className="absolute bottom-0 left-1/3 -translate-x-1/2 w-1 h-2 bg-accent rounded-b animate-pulse" style={{ animationDelay: '400ms' }} />
-                                    <div className="absolute bottom-0 left-2/3 -translate-x-1/2 w-1 h-2 bg-primary rounded-b animate-pulse" style={{ animationDelay: '500ms' }} />
-
-                                    {/* Connection dots - left */}
-                                    <div className="absolute left-0 top-1/3 w-1.5 h-1.5 rounded-full bg-primary animate-ping" style={{ animationDuration: '1.5s' }} />
-                                    <div className="absolute left-0 top-1/2 w-1.5 h-1.5 rounded-full bg-accent animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
-                                    <div className="absolute left-0 top-2/3 w-1.5 h-1.5 rounded-full bg-primary animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
                                 </div>
-                                <span className="text-xs text-muted-foreground">Pensando...</span>
-                            </div>
-                        </div>
-                    )}
+                            ) : (
+                                messages.filter(m => !m.isHidden && m.role !== 'tool').map((msg, i) => (
+                                    <Message key={i} from={msg.role === 'user' ? 'user' : 'assistant'}>
+                                        <MessageContent>
+                                            {msg.attachments && msg.attachments.length > 0 && (
+                                                <MessageAttachments>
+                                                    {msg.attachments.map((att, idx) => (
+                                                        <MessageAttachment key={idx} data={{ type: 'file', url: att.url, mediaType: 'image/png' }} />
+                                                    ))}
+                                                </MessageAttachments>
+                                            )}
+                                            <div className="prose dark:prose-invert text-foreground text-sm max-w-none">
+                                                <ReactMarkdown
+                                                    components={{
+                                                        ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-2" {...props} />,
+                                                        ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-2" {...props} />,
+                                                        li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                                                        p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                                                        strong: ({ node, ...props }) => <span className="font-bold text-primary" {...props} />
+                                                    }}
+                                                >
+                                                    {Array.isArray(msg.content)
+                                                        ? msg.content.filter(c => c.type === 'text').map(c => (c as any).text).join('')
+                                                        : msg.content || ''}
+                                                </ReactMarkdown>
+
+                                                {msg.action && (
+                                                    <div className="mt-3">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="gap-2 text-xs"
+                                                            onClick={() => handleActionClick(msg.action!.path, msg.action!.transactionId)}
+                                                        >
+                                                            <ExternalLink className="h-3 w-3" />
+                                                            {msg.action.label}
+                                                        </Button>
+                                                    </div>
+                                                )}
+
+                                                {msg.options && (
+                                                    <div className="mt-4 flex flex-col gap-2">
+                                                        {msg.options.map((option, idx) => (
+                                                            <Button
+                                                                key={idx}
+                                                                variant="outline"
+                                                                className="h-auto py-3 px-4 justify-start text-left whitespace-normal bg-card hover:bg-accent hover:text-accent-foreground border-border/50"
+                                                                onClick={() => handlePillClick(option.value)}
+                                                            >
+                                                                <div className="flex flex-col gap-1 w-full">
+                                                                    <span className="font-semibold text-sm">{option.label}</span>
+                                                                    <span className="text-xs text-muted-foreground font-normal leading-relaxed">
+                                                                        {option.description}
+                                                                    </span>
+                                                                </div>
+                                                            </Button>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+
+                                                {msg.isCategorySelection && (
+                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                        {(() => {
+                                                            const allCats = getAllCategories();
+                                                            const suggested = msg.suggestedCategories || [];
+
+                                                            // Sort: Suggested first, then others
+                                                            const sortedCats = [...allCats].sort((a, b) => {
+                                                                const isASuggested = suggested.includes(a.id);
+                                                                const isBSuggested = suggested.includes(b.id);
+                                                                if (isASuggested && !isBSuggested) return -1;
+                                                                if (!isASuggested && isBSuggested) return 1;
+                                                                return 0;
+                                                            });
+
+                                                            return sortedCats.map(cat => {
+                                                                const isSuggested = suggested.includes(cat.id);
+                                                                return (
+                                                                    <Button
+                                                                        key={cat.id}
+                                                                        variant="outline"
+                                                                        size="sm"
+                                                                        className={`text-xs transition-colors ${isSuggested
+                                                                            ? 'border-primary/50 text-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                            : 'text-muted-foreground hover:bg-primary hover:text-primary-foreground'
+                                                                            }`}
+                                                                        onClick={() => handleCategorySelect(cat.name, cat.id)}
+                                                                    >
+                                                                        {isSuggested && <Sparkles className="w-3 h-3 mr-1 inline text-primary group-hover:text-primary-foreground" />}
+                                                                        {cat.name}
+                                                                    </Button>
+                                                                );
+                                                            });
+                                                        })()}
+                                                    </div>
+                                                )}
+
+                                                {msg.isConfirmation && (
+                                                    <div className="mt-3 flex gap-2">
+                                                        <Button
+                                                            size="sm"
+                                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                                            onClick={() => handleConfirmation(true)}
+                                                        >
+                                                            Ingresar
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() => handleConfirmation(false)}
+                                                        >
+                                                            Modificar
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </MessageContent>
+                                    </Message>
+                                ))
+                            )}
+
+                            {/* AI Loading Indicator */}
+                            {isLoading && (
+                                <div className="flex items-start gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+                                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                                        <Bot className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3">
+                                        {/* AI Chip Icon with Animation */}
+                                        <div className="relative w-12 h-12 animate-pulse">
+                                            {/* Chip body */}
+                                            <div className="absolute inset-2 rounded-lg border-2 border-primary bg-background flex items-center justify-center">
+                                                <span className="text-primary font-bold text-xs">AI</span>
+                                            </div>
+
+                                            {/* Connection pins - top */}
+                                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-2 bg-primary rounded-t animate-pulse" style={{ animationDelay: '0ms' }} />
+                                            <div className="absolute top-0 left-1/3 -translate-x-1/2 w-1 h-2 bg-accent rounded-t animate-pulse" style={{ animationDelay: '100ms' }} />
+                                            <div className="absolute top-0 left-2/3 -translate-x-1/2 w-1 h-2 bg-primary rounded-t animate-pulse" style={{ animationDelay: '200ms' }} />
+
+                                            {/* Connection pins - bottom */}
+                                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-2 bg-primary rounded-b animate-pulse" style={{ animationDelay: '300ms' }} />
+                                            <div className="absolute bottom-0 left-1/3 -translate-x-1/2 w-1 h-2 bg-accent rounded-b animate-pulse" style={{ animationDelay: '400ms' }} />
+                                            <div className="absolute bottom-0 left-2/3 -translate-x-1/2 w-1 h-2 bg-primary rounded-b animate-pulse" style={{ animationDelay: '500ms' }} />
+
+                                            {/* Connection dots - left */}
+                                            <div className="absolute left-0 top-1/3 w-1.5 h-1.5 rounded-full bg-primary animate-ping" style={{ animationDuration: '1.5s' }} />
+                                            <div className="absolute left-0 top-1/2 w-1.5 h-1.5 rounded-full bg-accent animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.2s' }} />
+                                            <div className="absolute left-0 top-2/3 w-1.5 h-1.5 rounded-full bg-primary animate-ping" style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">Pensando...</span>
+                                    </div>
+                                </div>
+                            )}
                             <div ref={messagesEndRef} />
                         </div>
 
                         <div className="p-4 border-t bg-background">
-                    <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-full text-xs whitespace-nowrap bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
-                            onClick={() => handlePillClick("Quiero añadir un gasto")}
-                        >
-                            Añadir Gasto
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-full text-xs whitespace-nowrap bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
-                            onClick={() => handlePillClick("Quiero añadir un ingreso")}
-                        >
-                            Añadir Ingreso
-                        </Button>
-                    </div>
-                    <PromptInput
-                        onSubmit={(msg) => handleSend(msg)}
-                        className="w-full"
-                        accept="image/*"
-                        maxFiles={3}
-                    >
-                        <PromptInputAttachments>
-                            {(file) => <PromptInputAttachment key={file.id} data={file} />}
-                        </PromptInputAttachments>
-                        <PromptInputBody>
-                            <PromptInputTextarea placeholder="Presiona Enter para enviar..." />
-                        </PromptInputBody>
-                        <PromptInputFooter className="justify-between">
-                            <PromptInputTools>
-                                <AttachmentButton />
+                            <div className="flex gap-2 mb-2 overflow-x-auto pb-2">
                                 <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className={isRecording ? "text-red-500 animate-pulse" : ""}
-                                    onClick={isRecording ? stopRecording : startRecording}
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full text-xs whitespace-nowrap bg-primary/10 hover:bg-primary/20 border-primary/20 text-primary"
+                                    onClick={() => handlePillClick("Quiero añadir un gasto")}
                                 >
-                                    {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                    Añadir Gasto
                                 </Button>
-                                </PromptInputTools>
-                            </PromptInputFooter>
-                        </PromptInput>
-                    </div>
-                </>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full text-xs whitespace-nowrap bg-green-500/10 hover:bg-green-500/20 border-green-500/20 text-green-600"
+                                    onClick={() => handlePillClick("Quiero añadir un ingreso")}
+                                >
+                                    Añadir Ingreso
+                                </Button>
+                            </div>
+                            <PromptInput
+                                onSubmit={(msg) => handleSend(msg)}
+                                className="w-full"
+                                accept="image/*"
+                                maxFiles={3}
+                            >
+                                <PromptInputAttachments>
+                                    {(file) => <PromptInputAttachment key={file.id} data={file} />}
+                                </PromptInputAttachments>
+                                <PromptInputBody>
+                                    <PromptInputTextarea placeholder="Presiona Enter para enviar..." />
+                                </PromptInputBody>
+                                <PromptInputFooter className="justify-between">
+                                    <PromptInputTools>
+                                        <AttachmentButton />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className={isRecording ? "text-red-500 animate-pulse" : ""}
+                                            onClick={isRecording ? stopRecording : startRecording}
+                                        >
+                                            {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                        </Button>
+                                    </PromptInputTools>
+                                </PromptInputFooter>
+                            </PromptInput>
+                        </div>
+                    </>
                 )}
-            </div>
+            </div >
         </>
     );
 };

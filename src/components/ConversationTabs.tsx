@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -146,54 +147,55 @@ export const ConversationTabs: React.FC = () => {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="new" className="font-medium text-primary">
-                <div className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span>Nueva conversación</span>
-                </div>
-              </SelectItem>
-              {activeConversations.length > 0 && (
-                <>
-                  <div className="h-px bg-border my-1" />
-                  {activeConversations.map((conv) => (
-                    <SelectItem key={conv.id} value={conv.id}>
-                      {truncateTitle(conv.title)}
-                    </SelectItem>
-                  ))}
-                </>
+              {activeConversations.length > 0 ? (
+                activeConversations.map((conv) => (
+                  <SelectItem key={conv.id} value={conv.id}>
+                    {truncateTitle(conv.title)}
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="empty" disabled>
+                  No hay conversaciones
+                </SelectItem>
               )}
             </SelectContent>
           </Select>
 
-          {/* Actions menu for current conversation */}
-          {currentConversation && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 flex-shrink-0"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => handleOpenRenameDialog(currentConversation.id, currentConversation.title)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Renombrar
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleOpenDeleteDialog(currentConversation.id)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Eliminar
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 flex-shrink-0"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleCreateConversation}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva conversación
+              </DropdownMenuItem>
+              {currentConversation && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleOpenRenameDialog(currentConversation.id, currentConversation.title)}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Renombrar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleOpenDeleteDialog(currentConversation.id)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
