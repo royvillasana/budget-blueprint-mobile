@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { DatePicker } from '@/components/ui/date-picker';
 import { getMonthName, getTableName } from '@/utils/monthUtils';
 import { IncomeExpenseChart } from '@/components/charts/IncomeExpenseChart';
 import { BudgetPieChart } from '@/components/charts/BudgetPieChart';
@@ -122,6 +123,9 @@ const MonthlyBudget = () => {
   // Combobox states
   const [categoryComboOpen, setCategoryComboOpen] = useState(false);
   const [editCategoryComboOpen, setEditCategoryComboOpen] = useState(false);
+
+  // Confirmation state for "add another"
+  const [showAddAnotherPrompt, setShowAddAnotherPrompt] = useState(false);
 
   useEffect(() => {
     const handleOpenAddTransaction = () => {
@@ -331,10 +335,18 @@ const MonthlyBudget = () => {
       description: 'Configuración guardada'
     });
   };
-  const resetFabDialog = () => {
-    setFabDialogOpen(false);
-    setSelectedAddType(null);
-    setCategoryComboOpen(false);
+  // Helper function to get transaction type name in Spanish
+  const getTransactionTypeName = (type: 'income' | 'transaction' | 'debt' | 'wishlist') => {
+    const names = {
+      'income': 'ingreso',
+      'transaction': 'gasto',
+      'debt': 'deuda',
+      'wishlist': 'deseo'
+    };
+    return names[type];
+  };
+
+  const resetFormFields = () => {
     setNewIncome({
       source: '',
       amount: 0,
@@ -358,9 +370,27 @@ const MonthlyBudget = () => {
     setNewWish({
       item: '',
       estimated_cost: 0,
-      priority: 1
+      priority: 3
     });
   };
+
+  const resetFabDialog = () => {
+    setFabDialogOpen(false);
+    setSelectedAddType(null);
+    setCategoryComboOpen(false);
+    setShowAddAnotherPrompt(false);
+    resetFormFields();
+  };
+
+  const handleAddAnother = () => {
+    setShowAddAnotherPrompt(false);
+    resetFormFields();
+  };
+
+  const handleDontAddAnother = () => {
+    resetFabDialog();
+  };
+
   const addIncome = async () => {
     const tableName = getTableName('monthly_income', currentMonth) as any;
     await supabase.from(tableName).insert([{
@@ -371,12 +401,12 @@ const MonthlyBudget = () => {
       date: newIncome.date,
       currency_code: config.currency
     }]);
-    resetFabDialog();
     loadIncome(monthId, currentMonth);
     toast({
       title: 'Agregado',
       description: 'Ingreso agregado'
     });
+    setShowAddAnotherPrompt(true);
   };
   const deleteIncome = async (id: string) => {
     const tableName = getTableName('monthly_income', currentMonth) as any;
@@ -425,12 +455,12 @@ const MonthlyBudget = () => {
       payment_method_id: newTxn.payment_method_id || null,
       account_id: newTxn.account_id || null
     }]);
-    resetFabDialog();
     loadTransactions(monthId, userId, currentMonth);
     toast({
       title: 'Agregado',
       description: 'Transacción agregada'
     });
+    setShowAddAnotherPrompt(true);
   };
   const deleteTransaction = async (id: string) => {
     const tableName = getTableName('monthly_transactions', currentMonth) as any;
@@ -472,12 +502,12 @@ const MonthlyBudget = () => {
       payment_made: newDebt.payment_made,
       min_payment: newDebt.min_payment
     }]);
-    resetFabDialog();
     loadDebts(monthId, userId, currentMonth);
     toast({
       title: 'Agregado',
       description: 'Deuda agregada'
     });
+    setShowAddAnotherPrompt(true);
   };
   const deleteDebt = async (id: string) => {
     const tableName = getTableName('monthly_debts', currentMonth) as any;
@@ -515,12 +545,12 @@ const MonthlyBudget = () => {
       estimated_cost: newWish.estimated_cost,
       priority: String(newWish.priority)
     }]);
-    resetFabDialog();
     loadWishlist(monthId, currentMonth);
     toast({
       title: 'Agregado',
       description: 'Deseo agregado'
     });
+    setShowAddAnotherPrompt(true);
   };
   const deleteWish = async (id: string) => {
     const tableName = getTableName('monthly_wishlist', currentMonth) as any;
@@ -1137,185 +1167,225 @@ const MonthlyBudget = () => {
             <span className="text-2xl">⭐</span>
             <span>Lista de Deseos</span>
           </Button>
-        </div> : selectedAddType === 'income' ? <div className="space-y-4">
-          <div>
-            <Label>Fuente</Label>
-            <Input value={newIncome.source} onChange={e => setNewIncome({
-              ...newIncome,
-              source: e.target.value
-            })} />
+        </div> : selectedAddType === 'income' ? (
+          showAddAnotherPrompt ? <div className="space-y-4 text-center">
+            <p className="text-lg">¿Vas a hacer otro {getTransactionTypeName('income')} más?</p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleDontAddAnother}>No</Button>
+              <Button className="flex-1" onClick={handleAddAnother}>Sí</Button>
+            </div>
+          </div> : <div className="space-y-4">
+            <div>
+              <Label>Fuente</Label>
+              <Input value={newIncome.source} onChange={e => setNewIncome({
+                ...newIncome,
+                source: e.target.value
+              })} />
+            </div>
+            <div>
+              <Label>Monto</Label>
+              <Input type="number" value={newIncome.amount} onChange={e => setNewIncome({
+                ...newIncome,
+                amount: Number(e.target.value)
+              })} />
+            </div>
+            <div>
+              <Label>Fecha</Label>
+              <DatePicker
+                value={newIncome.date}
+                onChange={(date) => setNewIncome({
+                  ...newIncome,
+                  date
+                })}
+                placeholder="Seleccionar fecha"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
+              <Button className="flex-1" onClick={addIncome}>Agregar</Button>
+            </div>
           </div>
-          <div>
-            <Label>Monto</Label>
-            <Input type="number" value={newIncome.amount} onChange={e => setNewIncome({
-              ...newIncome,
-              amount: Number(e.target.value)
-            })} />
+        ) : selectedAddType === 'transaction' ? (
+          showAddAnotherPrompt ? <div className="space-y-4 text-center">
+            <p className="text-lg">¿Vas a hacer otro {getTransactionTypeName('transaction')} más?</p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleDontAddAnother}>No</Button>
+              <Button className="flex-1" onClick={handleAddAnother}>Sí</Button>
+            </div>
+          </div> : <div className="space-y-4">
+            <div>
+              <Label>Categoría</Label>
+              <Popover open={categoryComboOpen} onOpenChange={setCategoryComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categoryComboOpen}
+                    className="w-full justify-between"
+                  >
+                    {newTxn.category_id
+                      ? (() => {
+                          const cat = categories.find(c => c.id === newTxn.category_id);
+                          return cat ? `${cat.emoji} ${cat.name}` : "Seleccionar categoría...";
+                        })()
+                      : "Seleccionar categoría..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar categoría..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontró la categoría.</CommandEmpty>
+                      <CommandGroup>
+                        {categories.map(cat => (
+                          <CommandItem
+                            key={cat.id}
+                            value={`${cat.emoji} ${cat.name}`}
+                            onSelect={() => {
+                              setNewTxn({
+                                ...newTxn,
+                                category_id: cat.id
+                              });
+                              setCategoryComboOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${
+                                newTxn.category_id === cat.id ? "opacity-100" : "opacity-0"
+                              }`}
+                            />
+                            {cat.emoji} {cat.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <Label>Descripción</Label>
+              <Input value={newTxn.description} onChange={e => setNewTxn({
+                ...newTxn,
+                description: e.target.value
+              })} />
+            </div>
+            <div>
+              <Label>Monto</Label>
+              <Input type="number" value={newTxn.amount} onChange={e => setNewTxn({
+                ...newTxn,
+                amount: Number(e.target.value)
+              })} />
+            </div>
+            <div>
+              <Label>Fecha</Label>
+              <DatePicker
+                value={newTxn.date}
+                onChange={(date) => setNewTxn({
+                  ...newTxn,
+                  date
+                })}
+                placeholder="Seleccionar fecha"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
+              <Button className="flex-1" onClick={addTransaction}>Agregar</Button>
+            </div>
           </div>
-          <div>
-            <Label>Fecha</Label>
-            <Input type="date" value={newIncome.date} onChange={e => setNewIncome({
-              ...newIncome,
-              date: e.target.value
-            })} />
+        ) : selectedAddType === 'debt' ? (
+          showAddAnotherPrompt ? <div className="space-y-4 text-center">
+            <p className="text-lg">¿Vas a hacer otra {getTransactionTypeName('debt')} más?</p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleDontAddAnother}>No</Button>
+              <Button className="flex-1" onClick={handleAddAnother}>Sí</Button>
+            </div>
+          </div> : <div className="space-y-4">
+            <div>
+              <Label>Cuenta de deuda</Label>
+              <Select value={newDebt.debt_account_id} onValueChange={v => setNewDebt({
+                ...newDebt,
+                debt_account_id: v
+              })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar cuenta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => <SelectItem key={acc.id} value={acc.id}>
+                    {acc.name}
+                  </SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Saldo inicial</Label>
+              <Input type="number" value={newDebt.starting_balance} onChange={e => setNewDebt({
+                ...newDebt,
+                starting_balance: Number(e.target.value)
+              })} />
+            </div>
+            <div>
+              <Label>Tasa de interés (APR %)</Label>
+              <Input type="number" value={newDebt.interest_rate_apr} onChange={e => setNewDebt({
+                ...newDebt,
+                interest_rate_apr: Number(e.target.value)
+              })} />
+            </div>
+            <div>
+              <Label>Pago mínimo</Label>
+              <Input type="number" value={newDebt.min_payment} onChange={e => setNewDebt({
+                ...newDebt,
+                min_payment: Number(e.target.value)
+              })} />
+            </div>
+            <div>
+              <Label>Pago realizado</Label>
+              <Input type="number" value={newDebt.payment_made} onChange={e => setNewDebt({
+                ...newDebt,
+                payment_made: Number(e.target.value)
+              })} />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
+              <Button className="flex-1" onClick={addDebt}>Agregar</Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-            <Button className="flex-1" onClick={addIncome}>Agregar</Button>
+        ) : (
+          showAddAnotherPrompt ? <div className="space-y-4 text-center">
+            <p className="text-lg">¿Vas a hacer otro {getTransactionTypeName('wishlist')} más?</p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleDontAddAnother}>No</Button>
+              <Button className="flex-1" onClick={handleAddAnother}>Sí</Button>
+            </div>
+          </div> : <div className="space-y-4">
+            <div>
+              <Label>Artículo</Label>
+              <Input value={newWish.item} onChange={e => setNewWish({
+                ...newWish,
+                item: e.target.value
+              })} />
+            </div>
+            <div>
+              <Label>Costo estimado</Label>
+              <Input type="number" value={newWish.estimated_cost} onChange={e => setNewWish({
+                ...newWish,
+                estimated_cost: Number(e.target.value)
+              })} />
+            </div>
+            <div>
+              <Label>Prioridad (1-5)</Label>
+              <Input type="number" min={1} max={5} value={newWish.priority} onChange={e => setNewWish({
+                ...newWish,
+                priority: Number(e.target.value)
+              })} />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
+              <Button className="flex-1" onClick={addWish}>Agregar</Button>
+            </div>
           </div>
-        </div> : selectedAddType === 'transaction' ? <div className="space-y-4">
-          <div>
-            <Label>Categoría</Label>
-            <Popover open={categoryComboOpen} onOpenChange={setCategoryComboOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={categoryComboOpen}
-                  className="w-full justify-between"
-                >
-                  {newTxn.category_id
-                    ? (() => {
-                        const cat = categories.find(c => c.id === newTxn.category_id);
-                        return cat ? `${cat.emoji} ${cat.name}` : "Seleccionar categoría...";
-                      })()
-                    : "Seleccionar categoría..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar categoría..." />
-                  <CommandList>
-                    <CommandEmpty>No se encontró la categoría.</CommandEmpty>
-                    <CommandGroup>
-                      {categories.map(cat => (
-                        <CommandItem
-                          key={cat.id}
-                          value={`${cat.emoji} ${cat.name}`}
-                          onSelect={() => {
-                            setNewTxn({
-                              ...newTxn,
-                              category_id: cat.id
-                            });
-                            setCategoryComboOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={`mr-2 h-4 w-4 ${
-                              newTxn.category_id === cat.id ? "opacity-100" : "opacity-0"
-                            }`}
-                          />
-                          {cat.emoji} {cat.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div>
-            <Label>Descripción</Label>
-            <Input value={newTxn.description} onChange={e => setNewTxn({
-              ...newTxn,
-              description: e.target.value
-            })} />
-          </div>
-          <div>
-            <Label>Monto</Label>
-            <Input type="number" value={newTxn.amount} onChange={e => setNewTxn({
-              ...newTxn,
-              amount: Number(e.target.value)
-            })} />
-          </div>
-          <div>
-            <Label>Fecha</Label>
-            <Input type="date" value={newTxn.date} onChange={e => setNewTxn({
-              ...newTxn,
-              date: e.target.value
-            })} />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-            <Button className="flex-1" onClick={addTransaction}>Agregar</Button>
-          </div>
-        </div> : selectedAddType === 'debt' ? <div className="space-y-4">
-          <div>
-            <Label>Cuenta de deuda</Label>
-            <Select value={newDebt.debt_account_id} onValueChange={v => setNewDebt({
-              ...newDebt,
-              debt_account_id: v
-            })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar cuenta" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => <SelectItem key={acc.id} value={acc.id}>
-                  {acc.name}
-                </SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Saldo inicial</Label>
-            <Input type="number" value={newDebt.starting_balance} onChange={e => setNewDebt({
-              ...newDebt,
-              starting_balance: Number(e.target.value)
-            })} />
-          </div>
-          <div>
-            <Label>Tasa de interés (APR %)</Label>
-            <Input type="number" value={newDebt.interest_rate_apr} onChange={e => setNewDebt({
-              ...newDebt,
-              interest_rate_apr: Number(e.target.value)
-            })} />
-          </div>
-          <div>
-            <Label>Pago mínimo</Label>
-            <Input type="number" value={newDebt.min_payment} onChange={e => setNewDebt({
-              ...newDebt,
-              min_payment: Number(e.target.value)
-            })} />
-          </div>
-          <div>
-            <Label>Pago realizado</Label>
-            <Input type="number" value={newDebt.payment_made} onChange={e => setNewDebt({
-              ...newDebt,
-              payment_made: Number(e.target.value)
-            })} />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-            <Button className="flex-1" onClick={addDebt}>Agregar</Button>
-          </div>
-        </div> : <div className="space-y-4">
-          <div>
-            <Label>Artículo</Label>
-            <Input value={newWish.item} onChange={e => setNewWish({
-              ...newWish,
-              item: e.target.value
-            })} />
-          </div>
-          <div>
-            <Label>Costo estimado</Label>
-            <Input type="number" value={newWish.estimated_cost} onChange={e => setNewWish({
-              ...newWish,
-              estimated_cost: Number(e.target.value)
-            })} />
-          </div>
-          <div>
-            <Label>Prioridad (1-5)</Label>
-            <Input type="number" min={1} max={5} value={newWish.priority} onChange={e => setNewWish({
-              ...newWish,
-              priority: Number(e.target.value)
-            })} />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-            <Button className="flex-1" onClick={addWish}>Agregar</Button>
-          </div>
-        </div>}
+        )}
       </DialogContent>
     </Dialog>
 
@@ -1393,10 +1463,14 @@ const MonthlyBudget = () => {
           </div>
           <div>
             <Label>Fecha</Label>
-            <Input type="date" value={editingTransaction.date} onChange={e => setEditingTransaction({
-              ...editingTransaction,
-              date: e.target.value
-            })} />
+            <DatePicker
+              value={editingTransaction.date}
+              onChange={(date) => setEditingTransaction({
+                ...editingTransaction,
+                date
+              })}
+              placeholder="Seleccionar fecha"
+            />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => {
@@ -1433,10 +1507,14 @@ const MonthlyBudget = () => {
           </div>
           <div>
             <Label>Fecha</Label>
-            <Input type="date" value={editingIncome.date} onChange={e => setEditingIncome({
-              ...editingIncome,
-              date: e.target.value
-            })} />
+            <DatePicker
+              value={editingIncome.date}
+              onChange={(date) => setEditingIncome({
+                ...editingIncome,
+                date
+              })}
+              placeholder="Seleccionar fecha"
+            />
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => {
