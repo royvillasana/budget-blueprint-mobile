@@ -614,7 +614,7 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                                 resultData = { success: true };
                                 window.dispatchEvent(new CustomEvent('financial-goals-updated'));
                             } else if (functionName === 'getFinancialGoals') {
-                                let q = supabase.from('financial_goals').select('*').eq('user_id', userData.user.id);
+                                let q: any = supabase.from('financial_goals').select('*').eq('user_id', userData.user.id);
                                 if (functionArgs.monthId) q = q.eq('month_id', functionArgs.monthId);
                                 const { data } = await q;
                                 resultData = { success: true, goals: data };
