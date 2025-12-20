@@ -356,7 +356,7 @@ export const AIChat = () => {
                 tool_call_id: message.tool_call_id,
                 name: message.name,
                 attachments: message.attachments,
-                isHidden: message.isHidden || false,
+                is_hidden: message.isHidden || false,
                 metadata: {
                     options: message.options,
                     action: message.action
@@ -424,7 +424,8 @@ export const AIChat = () => {
                         description: functionArgs.description,
                         amount: functionArgs.amount,
                         type: functionArgs.type,
-                        date: functionArgs.date || new Date().toISOString().split('T')[0]
+                        date: functionArgs.date || new Date().toISOString().split('T')[0],
+                        goalId: functionArgs.goalId
                     };
 
                     // Only add category for expenses

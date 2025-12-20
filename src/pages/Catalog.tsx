@@ -85,20 +85,16 @@ const Catalog = () => {
     currency_code: 'USD',
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
     setLoading(true);
-    
+
     // Check authentication
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       navigate('/auth');
       return;
     }
-    
+
     await Promise.all([loadCategories(), loadPaymentMethods(), loadAccounts()]);
     setLoading(false);
   };
@@ -106,13 +102,13 @@ const Catalog = () => {
   const loadCategories = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    
+
     const { data, error } = await supabase
       .from('categories')
       .select('*')
       .eq('user_id', user.id)
       .order('name');
-    
+
     if (error) {
       toast({ title: 'Error loading categories', description: error.message, variant: 'destructive' });
     } else {
@@ -123,13 +119,13 @@ const Catalog = () => {
   const loadPaymentMethods = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    
+
     const { data, error } = await supabase
       .from('payment_methods')
       .select('*')
       .eq('user_id', user.id)
       .order('name');
-    
+
     if (error) {
       toast({ title: 'Error loading payment methods', description: error.message, variant: 'destructive' });
     } else {
@@ -140,13 +136,13 @@ const Catalog = () => {
   const loadAccounts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    
+
     const { data, error } = await supabase
       .from('accounts')
       .select('*')
       .eq('user_id', user.id)
       .order('name');
-    
+
     if (error) {
       toast({ title: 'Error loading accounts', description: error.message, variant: 'destructive' });
     } else {
@@ -164,7 +160,7 @@ const Catalog = () => {
         .from('categories')
         .update(categoryForm)
         .eq('id', editingCategory.id);
-      
+
       if (error) {
         toast({ title: 'Error updating category', description: error.message, variant: 'destructive' });
       } else {
@@ -176,7 +172,7 @@ const Catalog = () => {
       const { error } = await supabase
         .from('categories')
         .insert({ ...categoryForm, user_id: user.id });
-      
+
       if (error) {
         toast({ title: 'Error creating category', description: error.message, variant: 'destructive' });
       } else {
@@ -192,7 +188,7 @@ const Catalog = () => {
       .from('categories')
       .delete()
       .eq('id', id);
-    
+
     if (error) {
       toast({ title: 'Error deleting category', description: error.message, variant: 'destructive' });
     } else {
@@ -217,7 +213,7 @@ const Catalog = () => {
         .from('payment_methods')
         .update(paymentForm)
         .eq('id', editingPayment.id);
-      
+
       if (error) {
         toast({ title: 'Error updating payment method', description: error.message, variant: 'destructive' });
       } else {
@@ -229,7 +225,7 @@ const Catalog = () => {
       const { error } = await supabase
         .from('payment_methods')
         .insert({ ...paymentForm, user_id: user.id });
-      
+
       if (error) {
         toast({ title: 'Error creating payment method', description: error.message, variant: 'destructive' });
       } else {
@@ -245,7 +241,7 @@ const Catalog = () => {
       .from('payment_methods')
       .delete()
       .eq('id', id);
-    
+
     if (error) {
       toast({ title: 'Error deleting payment method', description: error.message, variant: 'destructive' });
     } else {
@@ -270,7 +266,7 @@ const Catalog = () => {
         .from('accounts')
         .update(accountForm)
         .eq('id', editingAccount.id);
-      
+
       if (error) {
         toast({ title: 'Error updating account', description: error.message, variant: 'destructive' });
       } else {
@@ -282,7 +278,7 @@ const Catalog = () => {
       const { error } = await supabase
         .from('accounts')
         .insert({ ...accountForm, user_id: user.id });
-      
+
       if (error) {
         toast({ title: 'Error creating account', description: error.message, variant: 'destructive' });
       } else {
@@ -298,7 +294,7 @@ const Catalog = () => {
       .from('accounts')
       .delete()
       .eq('id', id);
-    
+
     if (error) {
       toast({ title: 'Error deleting account', description: error.message, variant: 'destructive' });
     } else {
@@ -356,380 +352,380 @@ const Catalog = () => {
           {/* Categories Tab */}
           <TabsContent value="categories">
             <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Categories</CardTitle>
-                  <CardDescription>Organize expenses by category</CardDescription>
-                </div>
-                <Dialog open={categoryDialog} onOpenChange={setCategoryDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" onClick={() => {
-                      resetCategoryForm();
-                      setCategoryDialog(true);
-                    }}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingCategory ? 'Edit Category' : 'New Category'}</DialogTitle>
-                      <DialogDescription>
-                        {editingCategory ? 'Update category details' : 'Create a new expense category'}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="cat-name">Name</Label>
-                        <Input
-                          id="cat-name"
-                          value={categoryForm.name}
-                          onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
-                          placeholder="e.g., Groceries"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cat-emoji">Emoji</Label>
-                        <Input
-                          id="cat-emoji"
-                          value={categoryForm.emoji}
-                          onChange={(e) => setCategoryForm({ ...categoryForm, emoji: e.target.value })}
-                          placeholder="🛒"
-                          maxLength={2}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="cat-bucket">50/30/20 Bucket</Label>
-                        <Select
-                          value={categoryForm.bucket_50_30_20}
-                          onValueChange={(value) => setCategoryForm({ ...categoryForm, bucket_50_30_20: value as 'NEEDS' | 'WANTS' | 'FUTURE' | 'INVESTMENTS' | 'DEBT_PAYMENTS' })}
-                        >
-                          <SelectTrigger id="cat-bucket">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="NEEDS">Needs (50%)</SelectItem>
-                            <SelectItem value="WANTS">Wants (30%)</SelectItem>
-                            <SelectItem value="FUTURE">Future (20%)</SelectItem>
-                            <SelectItem value="INVESTMENTS">Investments</SelectItem>
-                            <SelectItem value="DEBT_PAYMENTS">Debt Payments</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="cat-monthly-budget">Presupuesto Mensual</Label>
-                        <Input
-                          id="cat-monthly-budget"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={categoryForm.monthly_budget}
-                          onChange={(e) => setCategoryForm({ ...categoryForm, monthly_budget: parseFloat(e.target.value) || 0 })}
-                          placeholder="0.00"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Presupuesto mensual asignado para esta categoría
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="cat-active"
-                          checked={categoryForm.is_active}
-                          onCheckedChange={(checked) => setCategoryForm({ ...categoryForm, is_active: checked })}
-                        />
-                        <Label htmlFor="cat-active">Active</Label>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={resetCategoryForm}>Cancel</Button>
-                      <Button onClick={saveCategory}>Save</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {categories.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No categories yet</p>
-                ) : (
-                  categories.map((cat) => (
-                    <div key={cat.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                      <div className="flex items-center gap-3 flex-1">
-                        <span className="text-2xl">{cat.emoji}</span>
-                        <div className="flex-1">
-                          <p className="font-medium">{cat.name}</p>
-                          <div className="flex gap-2 mt-1 items-center">
-                            <Badge className={getBucketBadge(cat.bucket_50_30_20)} variant="secondary">
-                              {cat.bucket_50_30_20}
-                            </Badge>
-                            {cat.monthly_budget > 0 && (
-                              <span className="text-sm text-muted-foreground">
-                                ${cat.monthly_budget.toFixed(2)}/mes
-                              </span>
-                            )}
-                          </div>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Categories</CardTitle>
+                    <CardDescription>Organize expenses by category</CardDescription>
+                  </div>
+                  <Dialog open={categoryDialog} onOpenChange={setCategoryDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" onClick={() => {
+                        resetCategoryForm();
+                        setCategoryDialog(true);
+                      }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{editingCategory ? 'Edit Category' : 'New Category'}</DialogTitle>
+                        <DialogDescription>
+                          {editingCategory ? 'Update category details' : 'Create a new expense category'}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="cat-name">Name</Label>
+                          <Input
+                            id="cat-name"
+                            value={categoryForm.name}
+                            onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                            placeholder="e.g., Groceries"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="cat-emoji">Emoji</Label>
+                          <Input
+                            id="cat-emoji"
+                            value={categoryForm.emoji}
+                            onChange={(e) => setCategoryForm({ ...categoryForm, emoji: e.target.value })}
+                            placeholder="🛒"
+                            maxLength={2}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="cat-bucket">50/30/20 Bucket</Label>
+                          <Select
+                            value={categoryForm.bucket_50_30_20}
+                            onValueChange={(value) => setCategoryForm({ ...categoryForm, bucket_50_30_20: value as 'NEEDS' | 'WANTS' | 'FUTURE' | 'INVESTMENTS' | 'DEBT_PAYMENTS' })}
+                          >
+                            <SelectTrigger id="cat-bucket">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="NEEDS">Needs (50%)</SelectItem>
+                              <SelectItem value="WANTS">Wants (30%)</SelectItem>
+                              <SelectItem value="FUTURE">Future (20%)</SelectItem>
+                              <SelectItem value="INVESTMENTS">Investments</SelectItem>
+                              <SelectItem value="DEBT_PAYMENTS">Debt Payments</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="cat-monthly-budget">Presupuesto Mensual</Label>
+                          <Input
+                            id="cat-monthly-budget"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={categoryForm.monthly_budget}
+                            onChange={(e) => setCategoryForm({ ...categoryForm, monthly_budget: parseFloat(e.target.value) || 0 })}
+                            placeholder="0.00"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Presupuesto mensual asignado para esta categoría
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id="cat-active"
+                            checked={categoryForm.is_active}
+                            onCheckedChange={(checked) => setCategoryForm({ ...categoryForm, is_active: checked })}
+                          />
+                          <Label htmlFor="cat-active">Active</Label>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingCategory(cat);
-                            setCategoryForm({
-                              name: cat.name,
-                              emoji: cat.emoji,
-                              bucket_50_30_20: cat.bucket_50_30_20,
-                              is_active: cat.is_active,
-                              monthly_budget: cat.monthly_budget || 0,
-                            });
-                            setCategoryDialog(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteCategory(cat.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={resetCategoryForm}>Cancel</Button>
+                        <Button onClick={saveCategory}>Save</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {categories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No categories yet</p>
+                  ) : (
+                    categories.map((cat) => (
+                      <div key={cat.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                        <div className="flex items-center gap-3 flex-1">
+                          <span className="text-2xl">{cat.emoji}</span>
+                          <div className="flex-1">
+                            <p className="font-medium">{cat.name}</p>
+                            <div className="flex gap-2 mt-1 items-center">
+                              <Badge className={getBucketBadge(cat.bucket_50_30_20)} variant="secondary">
+                                {cat.bucket_50_30_20}
+                              </Badge>
+                              {cat.monthly_budget > 0 && (
+                                <span className="text-sm text-muted-foreground">
+                                  ${cat.monthly_budget.toFixed(2)}/mes
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingCategory(cat);
+                              setCategoryForm({
+                                name: cat.name,
+                                emoji: cat.emoji,
+                                bucket_50_30_20: cat.bucket_50_30_20,
+                                is_active: cat.is_active,
+                                monthly_budget: cat.monthly_budget || 0,
+                              });
+                              setCategoryDialog(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteCategory(cat.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Payment Methods Tab */}
           <TabsContent value="payments">
             <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Payment Methods</CardTitle>
-                  <CardDescription>How you pay for things</CardDescription>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Payment Methods</CardTitle>
+                    <CardDescription>How you pay for things</CardDescription>
+                  </div>
+                  <Dialog open={paymentDialog} onOpenChange={setPaymentDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" onClick={() => {
+                        resetPaymentForm();
+                        setPaymentDialog(true);
+                      }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{editingPayment ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle>
+                        <DialogDescription>
+                          {editingPayment ? 'Update payment method details' : 'Create a new payment method'}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="pm-name">Name</Label>
+                          <Input
+                            id="pm-name"
+                            value={paymentForm.name}
+                            onChange={(e) => setPaymentForm({ ...paymentForm, name: e.target.value })}
+                            placeholder="e.g., Chase Credit Card"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="pm-type">Type</Label>
+                          <Select
+                            value={paymentForm.type}
+                            onValueChange={(value) => setPaymentForm({ ...paymentForm, type: value as 'CASH' | 'CREDIT' | 'DEBIT' | 'TRANSFER' | 'OTHER' })}
+                          >
+                            <SelectTrigger id="pm-type">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="CASH">Cash</SelectItem>
+                              <SelectItem value="CREDIT">Credit Card</SelectItem>
+                              <SelectItem value="DEBIT">Debit Card</SelectItem>
+                              <SelectItem value="TRANSFER">Bank Transfer</SelectItem>
+                              <SelectItem value="OTHER">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={resetPaymentForm}>Cancel</Button>
+                        <Button onClick={savePaymentMethod}>Save</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-                <Dialog open={paymentDialog} onOpenChange={setPaymentDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" onClick={() => {
-                      resetPaymentForm();
-                      setPaymentDialog(true);
-                    }}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingPayment ? 'Edit Payment Method' : 'New Payment Method'}</DialogTitle>
-                      <DialogDescription>
-                        {editingPayment ? 'Update payment method details' : 'Create a new payment method'}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="pm-name">Name</Label>
-                        <Input
-                          id="pm-name"
-                          value={paymentForm.name}
-                          onChange={(e) => setPaymentForm({ ...paymentForm, name: e.target.value })}
-                          placeholder="e.g., Chase Credit Card"
-                        />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {paymentMethods.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No payment methods yet</p>
+                  ) : (
+                    paymentMethods.map((pm) => (
+                      <div key={pm.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                        <div>
+                          <p className="font-medium">{pm.name}</p>
+                          <Badge variant="secondary">{pm.type}</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingPayment(pm);
+                              setPaymentForm({ name: pm.name, type: pm.type });
+                              setPaymentDialog(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deletePaymentMethod(pm.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <Label htmlFor="pm-type">Type</Label>
-                        <Select
-                          value={paymentForm.type}
-                          onValueChange={(value) => setPaymentForm({ ...paymentForm, type: value as 'CASH' | 'CREDIT' | 'DEBIT' | 'TRANSFER' | 'OTHER' })}
-                        >
-                          <SelectTrigger id="pm-type">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="CASH">Cash</SelectItem>
-                            <SelectItem value="CREDIT">Credit Card</SelectItem>
-                            <SelectItem value="DEBIT">Debit Card</SelectItem>
-                            <SelectItem value="TRANSFER">Bank Transfer</SelectItem>
-                            <SelectItem value="OTHER">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={resetPaymentForm}>Cancel</Button>
-                      <Button onClick={savePaymentMethod}>Save</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {paymentMethods.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No payment methods yet</p>
-                ) : (
-                  paymentMethods.map((pm) => (
-                    <div key={pm.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                      <div>
-                        <p className="font-medium">{pm.name}</p>
-                        <Badge variant="secondary">{pm.type}</Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingPayment(pm);
-                            setPaymentForm({ name: pm.name, type: pm.type });
-                            setPaymentDialog(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deletePaymentMethod(pm.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Accounts Tab */}
           <TabsContent value="accounts">
             <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Accounts</CardTitle>
-                  <CardDescription>Bank accounts, credit cards, and loans</CardDescription>
-                </div>
-                <Dialog open={accountDialog} onOpenChange={setAccountDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" onClick={() => {
-                      resetAccountForm();
-                      setAccountDialog(true);
-                    }}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{editingAccount ? 'Edit Account' : 'New Account'}</DialogTitle>
-                      <DialogDescription>
-                        {editingAccount ? 'Update account details' : 'Create a new financial account'}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="acc-name">Name</Label>
-                        <Input
-                          id="acc-name"
-                          value={accountForm.name}
-                          onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
-                          placeholder="e.g., Chase Checking"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="acc-type">Type</Label>
-                        <Select
-                          value={accountForm.type}
-                          onValueChange={(value) => setAccountForm({ ...accountForm, type: value as 'CHECKING' | 'SAVINGS' | 'CREDIT_CARD' | 'LOAN' | 'OTHER' })}
-                        >
-                          <SelectTrigger id="acc-type">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="CHECKING">Checking Account</SelectItem>
-                            <SelectItem value="SAVINGS">Savings Account</SelectItem>
-                            <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
-                            <SelectItem value="LOAN">Loan</SelectItem>
-                            <SelectItem value="OTHER">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="acc-currency">Currency</Label>
-                        <Select
-                          value={accountForm.currency_code}
-                          onValueChange={(value) => setAccountForm({ ...accountForm, currency_code: value })}
-                        >
-                          <SelectTrigger id="acc-currency">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="USD">USD ($)</SelectItem>
-                            <SelectItem value="EUR">EUR (€)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={resetAccountForm}>Cancel</Button>
-                      <Button onClick={saveAccount}>Save</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {accounts.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No accounts yet</p>
-                ) : (
-                  accounts.map((acc) => (
-                    <div key={acc.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                      <div>
-                        <p className="font-medium">{acc.name}</p>
-                        <div className="flex gap-2 mt-1">
-                          <Badge variant="secondary">{acc.type}</Badge>
-                          <Badge variant="outline">{acc.currency_code}</Badge>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Accounts</CardTitle>
+                    <CardDescription>Bank accounts, credit cards, and loans</CardDescription>
+                  </div>
+                  <Dialog open={accountDialog} onOpenChange={setAccountDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" onClick={() => {
+                        resetAccountForm();
+                        setAccountDialog(true);
+                      }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>{editingAccount ? 'Edit Account' : 'New Account'}</DialogTitle>
+                        <DialogDescription>
+                          {editingAccount ? 'Update account details' : 'Create a new financial account'}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="acc-name">Name</Label>
+                          <Input
+                            id="acc-name"
+                            value={accountForm.name}
+                            onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
+                            placeholder="e.g., Chase Checking"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="acc-type">Type</Label>
+                          <Select
+                            value={accountForm.type}
+                            onValueChange={(value) => setAccountForm({ ...accountForm, type: value as 'CHECKING' | 'SAVINGS' | 'CREDIT_CARD' | 'LOAN' | 'OTHER' })}
+                          >
+                            <SelectTrigger id="acc-type">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="CHECKING">Checking Account</SelectItem>
+                              <SelectItem value="SAVINGS">Savings Account</SelectItem>
+                              <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
+                              <SelectItem value="LOAN">Loan</SelectItem>
+                              <SelectItem value="OTHER">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="acc-currency">Currency</Label>
+                          <Select
+                            value={accountForm.currency_code}
+                            onValueChange={(value) => setAccountForm({ ...accountForm, currency_code: value })}
+                          >
+                            <SelectTrigger id="acc-currency">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="USD">USD ($)</SelectItem>
+                              <SelectItem value="EUR">EUR (€)</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingAccount(acc);
-                            setAccountForm({
-                              name: acc.name,
-                              type: acc.type,
-                              currency_code: acc.currency_code,
-                            });
-                            setAccountDialog(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteAccount(acc.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={resetAccountForm}>Cancel</Button>
+                        <Button onClick={saveAccount}>Save</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {accounts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No accounts yet</p>
+                  ) : (
+                    accounts.map((acc) => (
+                      <div key={acc.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
+                        <div>
+                          <p className="font-medium">{acc.name}</p>
+                          <div className="flex gap-2 mt-1">
+                            <Badge variant="secondary">{acc.type}</Badge>
+                            <Badge variant="outline">{acc.currency_code}</Badge>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingAccount(acc);
+                              setAccountForm({
+                                name: acc.name,
+                                type: acc.type,
+                                currency_code: acc.currency_code,
+                              });
+                              setAccountDialog(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteAccount(acc.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>

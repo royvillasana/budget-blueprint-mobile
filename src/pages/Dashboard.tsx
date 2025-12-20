@@ -80,28 +80,18 @@ const Dashboard = () => {
   const [recentTransactions, setRecentTransactions] = useState<TransactionItem[]>([]);
   const [currentDebts, setCurrentDebts] = useState<DebtItem[]>([]);
 
-  // FAB Dialog state
-  const [fabDialogOpen, setFabDialogOpen] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
-  const [selectedAddType, setSelectedAddType] = useState<'income' | 'transaction' | 'debt' | 'wishlist' | null>(null);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [userId, setUserId] = useState<string>('');
 
-  // Form states
-  const [newIncome, setNewIncome] = useState({ source: '', amount: 0, date: '' });
-  const [newTxn, setNewTxn] = useState({ category_id: '', description: '', amount: 0, date: '', payment_method_id: '', account_id: '' });
-  const [newDebt, setNewDebt] = useState({ debt_account_id: '', starting_balance: 0, interest_rate_apr: 0, payment_made: 0, min_payment: 0 });
-  const [newWish, setNewWish] = useState({ item: '', estimated_cost: 0, priority: 1 });
+  // Combobox states
+  const [categoryComboOpen, setCategoryComboOpen] = useState(false);
   useEffect(() => {
-    const handleOpenAddTransaction = () => {
-      setFabDialogOpen(true);
+    const handleRefresh = () => {
+      if (userId) loadDashboardData();
     };
 
-    window.addEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
-    return () => window.removeEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
-  }, []);
+    window.addEventListener('transaction-added', handleRefresh);
+    return () => window.removeEventListener('transaction-added', handleRefresh);
+  }, [userId]);
 
   useEffect(() => {
     loadDashboardData();
@@ -119,15 +109,7 @@ const Dashboard = () => {
       }
       setUserId(user.id);
 
-      // Load categories, accounts, payment methods for FAB
-      const [categoriesRes, accountsRes, paymentMethodsRes] = await Promise.all([
-        storage.getCategories(user.id),
-        storage.getAccounts(user.id),
-        storage.getPaymentMethods(user.id)
-      ]);
-      setCategories(categoriesRes || []);
-      setAccounts(accountsRes || []);
-      setPaymentMethods(paymentMethodsRes || []);
+      setUserId(user.id);
 
       // Load monthly summary view
       const monthlyData = await storage.getMonthlySummaries(user.id);
@@ -189,77 +171,6 @@ const Dashboard = () => {
       'December': config.language === 'es' ? 'Diciembre' : 'December'
     };
     return monthMap[monthName] || monthName;
-  };
-
-  const resetFabDialog = () => {
-    setFabDialogOpen(false);
-    setSelectedMonth(null);
-    setSelectedAddType(null);
-    setNewIncome({ source: '', amount: 0, date: '' });
-    setNewTxn({ category_id: '', description: '', amount: 0, date: '', payment_method_id: '', account_id: '' });
-    setNewDebt({ debt_account_id: '', starting_balance: 0, interest_rate_apr: 0, payment_made: 0, min_payment: 0 });
-    setNewWish({ item: '', estimated_cost: 0, priority: 1 });
-  };
-
-  const addIncome = async () => {
-    if (!selectedMonth) return;
-    await storage.addIncome({
-      month_id: selectedMonth,
-      user_id: userId,
-      source: newIncome.source,
-      amount: newIncome.amount,
-      date: newIncome.date,
-      currency_code: config.currency
-    });
-    resetFabDialog();
-    loadDashboardData();
-  };
-
-  const addTransaction = async () => {
-    if (!selectedMonth) return;
-    await storage.addTransaction({
-      month_id: selectedMonth,
-      user_id: userId,
-      category_id: newTxn.category_id,
-      description: newTxn.description,
-      amount: -Math.abs(newTxn.amount),
-      date: newTxn.date,
-      direction: 'EXPENSE',
-      currency_code: config.currency,
-      payment_method_id: newTxn.payment_method_id || null,
-      account_id: newTxn.account_id || null
-    });
-    resetFabDialog();
-    loadDashboardData();
-  };
-
-  const addDebt = async () => {
-    if (!selectedMonth) return;
-    await storage.addDebt({
-      month_id: selectedMonth,
-      user_id: userId,
-      debt_account_id: newDebt.debt_account_id,
-      starting_balance: newDebt.starting_balance,
-      interest_rate_apr: newDebt.interest_rate_apr,
-      payment_made: newDebt.payment_made,
-      min_payment: newDebt.min_payment,
-      ending_balance: newDebt.starting_balance - newDebt.payment_made
-    });
-    resetFabDialog();
-    loadDashboardData();
-  };
-
-  const addWish = async () => {
-    if (!selectedMonth) return;
-    await storage.addWish({
-      month_id: selectedMonth,
-      user_id: userId,
-      item: newWish.item,
-      estimated_cost: newWish.estimated_cost,
-      priority: String(newWish.priority)
-    });
-    resetFabDialog();
-    loadDashboardData();
   };
 
   // Calculate income rate (mock calculation - you can adjust)
@@ -799,156 +710,6 @@ const Dashboard = () => {
         </Card>
       </Collapsible>
     </main>
-
-
-    {/* FAB Dialog */}
-    <Dialog open={fabDialogOpen} onOpenChange={open => {
-      if (!open) resetFabDialog(); else setFabDialogOpen(true);
-    }}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {!selectedMonth ? 'Seleccionar mes' : !selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nuevo Gasto' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
-          </DialogTitle>
-        </DialogHeader>
-
-        {!selectedMonth ? (
-          <div className="grid grid-cols-3 gap-2">
-            {Object.entries(MONTH_INFO).map(([id, month]) => (
-              <Button
-                key={id}
-                variant="outline"
-                className="h-12"
-                onClick={() => setSelectedMonth(Number(id))}
-              >
-                {config.language === 'es' ? month.name.slice(0, 3) : month.nameEn.slice(0, 3)}
-              </Button>
-            ))}
-          </div>
-        ) : !selectedAddType ? (
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('income')}>
-              <span className="text-2xl">💰</span>
-              <span>Ingreso</span>
-            </Button>
-            <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('transaction')}>
-              <span className="text-2xl">💸</span>
-              <span>Gasto</span>
-            </Button>
-            <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('debt')}>
-              <span className="text-2xl">💳</span>
-              <span>Deuda</span>
-            </Button>
-            <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('wishlist')}>
-              <span className="text-2xl">⭐</span>
-              <span>Lista de Deseos</span>
-            </Button>
-          </div>
-        ) : selectedAddType === 'income' ? (
-          <div className="space-y-4">
-            <div>
-              <FormLabel>Fuente</FormLabel>
-              <Input value={newIncome.source} onChange={e => setNewIncome({ ...newIncome, source: e.target.value })} />
-            </div>
-            <div>
-              <FormLabel>Monto</FormLabel>
-              <Input type="number" value={newIncome.amount} onChange={e => setNewIncome({ ...newIncome, amount: Number(e.target.value) })} />
-            </div>
-            <div>
-              <FormLabel>Fecha</FormLabel>
-              <Input type="date" value={newIncome.date} onChange={e => setNewIncome({ ...newIncome, date: e.target.value })} />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-              <Button className="flex-1" onClick={addIncome}>Agregar</Button>
-            </div>
-          </div>
-        ) : selectedAddType === 'transaction' ? (
-          <div className="space-y-4">
-            <div>
-              <FormLabel>Categoría</FormLabel>
-              <Select value={newTxn.category_id} onValueChange={v => setNewTxn({ ...newTxn, category_id: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(cat => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.emoji} {cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <FormLabel>Descripción</FormLabel>
-              <Input value={newTxn.description} onChange={e => setNewTxn({ ...newTxn, description: e.target.value })} />
-            </div>
-            <div>
-              <FormLabel>Monto</FormLabel>
-              <Input type="number" value={newTxn.amount} onChange={e => setNewTxn({ ...newTxn, amount: Number(e.target.value) })} />
-            </div>
-            <div>
-              <FormLabel>Fecha</FormLabel>
-              <Input type="date" value={newTxn.date} onChange={e => setNewTxn({ ...newTxn, date: e.target.value })} />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-              <Button className="flex-1" onClick={addTransaction}>Agregar</Button>
-            </div>
-          </div>
-        ) : selectedAddType === 'debt' ? (
-          <div className="space-y-4">
-            <div>
-              <FormLabel>Cuenta de deuda</FormLabel>
-              <Select value={newDebt.debt_account_id} onValueChange={v => setNewDebt({ ...newDebt, debt_account_id: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map(acc => (
-                    <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <FormLabel>Saldo inicial</FormLabel>
-              <Input type="number" value={newDebt.starting_balance} onChange={e => setNewDebt({ ...newDebt, starting_balance: Number(e.target.value) })} />
-            </div>
-            <div>
-              <FormLabel>Tasa APR (%)</FormLabel>
-              <Input type="number" value={newDebt.interest_rate_apr} onChange={e => setNewDebt({ ...newDebt, interest_rate_apr: Number(e.target.value) })} />
-            </div>
-            <div>
-              <FormLabel>Pago realizado</FormLabel>
-              <Input type="number" value={newDebt.payment_made} onChange={e => setNewDebt({ ...newDebt, payment_made: Number(e.target.value) })} />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-              <Button className="flex-1" onClick={addDebt}>Agregar</Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <FormLabel>Artículo</FormLabel>
-              <Input value={newWish.item} onChange={e => setNewWish({ ...newWish, item: e.target.value })} />
-            </div>
-            <div>
-              <FormLabel>Costo estimado</FormLabel>
-              <Input type="number" value={newWish.estimated_cost} onChange={e => setNewWish({ ...newWish, estimated_cost: Number(e.target.value) })} />
-            </div>
-            <div>
-              <FormLabel>Prioridad (1-5)</FormLabel>
-              <Input type="number" min={1} max={5} value={newWish.priority} onChange={e => setNewWish({ ...newWish, priority: Number(e.target.value) })} />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-              <Button className="flex-1" onClick={addWish}>Agregar</Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
   </div>;
 };
 export default Dashboard;

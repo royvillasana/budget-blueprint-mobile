@@ -14,6 +14,7 @@ const Budget = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('Budget: mounting');
     // Check authentication
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -21,12 +22,12 @@ const Budget = () => {
         return;
       }
       setLoading(false);
-      
+
       // Auto-redirect to current month
       const now = new Date();
       const currentMonth = now.getMonth() + 1; // 1-12
       const currentYear = now.getFullYear();
-      
+
       // Only redirect if it's 2025, otherwise show month selector
       if (currentYear === 2025) {
         navigate(`/budget/2025/${currentMonth}`, { replace: true });

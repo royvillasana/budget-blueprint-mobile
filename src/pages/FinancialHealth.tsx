@@ -65,6 +65,20 @@ interface AIRecommendation {
   impact: string;
 }
 
+const SAVINGS_CATEGORIES = [
+  'Fondo de Emergencia',
+  'Vacaciones',
+  'Coche',
+  'Vivienda/Entrada',
+  'Educación',
+  'Salud/Seguros',
+  'Inversiones',
+  'Jubilación',
+  'Electrónicos/Gadgets',
+  'Regalos/Eventos',
+  'Otros'
+];
+
 export const FinancialHealth = () => {
   const { config } = useApp();
   const { toast } = useToast();
@@ -75,12 +89,13 @@ export const FinancialHealth = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newGoal, setNewGoal] = useState({
-    description: '',
+    description: SAVINGS_CATEGORIES[0],
     amount: '',
     type: 'savings' as const
   });
 
   useEffect(() => {
+    console.log('FinancialHealth: mounting');
     loadFinancialData();
 
     // Listen for goals updates from AI Chat
@@ -681,29 +696,16 @@ export const FinancialHealth = () => {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label htmlFor="description">Descripción</Label>
-                        <Input
-                          id="description"
-                          placeholder="Ej: Ahorrar para vacaciones"
-                          value={newGoal.description}
-                          onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="amount">Cantidad Objetivo ({config.currency})</Label>
-                        <Input
-                          id="amount"
-                          type="number"
-                          placeholder="0.00"
-                          value={newGoal.amount}
-                          onChange={(e) => setNewGoal({ ...newGoal, amount: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
                         <Label htmlFor="type">Tipo de Meta</Label>
                         <Select
                           value={newGoal.type}
-                          onValueChange={(value: any) => setNewGoal({ ...newGoal, type: value })}
+                          onValueChange={(value: any) => {
+                            setNewGoal({
+                              ...newGoal,
+                              type: value,
+                              description: value === 'savings' ? SAVINGS_CATEGORIES[0] : ''
+                            });
+                          }}
                         >
                           <SelectTrigger>
                             <SelectValue />
@@ -715,6 +717,41 @@ export const FinancialHealth = () => {
                             <SelectItem value="income_increase">Aumento de Ingresos</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Descripción</Label>
+                        {newGoal.type === 'savings' ? (
+                          <Select
+                            value={newGoal.description}
+                            onValueChange={(value) => setNewGoal({ ...newGoal, description: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccionar categoría de ahorro" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SAVINGS_CATEGORIES.map(cat => (
+                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            id="description"
+                            placeholder="Ej: Pagar tarjeta VISA"
+                            value={newGoal.description}
+                            onChange={(e) => setNewGoal({ ...newGoal, description: e.target.value })}
+                          />
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="amount">Cantidad Objetivo ({config.currency})</Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          placeholder="0.00"
+                          value={newGoal.amount}
+                          onChange={(e) => setNewGoal({ ...newGoal, amount: e.target.value })}
+                        />
                       </div>
                     </div>
                     <DialogFooter>

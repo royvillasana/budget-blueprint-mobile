@@ -148,6 +148,7 @@ Selecciona la función adecuada en función de la intención y contexto detectad
 2. Sugiere la categoría adecuada con requestCategorySelection basándote en la descripción.
 3. Confirma con el usuario el resumen usando requestConfirmation.
 4. Solo tras la confirmación explícita, ejecuta addTransaction.
+5. Si el usuario menciona que un ingreso o gasto es para una meta específica (ej. "ahorro para vacaciones"), asegúrate de incluir el goalId correspondiente en el transactionData.
 
 **Para ELIMINAR transacciones:**
 1. Cuando el usuario pida borrar/eliminar una transacción, identifica primero qué transacción específica (por descripción, monto, fecha).
@@ -199,7 +200,7 @@ You have access to the user's complete financial history, including transactions
 - When analyzing debts, consider balances, interest rates, and payments to offer strategies like Snowball or Avalanche.
 - Evaluate financial health and use its metrics to personalize advice.
 
-🛠️ AVAILABLE CAPABILITIES AND FUNCTIONS:
+🛠️ CAPABILITIES AND FUNCTIONS:
 
 Select the appropriate function based on detected intent and context:
 - **getSpendingAnalysis**: Analyzes expenses by category, identifies excesses and savings opportunities.
@@ -222,6 +223,7 @@ Select the appropriate function based on detected intent and context:
    - **Expense (gastos)**: Money spent - **REQUIRES A CATEGORY**. Use requestCategorySelection to suggest appropriate category based on description.
 3. Confirm with user using requestConfirmation showing summary (including category if it's an expense).
 4. Only after explicit confirmation, execute addTransaction (with category only if it's an expense).
+5. If the user mentions that an income or expense is for a specific goal (e.g., "savings for vacation"), be sure to include the corresponding goalId in the transactionData.
 
 **To EDIT/UPDATE transactions:**
 1. When user asks to edit/modify/update a transaction, first identify which specific transaction (by description, amount, date).
@@ -445,6 +447,10 @@ ${cd.annualSummary ? `
                   date: {
                     type: 'string',
                     description: 'Date of transaction (YYYY-MM-DD)'
+                  },
+                  goalId: {
+                    type: 'string',
+                    description: 'Optional: The UUID of the financial goal to associate this transaction with. Use this if the user is adding a saving for a goal.'
                   }
                 },
                 required: ['description', 'amount', 'type', 'date']
@@ -497,7 +503,11 @@ ${cd.annualSummary ? `
                         type: 'string',
                         description: 'Category ID - only required if type is "expense". Omit for income.'
                       },
-                      date: { type: 'string' }
+                      date: { type: 'string' },
+                      goalId: {
+                        type: 'string',
+                        description: 'Optional: UUID of the financial goal to link this transaction to.'
+                      }
                     },
                     required: ['description', 'amount', 'type', 'date']
                   }

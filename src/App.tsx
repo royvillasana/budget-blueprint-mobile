@@ -20,6 +20,8 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AIChat } from './components/AIChat';
 import { useState, useEffect } from 'react';
 
+import { GlobalFABDialog } from './components/GlobalFABDialog';
+
 const queryClient = new QueryClient();
 
 const App = () => {
@@ -102,6 +104,7 @@ const App = () => {
                     </Routes>
                   </div>
                   <AIChat />
+                  <GlobalFABDialog />
                 </BrowserRouter>
               </TooltipProvider>
             </ConversationProvider>

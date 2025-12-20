@@ -12,7 +12,7 @@ import { Trash2, Save, ChevronDown, Eye, EyeOff, HelpCircle, Pencil, Check, Chev
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -64,36 +64,9 @@ const MonthlyBudget = () => {
 
   // Transactions
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [newTxn, setNewTxn] = useState({
-    category_id: '',
-    description: '',
-    amount: 0,
-    date: '',
-    payment_method_id: '',
-    account_id: ''
-  });
-
-  // Payment methods & accounts
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
-
-  // Debts
-  const [debts, setDebts] = useState<any[]>([]);
-  const [newDebt, setNewDebt] = useState({
-    debt_account_id: '',
-    starting_balance: 0,
-    interest_rate_apr: 0,
-    payment_made: 0,
-    min_payment: 0
-  });
-
+  const [financialGoals, setFinancialGoals] = useState<any[]>([]);
   // Wishlist
   const [wishlist, setWishlist] = useState<any[]>([]);
-  const [newWish, setNewWish] = useState({
-    item: '',
-    estimated_cost: 0,
-    priority: 1
-  });
 
   // Collapsible states
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -103,12 +76,8 @@ const MonthlyBudget = () => {
   const [debtsOpen, setDebtsOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
 
-  // FAB Dialog state
-  const [fabDialogOpen, setFabDialogOpen] = useState(false);
-
   // Data masking state
   const [dataMasked, setDataMasked] = useState(false);
-  const [selectedAddType, setSelectedAddType] = useState<'income' | 'transaction' | 'debt' | 'wishlist' | null>(null);
 
   // Edit states
   const [editTransactionDialog, setEditTransactionDialog] = useState(false);
@@ -121,20 +90,18 @@ const MonthlyBudget = () => {
   const [editingWish, setEditingWish] = useState<any>(null);
 
   // Combobox states
-  const [categoryComboOpen, setCategoryComboOpen] = useState(false);
   const [editCategoryComboOpen, setEditCategoryComboOpen] = useState(false);
 
-  // Confirmation state for "add another"
-  const [showAddAnotherPrompt, setShowAddAnotherPrompt] = useState(false);
-
   useEffect(() => {
-    const handleOpenAddTransaction = () => {
-      setFabDialogOpen(true);
+    const handleRefresh = () => {
+      loadMonthData(monthId, currentMonth);
     };
 
-    window.addEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
-    return () => window.removeEventListener('open-add-transaction-dialog', handleOpenAddTransaction);
-  }, []);
+    window.addEventListener('transaction-added', handleRefresh);
+    return () => {
+      window.removeEventListener('transaction-added', handleRefresh);
+    };
+  }, [monthId, currentMonth]);
 
   useEffect(() => {
     const monthNum = parseInt(month || '1');
@@ -193,7 +160,7 @@ const MonthlyBudget = () => {
       setMonthId(monthData.id);
 
       // Load all data for the month - pass monthNum directly instead of using state
-      await Promise.all([loadSettings(monthData.id, monthNum), loadIncome(monthData.id, monthNum), loadBudget(monthData.id, monthNum, user.id), loadTransactions(monthData.id, user.id, monthNum), loadDebts(monthData.id, user.id, monthNum), loadWishlist(monthData.id, monthNum), loadCategories(), loadPaymentMethods(), loadAccounts()]);
+      await Promise.all([loadSettings(monthData.id, monthNum), loadIncome(monthData.id, monthNum), loadBudget(monthData.id, monthNum, user.id), loadTransactions(monthData.id, user.id, monthNum), loadDebts(monthData.id, user.id, monthNum), loadWishlist(monthData.id, monthNum), loadCategories(), loadPaymentMethods(), loadAccounts(), loadFinancialGoals(user.id)]);
     } catch (error) {
       console.error('Error loading month data:', error);
       toast({
@@ -312,6 +279,14 @@ const MonthlyBudget = () => {
     } = await supabase.from('accounts').select('*').eq('user_id', user.id);
     setAccounts(data || []);
   };
+  const loadFinancialGoals = async (uid: string) => {
+    const {
+      data,
+      error
+    } = await supabase.from('financial_goals').select('*').eq('user_id', uid).eq('is_completed', false);
+    if (error) console.error('Error loading financial goals:', error);
+    setFinancialGoals(data || []);
+  };
   const saveSettings = async () => {
     const tableName = getTableName('monthly_settings', currentMonth) as any;
     const {
@@ -358,7 +333,8 @@ const MonthlyBudget = () => {
       amount: 0,
       date: '',
       payment_method_id: '',
-      account_id: ''
+      account_id: '',
+      goal_id: ''
     });
     setNewDebt({
       debt_account_id: '',
@@ -378,18 +354,18 @@ const MonthlyBudget = () => {
     setFabDialogOpen(false);
     setSelectedAddType(null);
     setCategoryComboOpen(false);
-    setShowAddAnotherPrompt(false);
+    // setShowAddAnotherPrompt(false); // Removed as per instruction
     resetFormFields();
   };
 
-  const handleAddAnother = () => {
-    setShowAddAnotherPrompt(false);
-    resetFormFields();
-  };
+  // const handleAddAnother = () => { // Removed as per instruction
+  //   setShowAddAnotherPrompt(false);
+  //   resetFormFields();
+  // };
 
-  const handleDontAddAnother = () => {
-    resetFabDialog();
-  };
+  // const handleDontAddAnother = () => { // Removed as per instruction
+  //   resetFabDialog();
+  // };
 
   const addIncome = async () => {
     const tableName = getTableName('monthly_income', currentMonth) as any;
@@ -406,7 +382,7 @@ const MonthlyBudget = () => {
       title: 'Agregado',
       description: 'Ingreso agregado'
     });
-    setShowAddAnotherPrompt(true);
+    // setShowAddAnotherPrompt(true); // Removed as per instruction
   };
   const deleteIncome = async (id: string) => {
     const tableName = getTableName('monthly_income', currentMonth) as any;
@@ -453,7 +429,8 @@ const MonthlyBudget = () => {
       direction: 'EXPENSE',
       currency_code: config.currency,
       payment_method_id: newTxn.payment_method_id || null,
-      account_id: newTxn.account_id || null
+      account_id: newTxn.account_id || null,
+      goal_id: newTxn.goal_id === 'none' ? null : (newTxn.goal_id || null)
     }]);
     loadTransactions(monthId, userId, currentMonth);
     toast({
@@ -991,7 +968,12 @@ const MonthlyBudget = () => {
                   {transactions.map(txn => <TableRow key={txn.id} id={`txn-${txn.id}`}>
                     <TableCell>{txn.date}</TableCell>
                     <TableCell><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{txn.category_emoji || txn.categories?.emoji} {txn.category_name || txn.categories?.name}</span></TableCell>
-                    <TableCell>{txn.description}</TableCell>
+                    <TableCell>
+                      {txn.description}
+                      {txn.goal_id && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        🎯 Meta
+                      </span>}
+                    </TableCell>
                     <TableCell className="text-right text-desires">{formatCurrency(txn.amount)}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex gap-1 justify-center">
@@ -1139,261 +1121,14 @@ const MonthlyBudget = () => {
       </Collapsible>
     </main>
 
-    {/* Unified Add Dialog */}
-    <Dialog open={fabDialogOpen} onOpenChange={open => {
-      if (!open) resetFabDialog(); else setFabDialogOpen(true);
-    }}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {!selectedAddType ? 'Agregar nuevo' : selectedAddType === 'income' ? 'Nuevo Ingreso' : selectedAddType === 'transaction' ? 'Nuevo Gasto' : selectedAddType === 'debt' ? 'Nueva Deuda' : 'Nuevo Deseo'}
-          </DialogTitle>
-        </DialogHeader>
-
-        {!selectedAddType ? <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('income')}>
-            <span className="text-2xl">💰</span>
-            <span>Ingreso</span>
-          </Button>
-          <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('transaction')}>
-            <span className="text-2xl">💸</span>
-            <span>Gasto</span>
-          </Button>
-          <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('debt')}>
-            <span className="text-2xl">💳</span>
-            <span>Deuda</span>
-          </Button>
-          <Button variant="outline" className="h-24 flex flex-col gap-2" onClick={() => setSelectedAddType('wishlist')}>
-            <span className="text-2xl">⭐</span>
-            <span>Lista de Deseos</span>
-          </Button>
-        </div> : selectedAddType === 'income' ? (
-          showAddAnotherPrompt ? <div className="space-y-4 text-center">
-            <p className="text-lg">¿Vas a hacer otro {getTransactionTypeName('income')} más?</p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handleDontAddAnother}>No</Button>
-              <Button className="flex-1" onClick={handleAddAnother}>Sí</Button>
-            </div>
-          </div> : <div className="space-y-4">
-            <div>
-              <Label>Fuente</Label>
-              <Input value={newIncome.source} onChange={e => setNewIncome({
-                ...newIncome,
-                source: e.target.value
-              })} />
-            </div>
-            <div>
-              <Label>Monto</Label>
-              <Input type="number" value={newIncome.amount} onChange={e => setNewIncome({
-                ...newIncome,
-                amount: Number(e.target.value)
-              })} />
-            </div>
-            <div>
-              <Label>Fecha</Label>
-              <DatePicker
-                value={newIncome.date}
-                onChange={(date) => setNewIncome({
-                  ...newIncome,
-                  date
-                })}
-                placeholder="Seleccionar fecha"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-              <Button className="flex-1" onClick={addIncome}>Agregar</Button>
-            </div>
-          </div>
-        ) : selectedAddType === 'transaction' ? (
-          showAddAnotherPrompt ? <div className="space-y-4 text-center">
-            <p className="text-lg">¿Vas a hacer otro {getTransactionTypeName('transaction')} más?</p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handleDontAddAnother}>No</Button>
-              <Button className="flex-1" onClick={handleAddAnother}>Sí</Button>
-            </div>
-          </div> : <div className="space-y-4">
-            <div>
-              <Label>Categoría</Label>
-              <Popover open={categoryComboOpen} onOpenChange={setCategoryComboOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={categoryComboOpen}
-                    className="w-full justify-between"
-                  >
-                    {newTxn.category_id
-                      ? (() => {
-                          const cat = categories.find(c => c.id === newTxn.category_id);
-                          return cat ? `${cat.emoji} ${cat.name}` : "Seleccionar categoría...";
-                        })()
-                      : "Seleccionar categoría..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Buscar categoría..." />
-                    <CommandList>
-                      <CommandEmpty>No se encontró la categoría.</CommandEmpty>
-                      <CommandGroup>
-                        {categories.map(cat => (
-                          <CommandItem
-                            key={cat.id}
-                            value={`${cat.emoji} ${cat.name}`}
-                            onSelect={() => {
-                              setNewTxn({
-                                ...newTxn,
-                                category_id: cat.id
-                              });
-                              setCategoryComboOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={`mr-2 h-4 w-4 ${
-                                newTxn.category_id === cat.id ? "opacity-100" : "opacity-0"
-                              }`}
-                            />
-                            {cat.emoji} {cat.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div>
-              <Label>Descripción</Label>
-              <Input value={newTxn.description} onChange={e => setNewTxn({
-                ...newTxn,
-                description: e.target.value
-              })} />
-            </div>
-            <div>
-              <Label>Monto</Label>
-              <Input type="number" value={newTxn.amount} onChange={e => setNewTxn({
-                ...newTxn,
-                amount: Number(e.target.value)
-              })} />
-            </div>
-            <div>
-              <Label>Fecha</Label>
-              <DatePicker
-                value={newTxn.date}
-                onChange={(date) => setNewTxn({
-                  ...newTxn,
-                  date
-                })}
-                placeholder="Seleccionar fecha"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-              <Button className="flex-1" onClick={addTransaction}>Agregar</Button>
-            </div>
-          </div>
-        ) : selectedAddType === 'debt' ? (
-          showAddAnotherPrompt ? <div className="space-y-4 text-center">
-            <p className="text-lg">¿Vas a hacer otra {getTransactionTypeName('debt')} más?</p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handleDontAddAnother}>No</Button>
-              <Button className="flex-1" onClick={handleAddAnother}>Sí</Button>
-            </div>
-          </div> : <div className="space-y-4">
-            <div>
-              <Label>Cuenta de deuda</Label>
-              <Select value={newDebt.debt_account_id} onValueChange={v => setNewDebt({
-                ...newDebt,
-                debt_account_id: v
-              })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar cuenta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.filter(a => a.type === 'CREDIT_CARD' || a.type === 'LOAN').map(acc => <SelectItem key={acc.id} value={acc.id}>
-                    {acc.name}
-                  </SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Saldo inicial</Label>
-              <Input type="number" value={newDebt.starting_balance} onChange={e => setNewDebt({
-                ...newDebt,
-                starting_balance: Number(e.target.value)
-              })} />
-            </div>
-            <div>
-              <Label>Tasa de interés (APR %)</Label>
-              <Input type="number" value={newDebt.interest_rate_apr} onChange={e => setNewDebt({
-                ...newDebt,
-                interest_rate_apr: Number(e.target.value)
-              })} />
-            </div>
-            <div>
-              <Label>Pago mínimo</Label>
-              <Input type="number" value={newDebt.min_payment} onChange={e => setNewDebt({
-                ...newDebt,
-                min_payment: Number(e.target.value)
-              })} />
-            </div>
-            <div>
-              <Label>Pago realizado</Label>
-              <Input type="number" value={newDebt.payment_made} onChange={e => setNewDebt({
-                ...newDebt,
-                payment_made: Number(e.target.value)
-              })} />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-              <Button className="flex-1" onClick={addDebt}>Agregar</Button>
-            </div>
-          </div>
-        ) : (
-          showAddAnotherPrompt ? <div className="space-y-4 text-center">
-            <p className="text-lg">¿Vas a hacer otro {getTransactionTypeName('wishlist')} más?</p>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handleDontAddAnother}>No</Button>
-              <Button className="flex-1" onClick={handleAddAnother}>Sí</Button>
-            </div>
-          </div> : <div className="space-y-4">
-            <div>
-              <Label>Artículo</Label>
-              <Input value={newWish.item} onChange={e => setNewWish({
-                ...newWish,
-                item: e.target.value
-              })} />
-            </div>
-            <div>
-              <Label>Costo estimado</Label>
-              <Input type="number" value={newWish.estimated_cost} onChange={e => setNewWish({
-                ...newWish,
-                estimated_cost: Number(e.target.value)
-              })} />
-            </div>
-            <div>
-              <Label>Prioridad (1-5)</Label>
-              <Input type="number" min={1} max={5} value={newWish.priority} onChange={e => setNewWish({
-                ...newWish,
-                priority: Number(e.target.value)
-              })} />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setSelectedAddType(null)}>Atrás</Button>
-              <Button className="flex-1" onClick={addWish}>Agregar</Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-
     {/* Edit Transaction Dialog */}
     <Dialog open={editTransactionDialog} onOpenChange={setEditTransactionDialog}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Editar Gasto</DialogTitle>
+          <DialogDescription>
+            Modifica los detalles de este gasto.
+          </DialogDescription>
         </DialogHeader>
         {editingTransaction && <div className="space-y-4">
           <div>
@@ -1408,9 +1143,9 @@ const MonthlyBudget = () => {
                 >
                   {editingTransaction.category_id
                     ? (() => {
-                        const cat = categories.find(c => c.id === editingTransaction.category_id);
-                        return cat ? `${cat.emoji} ${cat.name}` : "Seleccionar categoría...";
-                      })()
+                      const cat = categories.find(c => c.id === editingTransaction.category_id);
+                      return cat ? `${cat.emoji} ${cat.name}` : "Seleccionar categoría...";
+                    })()
                     : "Seleccionar categoría..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
@@ -1434,9 +1169,8 @@ const MonthlyBudget = () => {
                           }}
                         >
                           <Check
-                            className={`mr-2 h-4 w-4 ${
-                              editingTransaction.category_id === cat.id ? "opacity-100" : "opacity-0"
-                            }`}
+                            className={`mr-2 h-4 w-4 ${editingTransaction.category_id === cat.id ? "opacity-100" : "opacity-0"
+                              }`}
                           />
                           {cat.emoji} {cat.name}
                         </CommandItem>
@@ -1448,15 +1182,15 @@ const MonthlyBudget = () => {
             </Popover>
           </div>
           <div>
-            <Label>Descripción</Label>
-            <Input value={editingTransaction.description} onChange={e => setEditingTransaction({
+            <Label htmlFor="edit-txn-description">Descripción</Label>
+            <Input id="edit-txn-description" value={editingTransaction.description} onChange={e => setEditingTransaction({
               ...editingTransaction,
               description: e.target.value
             })} />
           </div>
           <div>
-            <Label>Monto</Label>
-            <Input type="number" value={Math.abs(editingTransaction.amount)} onChange={e => setEditingTransaction({
+            <Label htmlFor="edit-txn-amount">Monto</Label>
+            <Input id="edit-txn-amount" type="number" value={Math.abs(editingTransaction.amount)} onChange={e => setEditingTransaction({
               ...editingTransaction,
               amount: Number(e.target.value)
             })} />
@@ -1489,18 +1223,21 @@ const MonthlyBudget = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Editar Ingreso</DialogTitle>
+          <DialogDescription>
+            Modifica los detalles de este ingreso.
+          </DialogDescription>
         </DialogHeader>
         {editingIncome && <div className="space-y-4">
           <div>
-            <Label>Fuente</Label>
-            <Input value={editingIncome.source} onChange={e => setEditingIncome({
+            <Label htmlFor="edit-income-source">Fuente</Label>
+            <Input id="edit-income-source" value={editingIncome.source} onChange={e => setEditingIncome({
               ...editingIncome,
               source: e.target.value
             })} />
           </div>
           <div>
-            <Label>Monto</Label>
-            <Input type="number" value={editingIncome.amount} onChange={e => setEditingIncome({
+            <Label htmlFor="edit-income-amount">Monto</Label>
+            <Input id="edit-income-amount" type="number" value={editingIncome.amount} onChange={e => setEditingIncome({
               ...editingIncome,
               amount: Number(e.target.value)
             })} />
@@ -1532,6 +1269,9 @@ const MonthlyBudget = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Editar Deuda</DialogTitle>
+          <DialogDescription>
+            Modifica la información de esta deuda.
+          </DialogDescription>
         </DialogHeader>
         {editingDebt && <div className="space-y-4">
           <div>
@@ -1551,29 +1291,29 @@ const MonthlyBudget = () => {
             </Select>
           </div>
           <div>
-            <Label>Saldo inicial</Label>
-            <Input type="number" value={editingDebt.starting_balance} onChange={e => setEditingDebt({
+            <Label htmlFor="edit-debt-balance">Saldo inicial</Label>
+            <Input id="edit-debt-balance" type="number" value={editingDebt.starting_balance} onChange={e => setEditingDebt({
               ...editingDebt,
               starting_balance: Number(e.target.value)
             })} />
           </div>
           <div>
-            <Label>Tasa de interés (APR %)</Label>
-            <Input type="number" value={editingDebt.interest_rate_apr} onChange={e => setEditingDebt({
+            <Label htmlFor="edit-debt-apr">Tasa de interés (APR %)</Label>
+            <Input id="edit-debt-apr" type="number" value={editingDebt.interest_rate_apr} onChange={e => setEditingDebt({
               ...editingDebt,
               interest_rate_apr: Number(e.target.value)
             })} />
           </div>
           <div>
-            <Label>Pago mínimo</Label>
-            <Input type="number" value={editingDebt.min_payment} onChange={e => setEditingDebt({
+            <Label htmlFor="edit-debt-min-payment">Pago mínimo</Label>
+            <Input id="edit-debt-min-payment" type="number" value={editingDebt.min_payment} onChange={e => setEditingDebt({
               ...editingDebt,
               min_payment: Number(e.target.value)
             })} />
           </div>
           <div>
-            <Label>Pago realizado</Label>
-            <Input type="number" value={editingDebt.payment_made} onChange={e => setEditingDebt({
+            <Label htmlFor="edit-debt-payment">Pago realizado</Label>
+            <Input id="edit-debt-payment" type="number" value={editingDebt.payment_made} onChange={e => setEditingDebt({
               ...editingDebt,
               payment_made: Number(e.target.value)
             })} />
@@ -1594,25 +1334,28 @@ const MonthlyBudget = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Editar Deseo</DialogTitle>
+          <DialogDescription>
+            Modifica los detalles de este item en tu lista de deseos.
+          </DialogDescription>
         </DialogHeader>
         {editingWish && <div className="space-y-4">
           <div>
-            <Label>Artículo</Label>
-            <Input value={editingWish.item} onChange={e => setEditingWish({
+            <Label htmlFor="edit-wish-item">Artículo</Label>
+            <Input id="edit-wish-item" value={editingWish.item} onChange={e => setEditingWish({
               ...editingWish,
               item: e.target.value
             })} />
           </div>
           <div>
-            <Label>Costo estimado</Label>
-            <Input type="number" value={editingWish.estimated_cost} onChange={e => setEditingWish({
+            <Label htmlFor="edit-wish-cost">Costo estimado</Label>
+            <Input id="edit-wish-cost" type="number" value={editingWish.estimated_cost} onChange={e => setEditingWish({
               ...editingWish,
               estimated_cost: Number(e.target.value)
             })} />
           </div>
           <div>
-            <Label>Prioridad (1-5)</Label>
-            <Input type="number" min={1} max={5} value={editingWish.priority} onChange={e => setEditingWish({
+            <Label htmlFor="edit-wish-priority">Prioridad (1-5)</Label>
+            <Input id="edit-wish-priority" type="number" min={1} max={5} value={editingWish.priority} onChange={e => setEditingWish({
               ...editingWish,
               priority: Number(e.target.value)
             })} />

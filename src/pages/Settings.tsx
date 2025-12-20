@@ -16,6 +16,9 @@ const Settings = () => {
   const { storageType, setStorageType } = useStorage();
   const { toast } = useToast();
   const t = translations[config.language];
+
+  const [notifications, setNotifications] = useState(true);
+
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
