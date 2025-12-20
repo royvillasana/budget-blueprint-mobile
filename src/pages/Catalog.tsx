@@ -85,6 +85,10 @@ const Catalog = () => {
     currency_code: 'USD',
   });
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
   const loadData = async () => {
     setLoading(true);
 
@@ -383,6 +387,7 @@ const Catalog = () => {
                             value={categoryForm.name}
                             onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
                             placeholder="e.g., Groceries"
+                            autoComplete="off"
                           />
                         </div>
                         <div>
@@ -393,6 +398,7 @@ const Catalog = () => {
                             onChange={(e) => setCategoryForm({ ...categoryForm, emoji: e.target.value })}
                             placeholder="🛒"
                             maxLength={2}
+                            autoComplete="off"
                           />
                         </div>
                         <div>
@@ -423,6 +429,7 @@ const Catalog = () => {
                             value={categoryForm.monthly_budget}
                             onChange={(e) => setCategoryForm({ ...categoryForm, monthly_budget: parseFloat(e.target.value) || 0 })}
                             placeholder="0.00"
+                            autoComplete="off"
                           />
                           <p className="text-xs text-muted-foreground mt-1">
                             Presupuesto mensual asignado para esta categoría
@@ -536,6 +543,7 @@ const Catalog = () => {
                             value={paymentForm.name}
                             onChange={(e) => setPaymentForm({ ...paymentForm, name: e.target.value })}
                             placeholder="e.g., Chase Credit Card"
+                            autoComplete="off"
                           />
                         </div>
                         <div>
@@ -638,6 +646,7 @@ const Catalog = () => {
                             value={accountForm.name}
                             onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
                             placeholder="e.g., Chase Checking"
+                            autoComplete="off"
                           />
                         </div>
                         <div>

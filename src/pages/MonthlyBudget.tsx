@@ -52,11 +52,6 @@ const MonthlyBudget = () => {
 
   // Income
   const [incomeItems, setIncomeItems] = useState<any[]>([]);
-  const [newIncome, setNewIncome] = useState({
-    source: '',
-    amount: 0,
-    date: ''
-  });
 
   // Budget categories
   const [categories, setCategories] = useState<any[]>([]);
@@ -64,7 +59,10 @@ const MonthlyBudget = () => {
 
   // Transactions
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [debts, setDebts] = useState<any[]>([]);
   const [financialGoals, setFinancialGoals] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   // Wishlist
   const [wishlist, setWishlist] = useState<any[]>([]);
 
@@ -321,69 +319,6 @@ const MonthlyBudget = () => {
     return names[type];
   };
 
-  const resetFormFields = () => {
-    setNewIncome({
-      source: '',
-      amount: 0,
-      date: ''
-    });
-    setNewTxn({
-      category_id: '',
-      description: '',
-      amount: 0,
-      date: '',
-      payment_method_id: '',
-      account_id: '',
-      goal_id: ''
-    });
-    setNewDebt({
-      debt_account_id: '',
-      starting_balance: 0,
-      interest_rate_apr: 0,
-      payment_made: 0,
-      min_payment: 0
-    });
-    setNewWish({
-      item: '',
-      estimated_cost: 0,
-      priority: 3
-    });
-  };
-
-  const resetFabDialog = () => {
-    setFabDialogOpen(false);
-    setSelectedAddType(null);
-    setCategoryComboOpen(false);
-    // setShowAddAnotherPrompt(false); // Removed as per instruction
-    resetFormFields();
-  };
-
-  // const handleAddAnother = () => { // Removed as per instruction
-  //   setShowAddAnotherPrompt(false);
-  //   resetFormFields();
-  // };
-
-  // const handleDontAddAnother = () => { // Removed as per instruction
-  //   resetFabDialog();
-  // };
-
-  const addIncome = async () => {
-    const tableName = getTableName('monthly_income', currentMonth) as any;
-    await supabase.from(tableName).insert([{
-      month_id: monthId,
-      user_id: userId,
-      source: newIncome.source,
-      amount: newIncome.amount,
-      date: newIncome.date,
-      currency_code: config.currency
-    }]);
-    loadIncome(monthId, currentMonth);
-    toast({
-      title: 'Agregado',
-      description: 'Ingreso agregado'
-    });
-    // setShowAddAnotherPrompt(true); // Removed as per instruction
-  };
   const deleteIncome = async (id: string) => {
     const tableName = getTableName('monthly_income', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
@@ -416,29 +351,6 @@ const MonthlyBudget = () => {
     }).eq('id', id);
     loadBudget(monthId, currentMonth);
   };
-  const addTransaction = async () => {
-    const tableName = getTableName('monthly_transactions', currentMonth) as any;
-    await supabase.from(tableName).insert([{
-      month_id: monthId,
-      user_id: userId,
-      category_id: newTxn.category_id,
-      description: newTxn.description,
-      amount: -Math.abs(newTxn.amount),
-      // Negative for expenses
-      date: newTxn.date,
-      direction: 'EXPENSE',
-      currency_code: config.currency,
-      payment_method_id: newTxn.payment_method_id || null,
-      account_id: newTxn.account_id || null,
-      goal_id: newTxn.goal_id === 'none' ? null : (newTxn.goal_id || null)
-    }]);
-    loadTransactions(monthId, userId, currentMonth);
-    toast({
-      title: 'Agregado',
-      description: 'Transacción agregada'
-    });
-    setShowAddAnotherPrompt(true);
-  };
   const deleteTransaction = async (id: string) => {
     const tableName = getTableName('monthly_transactions', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
@@ -468,24 +380,6 @@ const MonthlyBudget = () => {
       description: 'Transacción actualizada'
     });
   };
-  const addDebt = async () => {
-    const tableName = getTableName('monthly_debts', currentMonth) as any;
-    await supabase.from(tableName).insert([{
-      month_id: monthId,
-      user_id: userId,
-      debt_account_id: newDebt.debt_account_id,
-      starting_balance: newDebt.starting_balance,
-      interest_rate_apr: newDebt.interest_rate_apr,
-      payment_made: newDebt.payment_made,
-      min_payment: newDebt.min_payment
-    }]);
-    loadDebts(monthId, userId, currentMonth);
-    toast({
-      title: 'Agregado',
-      description: 'Deuda agregada'
-    });
-    setShowAddAnotherPrompt(true);
-  };
   const deleteDebt = async (id: string) => {
     const tableName = getTableName('monthly_debts', currentMonth) as any;
     await supabase.from(tableName).delete().eq('id', id);
@@ -512,22 +406,6 @@ const MonthlyBudget = () => {
       title: 'Actualizado',
       description: 'Deuda actualizada'
     });
-  };
-  const addWish = async () => {
-    const tableName = getTableName('monthly_wishlist', currentMonth) as any;
-    await supabase.from(tableName).insert([{
-      month_id: monthId,
-      user_id: userId,
-      item: newWish.item,
-      estimated_cost: newWish.estimated_cost,
-      priority: String(newWish.priority)
-    }]);
-    loadWishlist(monthId, currentMonth);
-    toast({
-      title: 'Agregado',
-      description: 'Deseo agregado'
-    });
-    setShowAddAnotherPrompt(true);
   };
   const deleteWish = async (id: string) => {
     const tableName = getTableName('monthly_wishlist', currentMonth) as any;
