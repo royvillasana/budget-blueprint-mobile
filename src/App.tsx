@@ -7,20 +7,27 @@ import { AppProvider } from "./contexts/AppContext";
 import { StorageProvider } from "./contexts/StorageContext";
 import { ConversationProvider } from "./contexts/ConversationContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Dashboard from "./pages/Dashboard";
-import MonthlyBudget from "./pages/MonthlyBudget";
-import Budget from "./pages/Budget";
-import Catalog from "./pages/Catalog";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import { FinancialHealth } from "./pages/FinancialHealth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { AIChat } from './components/AIChat';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 
-import { GlobalFABDialog } from './components/GlobalFABDialog';
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const MonthlyBudget = lazy(() => import("./pages/MonthlyBudget"));
+const Budget = lazy(() => import("./pages/Budget"));
+const Catalog = lazy(() => import("./pages/Catalog"));
+const Settings = lazy(() => import("./pages/Settings"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
+const FinancialHealth = lazy(() => import("./pages/FinancialHealth").then(module => ({ default: module.FinancialHealth })));
+const AIChat = lazy(() => import('./components/AIChat').then(module => ({ default: module.AIChat })));
+const GlobalFABDialog = lazy(() => import('./components/GlobalFABDialog').then(module => ({ default: module.GlobalFABDialog })));
+
+const LoadingFallback = () => (
+  <div className="h-screen w-full flex items-center justify-center bg-background">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
+
 
 const queryClient = new QueryClient();
 
@@ -49,62 +56,66 @@ const App = () => {
                   <div
                     className={`transition-all duration-300 ease-in-out h-screen overflow-y-auto ${isDrawerOpen ? 'md:mr-[25%]' : 'mr-0'}`}
                   >
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route
-                        path="/dashboard"
-                        element={
-                          <ProtectedRoute>
-                            <Dashboard />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/budget"
-                        element={
-                          <ProtectedRoute>
-                            <Budget />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/budget/:year/:month"
-                        element={
-                          <ProtectedRoute>
-                            <MonthlyBudget />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/catalog"
-                        element={
-                          <ProtectedRoute>
-                            <Catalog />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/settings"
-                        element={
-                          <ProtectedRoute>
-                            <Settings />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/financial-health"
-                        element={
-                          <ProtectedRoute>
-                            <FinancialHealth />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/auth" element={<Auth />} />
+                        <Route
+                          path="/dashboard"
+                          element={
+                            <ProtectedRoute>
+                              <Dashboard />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/budget"
+                          element={
+                            <ProtectedRoute>
+                              <Budget />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/budget/:year/:month"
+                          element={
+                            <ProtectedRoute>
+                              <MonthlyBudget />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/catalog"
+                          element={
+                            <ProtectedRoute>
+                              <Catalog />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/settings"
+                          element={
+                            <ProtectedRoute>
+                              <Settings />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/financial-health"
+                          element={
+                            <ProtectedRoute>
+                              <FinancialHealth />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
                   </div>
-                  <AIChat />
-                  <GlobalFABDialog />
+                  <Suspense fallback={null}>
+                    <AIChat />
+                    <GlobalFABDialog />
+                  </Suspense>
                 </BrowserRouter>
               </TooltipProvider>
             </ConversationProvider>
