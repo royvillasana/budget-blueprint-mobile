@@ -204,8 +204,15 @@ const MonthlyBudget = () => {
           data: allCategories
         } = await supabase.from('categories').select('*').eq('is_active', true);
         if (allCategories && allCategories.length > 0) {
+          // De-duplicate categories by name and emoji
+          const uniqueCategories = allCategories.filter((cat, index, self) =>
+            index === self.findIndex((c) =>
+              c.name === cat.name && c.emoji === cat.emoji
+            )
+          );
+
           const tableName = getTableName('monthly_budget', monthNum) as any;
-          const budgetEntries = allCategories.map(cat => ({
+          const budgetEntries = uniqueCategories.map(cat => ({
             month_id: monthId,
             user_id: userIdToUse,
             category_id: cat.id,
@@ -459,9 +466,21 @@ const MonthlyBudget = () => {
       };
     });
   };
-  const needsBudget = enrichBudgetItems(budgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'NEEDS'));
-  const wantsBudget = enrichBudgetItems(budgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'WANTS'));
-  const futureBudget = enrichBudgetItems(budgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'FUTURE'));
+  // De-duplicate budget items for the UI by category name and emoji
+  const uniqueBudgetItems = budgetItems.reduce((acc: any[], current) => {
+    const isDuplicate = acc.some(item =>
+      (item.category_name || item.categories?.name) === (current.category_name || current.categories?.name) &&
+      (item.category_emoji || item.categories?.emoji) === (current.category_emoji || current.categories?.emoji)
+    );
+    if (!isDuplicate) {
+      acc.push(current);
+    }
+    return acc;
+  }, []);
+
+  const needsBudget = enrichBudgetItems(uniqueBudgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'NEEDS'));
+  const wantsBudget = enrichBudgetItems(uniqueBudgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'WANTS'));
+  const futureBudget = enrichBudgetItems(uniqueBudgetItems.filter(b => (b.bucket_50_30_20 || b.categories?.bucket_50_30_20) === 'FUTURE'));
 
   // Calculate totals for charts
   const needsActual = needsBudget.reduce((sum, item) => sum + (item.calculatedActual || 0), 0);

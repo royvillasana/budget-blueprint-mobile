@@ -160,6 +160,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (error) throw error;
 
         if (categoriesData) {
+          // De-duplicate categories by name and emoji
+          const uniqueCategoriesData = categoriesData.filter((cat, index, self) =>
+            index === self.findIndex((c) =>
+              c.name === cat.name && c.emoji === cat.emoji
+            )
+          );
+
           const newCategories = {
             needs: { ...budgetCategories.needs, categories: [] as Category[] },
             desires: { ...budgetCategories.desires, categories: [] as Category[] },
@@ -167,7 +174,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             debts: { ...budgetCategories.debts, categories: [] as Category[] },
           };
 
-          categoriesData.forEach(cat => {
+          uniqueCategoriesData.forEach(cat => {
             const category: Category = {
               id: cat.id,
               name: cat.name,
