@@ -4,7 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useStorage } from '@/contexts/StorageContext';
 import { translations } from '@/i18n/translations';
 import { Button } from './ui/button';
-import { Calendar, Menu, LogOut, User, Settings as SettingsIcon, Activity } from 'lucide-react';
+import { Calendar, Menu, LogOut, User, Settings as SettingsIcon, Activity, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -113,6 +113,19 @@ export const Header = () => {
       >
         <Activity className={`h-4 w-4 ${mobile ? 'inline mr-2' : 'hidden'}`} />
         {config.language === 'es' ? 'Salud Financiera' : 'Financial Health'}
+      </Link>
+
+      <Link
+        to="/banking"
+        onClick={onClose}
+        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${mobile ? 'block w-full' : ''
+          } ${isActive('/banking')
+            ? 'text-primary bg-primary/10'
+            : 'text-muted-foreground hover:bg-muted/50'
+          }`}
+      >
+        <Building2 className={`h-4 w-4 ${mobile ? 'inline mr-2' : 'hidden'}`} />
+        {config.language === 'es' ? 'Banca' : 'Banking'}
       </Link>
     </>
   );

@@ -11,6 +11,8 @@ import MonthlyBudget from "./pages/MonthlyBudget";
 import Budget from "./pages/Budget";
 import Catalog from "./pages/Catalog";
 import Settings from "./pages/Settings";
+import Banking from "./pages/Banking";
+import BankingCallback from "./pages/BankingCallback";
 import NotFound from "./pages/NotFound";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -93,6 +95,22 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <FinancialHealth />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/banking"
+                      element={
+                        <ProtectedRoute>
+                          <Banking />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/banking/callback"
+                      element={
+                        <ProtectedRoute>
+                          <BankingCallback />
                         </ProtectedRoute>
                       }
                     />
