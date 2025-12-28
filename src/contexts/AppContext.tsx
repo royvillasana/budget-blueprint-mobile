@@ -26,6 +26,7 @@ export interface Transaction {
   description: string;
   amount: number;
   type: 'income' | 'expense';
+  goalId?: string;
 }
 
 export interface AppConfig {
@@ -159,6 +160,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (error) throw error;
 
         if (categoriesData) {
+          // De-duplicate categories by name and emoji
+          const uniqueCategoriesData = categoriesData.filter((cat, index, self) =>
+            index === self.findIndex((c) =>
+              c.name === cat.name && c.emoji === cat.emoji
+            )
+          );
+
           const newCategories = {
             needs: { ...budgetCategories.needs, categories: [] as Category[] },
             desires: { ...budgetCategories.desires, categories: [] as Category[] },
@@ -166,7 +174,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             debts: { ...budgetCategories.debts, categories: [] as Category[] },
           };
 
-          categoriesData.forEach(cat => {
+          uniqueCategoriesData.forEach(cat => {
             const category: Category = {
               id: cat.id,
               name: cat.name,
@@ -296,6 +304,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         date: transaction.date,
         direction: transaction.type === 'expense' ? 'EXPENSE' : 'INCOME',
         currency_code: config.currency,
+        goal_id: transaction.goalId,
       };
 
       console.log('Attempting to save transaction:', { tableName, newTxnData });
@@ -316,6 +325,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         description: data.description,
         amount: Math.abs(data.amount),
         type: data.amount < 0 ? 'expense' : 'income',
+        goalId: data.goal_id,
       };
 
       setTransactions((prev) => [...prev, newTransaction]);

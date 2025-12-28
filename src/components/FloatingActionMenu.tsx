@@ -13,8 +13,13 @@ export const FloatingActionMenu = ({ onOpenChat }: FloatingActionMenuProps) => {
     const toggleMenu = () => setIsOpen(!isOpen);
 
     const handleManualAdd = () => {
+        console.log('FAB: handleManualAdd clicked - dispatching CustomEvent');
         setIsOpen(false);
-        window.dispatchEvent(new Event('open-add-transaction-dialog'));
+        const event = new CustomEvent('open-add-transaction-dialog', {
+            bubbles: true,
+            composed: true
+        });
+        window.dispatchEvent(event);
     };
 
     const handleAIChat = () => {

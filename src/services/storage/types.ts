@@ -35,16 +35,19 @@ export interface IncomeItem {
 
 export interface TransactionItem {
   id: string;
+  month_id: number;
+  user_id: string;
+  category_id: string;
   description: string;
   amount: number;
   date: string;
-  category_id: string;
-  month_id: number;
-  user_id: string;
   direction: 'INCOME' | 'EXPENSE';
-  currency_code?: string;
-  payment_method_id?: string | null;
-  account_id?: string | null;
+  currency_code: string;
+  payment_method_id?: string;
+  account_id?: string;
+  notes?: string;
+  created_at?: string;
+  goal_id?: string;
   categories?: {
     name: string;
     emoji: string;
@@ -82,6 +85,19 @@ export interface WishItem {
   user_id: string;
 }
 
+export interface FinancialGoal {
+  id: string;
+  user_id: string;
+  month_id: number;
+  goal_type: 'savings' | 'debt_reduction' | 'expense_limit' | 'income_increase';
+  target_amount: number;
+  current_amount: number;
+  description: string;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface StorageService {
   // Dashboard Data
   getMonthlySummaries(userId: string): Promise<MonthlySummary[]>;
@@ -106,4 +122,5 @@ export interface StorageService {
   getCategories(userId: string): Promise<any[]>;
   getAccounts(userId: string): Promise<any[]>;
   getPaymentMethods(userId: string): Promise<any[]>;
+  getFinancialGoals(userId: string): Promise<FinancialGoal[]>;
 }

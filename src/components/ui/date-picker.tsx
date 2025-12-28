@@ -22,7 +22,8 @@ export function DatePicker({
   onChange,
   placeholder = "Seleccionar fecha",
   className,
-}: DatePickerProps) {
+  id,
+}: DatePickerProps & { id?: string }) {
   const [open, setOpen] = React.useState(false);
 
   // Convert ISO string to Date object
@@ -43,6 +44,7 @@ export function DatePicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="default"
           className={cn(
             "w-full justify-start text-left font-normal",

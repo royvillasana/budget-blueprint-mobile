@@ -20,6 +20,7 @@ class BudgetDatabase extends Dexie {
   categories!: Table<any>;
   accounts!: Table<any>;
   paymentMethods!: Table<any>;
+  financialGoals!: Table<any>;
 
   constructor() {
     super('BudgetBlueprintDB');
@@ -31,7 +32,8 @@ class BudgetDatabase extends Dexie {
       settings: 'user_id',
       categories: '++id, user_id, is_active',
       accounts: '++id, user_id',
-      paymentMethods: '++id, user_id'
+      paymentMethods: '++id, user_id',
+      financialGoals: '++id, user_id, is_completed'
     });
   }
 }
@@ -215,6 +217,13 @@ export class LocalStorage implements StorageService {
   async getPaymentMethods(userId: string): Promise<any[]> {
     return await this.db.paymentMethods
       .where({ user_id: userId })
+      .toArray();
+  }
+
+  async getFinancialGoals(userId: string): Promise<any[]> {
+    return await this.db.financialGoals
+      .where({ user_id: userId })
+      .filter(g => g.is_completed !== true)
       .toArray();
   }
 }

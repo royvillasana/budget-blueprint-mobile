@@ -4,7 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useStorage } from '@/contexts/StorageContext';
 import { translations } from '@/i18n/translations';
 import { Button } from './ui/button';
-import { Calendar, Menu, LogOut, User, Settings as SettingsIcon, Activity, Building2 } from 'lucide-react';
+import { Calendar, Menu, LogOut, User, Settings as SettingsIcon, Activity, Building2, Sun, Moon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -15,6 +15,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMonthName, MONTH_INFO } from '@/utils/monthUtils';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export const Header = () => {
   const { config } = useApp();
@@ -24,6 +25,7 @@ export const Header = () => {
   const t = translations[config.language];
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const { setTheme, theme } = useTheme();
 
   useState(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -152,6 +154,15 @@ export const Header = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            >
+              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <span className="sr-only">Toggle theme</span>
+            </Button>
             {userEmail ? (
               <>
                 <DropdownMenu>

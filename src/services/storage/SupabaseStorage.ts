@@ -169,4 +169,16 @@ export class SupabaseStorage implements StorageService {
     if (error) throw error;
     return data || [];
   }
+
+  async getFinancialGoals(userId: string): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('financial_goals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_completed', false)
+      .order('created_at', { ascending: false });
+      
+    if (error) throw error;
+    return data || [];
+  }
 }
