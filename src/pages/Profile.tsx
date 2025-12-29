@@ -94,7 +94,7 @@ const Profile = () => {
                                 {gamificationProfile && (
                                     <div className="flex items-center justify-center gap-2">
                                         <Badge variant="secondary" className="px-3 py-1 bg-primary/10 text-primary border-primary/20">
-                                            Lvl {gamificationProfile.current_level} • {levelInfo?.title}
+                                            {t.profile.level} {gamificationProfile.current_level} • {levelInfo?.title}
                                         </Badge>
                                     </div>
                                 )}
@@ -104,11 +104,11 @@ const Profile = () => {
                         {/* Navigation Menu */}
                         <div className="space-y-2">
                             <h3 className="px-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                                {config.language === 'es' ? 'Menú' : 'Menu'}
+                                {t.profile.menu}
                             </h3>
                             <TabButton
                                 id="progress"
-                                label={config.language === 'es' ? 'Progreso y Logros' : 'Progress & Achievements'}
+                                label={t.profile.progress}
                                 icon={Trophy}
                             />
                             <TabButton

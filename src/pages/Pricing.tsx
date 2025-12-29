@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Header } from '@/components/Header';
+import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/i18n/translations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +15,8 @@ export default function Pricing() {
   const [billingInterval, setBillingInterval] = useState<'month' | 'year'>('month');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { config } = useApp();
+  const t = translations[config.language];
 
   const handleSubscribe = async (plan: 'essential' | 'pro') => {
     try {
@@ -62,27 +66,27 @@ export default function Pricing() {
         {/* Header */}
         <div className="text-center space-y-4 mt-8">
           <h1 className="text-4xl font-bold tracking-tight">
-            Choose Your Plan
+            {t.pricing.title}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Start free, upgrade when you need more. All plans include core budgeting features.
+            {t.pricing.subtitle}
           </p>
 
           {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-4 mt-8">
             <span className={billingInterval === 'month' ? 'font-medium' : 'text-muted-foreground'}>
-              Monthly
+              {t.pricing.monthly}
             </span>
             <Switch
               checked={billingInterval === 'year'}
               onCheckedChange={(checked) => setBillingInterval(checked ? 'year' : 'month')}
             />
             <span className={billingInterval === 'year' ? 'font-medium' : 'text-muted-foreground'}>
-              Yearly
+              {t.pricing.yearly}
             </span>
             {billingInterval === 'year' && (
               <Badge variant="secondary" className="ml-2">
-                Save up to 17%
+                {t.pricing.saveUpTo} 17%
               </Badge>
             )}
           </div>
@@ -93,11 +97,11 @@ export default function Pricing() {
           {/* Free Plan */}
           <Card className="relative">
             <CardHeader>
-              <CardTitle className="text-2xl">Free</CardTitle>
-              <CardDescription>Perfect for getting started</CardDescription>
+              <CardTitle className="text-2xl">{t.pricing.free}</CardTitle>
+              <CardDescription>{t.pricing.freeDesc}</CardDescription>
               <div className="mt-4">
                 <div className="text-4xl font-bold">$0</div>
-                <div className="text-sm text-muted-foreground mt-1">Forever</div>
+                <div className="text-sm text-muted-foreground mt-1">{t.pricing.forever}</div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -106,7 +110,7 @@ export default function Pricing() {
                 variant="outline"
                 onClick={() => navigate('/dashboard')}
               >
-                Current Plan
+                {t.pricing.currentPlan}
               </Button>
 
               <ul className="space-y-3 mt-6">
@@ -123,12 +127,12 @@ export default function Pricing() {
           {/* Essential Plan */}
           <Card className="relative border-2 border-primary">
             <CardHeader>
-              <CardTitle className="text-2xl">Essential</CardTitle>
-              <CardDescription>For serious budgeters</CardDescription>
+              <CardTitle className="text-2xl">{t.pricing.essential}</CardTitle>
+              <CardDescription>{t.pricing.essentialDesc}</CardDescription>
               <div className="mt-4">
                 <div className="text-4xl font-bold">{getPlanPrice('essential')}</div>
                 <div className="text-sm text-muted-foreground mt-1">
-                  per month{billingInterval === 'year' && ', billed annually'}
+                  {t.pricing.perMonth}{billingInterval === 'year' && t.pricing.billedAnnually}
                 </div>
                 {getSavingsText('essential') && (
                   <Badge variant="secondary" className="mt-2">
@@ -146,10 +150,10 @@ export default function Pricing() {
                 {loadingPlan === 'essential' ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading...
+                    {t.pricing.loading}
                   </>
                 ) : (
-                  'Subscribe to Essential'
+                  `${t.pricing.subscribeTo} ${t.pricing.essential}`
                 )}
               </Button>
 
@@ -163,7 +167,7 @@ export default function Pricing() {
               </ul>
 
               <p className="text-xs text-muted-foreground mt-4">
-                *Fair use policy: 10,000 messages/month
+                {t.pricing.fairUse}
               </p>
             </CardContent>
           </Card>
@@ -173,17 +177,17 @@ export default function Pricing() {
             {PLAN_FEATURES.pro.popular && (
               <div className="absolute -top-4 left-0 right-0 flex justify-center">
                 <Badge className="bg-primary text-primary-foreground">
-                  Most Popular
+                  {t.pricing.mostPopular}
                 </Badge>
               </div>
             )}
             <CardHeader>
-              <CardTitle className="text-2xl">Pro</CardTitle>
-              <CardDescription>For power users & businesses</CardDescription>
+              <CardTitle className="text-2xl">{t.pricing.pro}</CardTitle>
+              <CardDescription>{t.pricing.proDesc}</CardDescription>
               <div className="mt-4">
                 <div className="text-4xl font-bold">{getPlanPrice('pro')}</div>
                 <div className="text-sm text-muted-foreground mt-1">
-                  per month{billingInterval === 'year' && ', billed annually'}
+                  {t.pricing.perMonth}{billingInterval === 'year' && t.pricing.billedAnnually}
                 </div>
                 {getSavingsText('pro') && (
                   <Badge variant="secondary" className="mt-2">
@@ -201,10 +205,10 @@ export default function Pricing() {
                 {loadingPlan === 'pro' ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Loading...
+                    {t.pricing.loading}
                   </>
                 ) : (
-                  'Subscribe to Pro'
+                  `${t.pricing.subscribeTo} ${t.pricing.pro}`
                 )}
               </Button>
 
@@ -222,30 +226,30 @@ export default function Pricing() {
 
         {/* FAQ or Additional Info */}
         <div className="mt-16 text-center space-y-4">
-          <h3 className="text-2xl font-semibold">Frequently Asked Questions</h3>
+          <h3 className="text-2xl font-semibold">{t.pricing.faqTitle}</h3>
           <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8 text-left">
             <div className="space-y-2">
-              <h4 className="font-medium">Can I cancel anytime?</h4>
+              <h4 className="font-medium">{t.pricing.faq1Q}</h4>
               <p className="text-sm text-muted-foreground">
-                Yes! Cancel anytime from your billing dashboard. You'll keep access until the end of your billing period.
+                {t.pricing.faq1A}
               </p>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium">What payment methods do you accept?</h4>
+              <h4 className="font-medium">{t.pricing.faq2Q}</h4>
               <p className="text-sm text-muted-foreground">
-                We accept all major credit/debit cards, Apple Pay, and Google Pay via Stripe.
+                {t.pricing.faq2A}
               </p>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium">Is my financial data secure?</h4>
+              <h4 className="font-medium">{t.pricing.faq3Q}</h4>
               <p className="text-sm text-muted-foreground">
-                Yes! We use bank-level encryption and never store your bank login credentials. All bank connections are read-only.
+                {t.pricing.faq3A}
               </p>
             </div>
             <div className="space-y-2">
-              <h4 className="font-medium">Can I upgrade or downgrade later?</h4>
+              <h4 className="font-medium">{t.pricing.faq4Q}</h4>
               <p className="text-sm text-muted-foreground">
-                Absolutely! Change plans anytime. Upgrades take effect immediately, downgrades at the end of your billing period.
+                {t.pricing.faq4A}
               </p>
             </div>
           </div>

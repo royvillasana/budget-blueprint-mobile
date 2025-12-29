@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutDashboard, Wallet, Shield, Globe, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Header } from '@/components/Header';
+import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/i18n/translations';
 
 declare global {
   interface Window {
@@ -16,6 +18,8 @@ declare global {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { config } = useApp();
+  const t = translations[config.language];
 
   useEffect(() => {
     // Redirect to dashboard if already logged in
@@ -61,7 +65,7 @@ const Index = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
             </span>
-            New: Local Storage Option
+            {t.landing.heroBadge}
           </div>
 
           {/* Hero Title Container with Gradient Border */}
@@ -74,10 +78,10 @@ const Index = () => {
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-background">
-              Master Your Money, <span className="text-background">Your Way</span>.
+              {t.landing.heroTitle} <span className="text-background">{t.landing.heroTitleSpan}</span>.
             </h1>
             <p className="text-xl text-background font-semibold leading-relaxed">
-              Professional budget tracking with the flexibility you need. Choose between cloud sync for access anywhere, or keep your data 100% private on your device.
+              {t.landing.heroDescription}
             </p>
           </div>
 
@@ -87,7 +91,7 @@ const Index = () => {
               className="w-full sm:w-auto text-lg h-12 px-8"
               onClick={() => navigate('/auth')}
             >
-              Get Started <ArrowRight className="ml-2 h-5 w-5" />
+              {t.landing.getStarted} <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button
               variant="outline"
@@ -95,7 +99,7 @@ const Index = () => {
               className="w-full sm:w-auto text-lg h-12 px-8"
               onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              Learn More
+              {t.landing.learnMore}
             </Button>
           </div>
         </div>
@@ -109,11 +113,11 @@ const Index = () => {
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
               <CardHeader>
                 <Shield className="h-10 w-10 text-primary mb-4" />
-                <CardTitle className="text-xl">Flexible Storage</CardTitle>
+                <CardTitle className="text-xl">{t.landing.features.flexibleStorage}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  You decide where your data lives. Use our secure Cloud for cross-device sync, or switch to Local Mode to keep everything on your phone.
+                  {t.landing.features.flexibleStorageDesc}
                 </p>
               </CardContent>
             </Card>
@@ -122,11 +126,11 @@ const Index = () => {
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
               <CardHeader>
                 <LayoutDashboard className="h-10 w-10 text-accent mb-4" />
-                <CardTitle className="text-xl">Visual Analytics</CardTitle>
+                <CardTitle className="text-xl">{t.landing.features.visualAnalytics}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Understand your spending habits at a glance with beautiful, interactive charts for monthly and annual overviews.
+                  {t.landing.features.visualAnalyticsDesc}
                 </p>
               </CardContent>
             </Card>
@@ -135,11 +139,11 @@ const Index = () => {
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
               <CardHeader>
                 <Wallet className="h-10 w-10 text-primary mb-4" />
-                <CardTitle className="text-xl">Smart Budgeting</CardTitle>
+                <CardTitle className="text-xl">{t.landing.features.smartBudgeting}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  Create detailed monthly budgets, track debts, and manage wishlists. Support for multiple currencies (USD & EUR).
+                  {t.landing.features.smartBudgetingDesc}
                 </p>
               </CardContent>
             </Card>
@@ -152,16 +156,9 @@ const Index = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold">Why Choose RialNexus?</h2>
+              <h2 className="text-3xl font-bold">{t.landing.whyChoose}</h2>
               <ul className="space-y-4">
-                {[
-                  'Zero-knowledge local storage option',
-                  'Real-time cloud synchronization',
-                  'Multi-currency support (USD/EUR)',
-                  'Bilingual interface (English/Spanish)',
-                  'Dark mode support',
-                  'Exportable reports (coming soon)'
-                ].map((item, i) => (
+                {t.landing.benefits.map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
                     <span className="text-muted-foreground">{item}</span>
@@ -174,13 +171,12 @@ const Index = () => {
                 <Globe className="h-8 w-8 text-primary animate-pulse" />
               </div>
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold">Privacy First Design</h3>
+                <h3 className="text-xl font-semibold">{t.landing.privacyTitle}</h3>
                 <p className="text-muted-foreground">
-                  We believe your financial data belongs to you. That's why we built a unique dual-storage architecture.
-                  Start in the cloud for convenience, or switch to local storage for complete isolation.
+                  {t.landing.privacyDesc}
                 </p>
                 <Button variant="link" className="p-0 h-auto font-semibold text-primary" onClick={() => navigate('/auth')}>
-                  Start your journey today &rarr;
+                  {t.landing.startJourney}
                 </Button>
               </div>
             </div>

@@ -143,7 +143,6 @@ export class SupabaseStorage implements StorageService {
     const { data, error } = await supabase
       .from('categories')
       .select('*')
-      .eq('user_id', userId)
       .eq('is_active', true);
       
     if (error) throw error;

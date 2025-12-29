@@ -46,9 +46,24 @@ export const GlobalFABDialog = () => {
             if (user) {
                 setUserId(user.id);
                 loadMetadata(user.id);
+            } else {
+                setUserId(null);
             }
         };
         fetchUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (session?.user) {
+                setUserId(session.user.id);
+                loadMetadata(session.user.id);
+            } else {
+                setUserId(null);
+                setCategories([]);
+                setAccounts([]);
+                setPaymentMethods([]);
+                setFinancialGoals([]);
+            }
+        });
 
         const handleOpenEvent = () => {
             console.log('GlobalFABDialog: opening');
@@ -56,7 +71,10 @@ export const GlobalFABDialog = () => {
         };
 
         window.addEventListener('open-add-transaction-dialog', handleOpenEvent);
-        return () => window.removeEventListener('open-add-transaction-dialog', handleOpenEvent);
+        return () => {
+            window.removeEventListener('open-add-transaction-dialog', handleOpenEvent);
+            subscription.unsubscribe();
+        };
     }, []);
 
     const loadMetadata = async (uid: string) => {
@@ -67,7 +85,12 @@ export const GlobalFABDialog = () => {
                 storage.getPaymentMethods(uid),
                 storage.getFinancialGoals(uid)
             ]);
-            setCategories(cats);
+            const uniqueCategories = cats.filter((cat, index, self) =>
+                index === self.findIndex((c) =>
+                    c.name === cat.name && c.emoji === cat.emoji
+                )
+            );
+            setCategories(uniqueCategories);
             setAccounts(accs);
             setPaymentMethods(pms);
             setFinancialGoals(goals);
@@ -112,30 +135,38 @@ export const GlobalFABDialog = () => {
     const handleAdd = async () => {
         if (!userId) return;
         setLoading(true);
-        const { month } = getActivePeriod();
+        const { month: activeMonth } = getActivePeriod();
 
         try {
             if (selectedType === 'income') {
-                await storage.addIncome({ ...newIncome, user_id: userId, month_id: month, currency_code: config.currency });
+                const dateObj = new Date(newIncome.date);
+                // getMonth() returns 0-11, so we add 1. If date is invalid, fall back to activeMonth
+                const targetMonth = !isNaN(dateObj.getTime()) ? dateObj.getMonth() + 1 : activeMonth;
+                await storage.addIncome({ ...newIncome, user_id: userId, month_id: targetMonth, currency_code: config.currency });
             } else if (selectedType === 'transaction') {
+                const dateObj = new Date(newTxn.date);
+                const targetMonth = !isNaN(dateObj.getTime()) ? dateObj.getMonth() + 1 : activeMonth;
                 await storage.addTransaction({
                     ...newTxn,
                     user_id: userId,
-                    month_id: month,
+                    month_id: targetMonth,
                     amount: -Math.abs(newTxn.amount),
                     direction: 'EXPENSE',
                     currency_code: config.currency,
-                    goal_id: newTxn.goal_id === 'none' ? undefined : newTxn.goal_id
+                    goal_id: newTxn.goal_id === 'none' ? undefined : newTxn.goal_id,
+                    payment_method_id: newTxn.payment_method_id || undefined,
+                    account_id: newTxn.account_id || undefined
                 });
             } else if (selectedType === 'debt') {
+                // Debts and Wishlist don't have a date picker, so we keep using the active view's month
                 await storage.addDebt({
                     ...newDebt,
                     user_id: userId,
-                    month_id: month,
+                    month_id: activeMonth,
                     ending_balance: newDebt.starting_balance - newDebt.payment_made
                 });
             } else if (selectedType === 'wishlist') {
-                await storage.addWish({ ...newWish, user_id: userId, month_id: month });
+                await storage.addWish({ ...newWish, user_id: userId, month_id: activeMonth });
             }
 
             toast({ title: 'Agregado', description: 'Registro guardado exitosamente' });

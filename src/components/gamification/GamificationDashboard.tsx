@@ -7,12 +7,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Flame, Shield } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getLevelTitle } from '@/utils/gamification';
+import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/i18n/translations';
 
 export const GamificationDashboard = () => {
     const [profile, setProfile] = useState<GamificationProfile | null>(null);
     const [badges, setBadges] = useState<UserBadge[]>([]);
     const [challenges, setChallenges] = useState<UserChallenge[]>([]);
     const [loading, setLoading] = useState(true);
+    const { config } = useApp();
+    const t = translations[config.language];
 
     useEffect(() => {
         async function loadData() {
@@ -61,18 +65,18 @@ export const GamificationDashboard = () => {
                     </div>
                     <div className="absolute -bottom-2 -right-2 bg-background p-1 rounded-full">
                         <div className="bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-full border">
-                            Lvl {currentLevel}
+                            {t.profile.level} {currentLevel}
                         </div>
                     </div>
                 </div>
                 <h1 className="text-2xl font-bold mt-2">{title}</h1>
-                <p className="text-muted-foreground text-sm">Total XP: {profile.total_xp.toLocaleString()}</p>
+                <p className="text-muted-foreground text-sm">{t.gamification.totalXP}: {profile.total_xp.toLocaleString()}</p>
 
                 <div className="w-full max-w-xs space-y-1 mt-2">
                     <Progress value={percentage} className="h-3" />
                     <div className="flex justify-between text-xs text-muted-foreground px-1">
                         <span>{Math.floor(xpProgress)} XP</span>
-                        <span>{xpNeeded} XP to next</span>
+                        <span>{xpNeeded} {t.gamification.xpToNext}</span>
                     </div>
                 </div>
             </div>
@@ -83,29 +87,29 @@ export const GamificationDashboard = () => {
                     <CardContent className="p-4 flex flex-col items-center justify-center">
                         <Flame className="w-8 h-8 text-orange-500 mb-2" />
                         <span className="text-2xl font-bold">{profile.current_streak}</span>
-                        <span className="text-xs text-muted-foreground">Day Streak</span>
+                        <span className="text-xs text-muted-foreground">{t.gamification.dayStreak}</span>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardContent className="p-4 flex flex-col items-center justify-center">
                         <Shield className="w-8 h-8 text-blue-500 mb-2" />
                         <span className="text-2xl font-bold">{profile.streak_freeze_count}</span>
-                        <span className="text-xs text-muted-foreground">Freezes Available</span>
+                        <span className="text-xs text-muted-foreground">{t.gamification.freezesAvailable}</span>
                     </CardContent>
                 </Card>
             </div>
 
             <Tabs defaultValue="challenges" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="challenges">Challenges</TabsTrigger>
-                    <TabsTrigger value="badges">Badges</TabsTrigger>
+                    <TabsTrigger value="challenges">{t.gamification.challenges}</TabsTrigger>
+                    <TabsTrigger value="badges">{t.gamification.badges}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="challenges" className="space-y-4 mt-4">
                     {challenges.length === 0 ? (
                         <Card>
                             <CardContent className="p-6 text-center text-muted-foreground">
-                                No active challenges. Check back tomorrow!
+                                {t.gamification.noChallenges}
                             </CardContent>
                         </Card>
                     ) : (
@@ -122,7 +126,7 @@ export const GamificationDashboard = () => {
                                     <div className="space-y-1">
                                         <Progress value={(uc.progress / uc.target) * 100} className="h-2" />
                                         <div className="text-xs text-right text-muted-foreground">
-                                            {uc.progress} / {uc.target} {uc.challenge?.goal_metric}
+                                            {uc.progress} / {uc.target} {t.gamification.goalMetric}
                                         </div>
                                     </div>
                                 </CardContent>
@@ -144,7 +148,7 @@ export const GamificationDashboard = () => {
                         ))}
                         {badges.length === 0 && (
                             <div className="col-span-3 text-center py-8 text-muted-foreground">
-                                No badges earned yet. Keep going!
+                                {t.gamification.noBadges}
                             </div>
                         )}
                     </div>

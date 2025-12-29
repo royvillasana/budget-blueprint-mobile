@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { LogIn, UserPlus } from 'lucide-react';
+import { useApp } from '@/contexts/AppContext';
+import { translations } from '@/i18n/translations';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -15,6 +17,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { config } = useApp();
+  const t = translations[config.language];
 
   useEffect(() => {
     // Check if user is already logged in
@@ -48,14 +52,14 @@ const Auth = () => {
 
     if (error) {
       toast({
-        title: 'Error al registrarse',
+        title: t.auth.errors.signUp,
         description: error.message,
         variant: 'destructive'
       });
     } else {
       toast({
-        title: 'Registro exitoso',
-        description: 'Tu cuenta ha sido creada. Ya puedes iniciar sesión.'
+        title: t.auth.success.signUp,
+        description: t.auth.success.signUpDesc
       });
     }
 
@@ -73,7 +77,7 @@ const Auth = () => {
 
     if (error) {
       toast({
-        title: 'Error al iniciar sesión',
+        title: t.auth.errors.signIn,
         description: error.message,
         variant: 'destructive'
       });
@@ -90,19 +94,19 @@ const Auth = () => {
             <img src="/assets/logo.png" alt="RialNexus Logo" className="w-full h-full object-contain" />
           </div>
           <CardTitle className="text-2xl">RialNexus</CardTitle>
-          <CardDescription>Accede a tu controlador financiero</CardDescription>
+          <CardDescription>{t.auth.subtitle}</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Iniciar Sesión</TabsTrigger>
-              <TabsTrigger value="signup">Registrarse</TabsTrigger>
+              <TabsTrigger value="signin">{t.auth.signIn}</TabsTrigger>
+              <TabsTrigger value="signup">{t.auth.signUp}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin">
               <form onSubmit={handleSignIn} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
+                  <Label htmlFor="signin-email">{t.auth.email}</Label>
                   <Input
                     id="signin-email"
                     type="email"
@@ -113,7 +117,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signin-password">Contraseña</Label>
+                  <Label htmlFor="signin-password">{t.auth.password}</Label>
                   <Input
                     id="signin-password"
                     type="password"
@@ -125,7 +129,7 @@ const Auth = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   <LogIn className="mr-2 h-4 w-4" />
-                  {loading ? 'Iniciando...' : 'Iniciar Sesión'}
+                  {loading ? t.auth.loggingIn : t.auth.signIn}
                 </Button>
               </form>
             </TabsContent>
@@ -133,7 +137,7 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">{t.auth.email}</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -144,7 +148,7 @@ const Auth = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Contraseña</Label>
+                  <Label htmlFor="signup-password">{t.auth.password}</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -157,7 +161,7 @@ const Auth = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   <UserPlus className="mr-2 h-4 w-4" />
-                  {loading ? 'Registrando...' : 'Crear Cuenta'}
+                  {loading ? t.auth.registering : t.auth.createAccount}
                 </Button>
               </form>
             </TabsContent>
