@@ -4,6 +4,7 @@ import { getTableName } from '@/utils/monthUtils';
 import { useApp } from '@/contexts/AppContext';
 import { AIService, AIMessage } from '@/services/AIService';
 import { FinancialDataService } from '@/services/FinancialDataService';
+import { GamificationService } from '@/services/gamification';
 import { Button } from '@/components/ui/button';
 import {
     Bot, Sparkles, ExternalLink, Mic,
@@ -497,6 +498,7 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                             transactionId: newTxn.id
                         }
                     });
+                    GamificationService.emitEvent('transaction_created', { action_id: newTxn.id });
                 } else if (functionName === 'updateTransaction') {
                     const { transactionId, transactionType, updates } = functionArgs;
                     try {
@@ -646,6 +648,7 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                                 const currentMonth = functionArgs.monthId || (new Date().getMonth() + 1);
                                 const { data } = await supabase.from('financial_goals').insert({ user_id: userData.user.id, month_id: currentMonth, goal_type: functionArgs.goalType, target_amount: functionArgs.targetAmount, current_amount: 0, description: functionArgs.description, is_completed: false }).select().single();
                                 resultData = { success: true, goal: data };
+                                if (data) GamificationService.emitEvent('goal_created', { action_id: data.id });
                                 window.dispatchEvent(new CustomEvent('financial-goals-updated'));
                             } else if (functionName === 'updateFinancialGoal') {
                                 const { data } = await supabase.from('financial_goals').update(functionArgs.updates).eq('id', functionArgs.goalId).select().single();
@@ -722,6 +725,7 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                 try {
                     await incrementChatUsage();
                     await refetchUsage(); // Refresh usage data
+                    GamificationService.emitEvent('chat_turn');
                 } catch (error) {
                     console.error('Error incrementing chat usage:', error);
                     // Don't block the user experience if usage tracking fails

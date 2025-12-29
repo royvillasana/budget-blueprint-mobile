@@ -198,9 +198,9 @@ export const Header = () => {
                         <div className="h-px bg-muted my-1" />
                       </>
                     )}
-                    <DropdownMenuItem onClick={() => navigate('/settings')}>
-                      <SettingsIcon className="mr-2 h-4 w-4" />
-                      <span>{t.settings}</span>
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>{config.language === 'es' ? 'Perfil' : 'Profile'}</span>
                     </DropdownMenuItem>
                     <div className="h-px bg-muted my-1" />
                     <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">

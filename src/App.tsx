@@ -25,7 +25,8 @@ const Auth = lazy(() => import("./pages/Auth"));
 const FinancialHealth = lazy(() => import("./pages/FinancialHealth").then(module => ({ default: module.FinancialHealth })));
 const AIChat = lazy(() => import('./components/AIChat').then(module => ({ default: module.AIChat })));
 const GlobalFABDialog = lazy(() => import('./components/GlobalFABDialog').then(module => ({ default: module.GlobalFABDialog })));
-
+const Progress = lazy(() => import("./pages/Progress"));
+const Profile = lazy(() => import("./pages/Profile"));
 const LoadingFallback = () => (
   <div className="h-screen w-full flex items-center justify-center bg-background">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -134,6 +135,22 @@ const App = () => {
                           element={
                             <ProtectedRoute>
                               <Billing />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/progress"
+                          element={
+                            <ProtectedRoute>
+                              <Progress />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/profile"
+                          element={
+                            <ProtectedRoute>
+                              <Profile />
                             </ProtectedRoute>
                           }
                         />

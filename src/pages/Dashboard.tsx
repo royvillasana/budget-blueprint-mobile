@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarRadiusAxis, PolarGrid, Label } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { GamificationHUD } from '@/components/gamification/GamificationHUD';
 interface MonthlySummary {
   month_name: string | null;
   month_id: number | null;
@@ -189,8 +190,8 @@ const Dashboard = () => {
     <main className="container mx-auto px-4 py-8 space-y-8">
 
       {/* Welcome Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-center">
+        <div className="sm:col-span-1 lg:col-span-3">
           <h1 className="text-3xl font-bold text-foreground">
             {(() => {
               const firstName = config.ownerName?.split(' ')[0] || '';
@@ -205,9 +206,9 @@ const Dashboard = () => {
             {config.language === 'es' ? 'Controla tus finanzas y alcanza tus metas' : 'Track your finances and reach your goals'}
           </p>
         </div>
-        <Button variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          {config.language === 'es' ? 'Ver reportes' : 'View reports'}
-        </Button>
+        <Card className="sm:col-span-1 lg:col-span-1 p-2 flex items-center justify-center bg-card/50 backdrop-blur-sm border-primary/20 h-auto">
+          <GamificationHUD className="w-full" />
+        </Card>
       </div>
 
       {/* KPI Cards Row */}
