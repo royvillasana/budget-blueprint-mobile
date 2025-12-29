@@ -69,6 +69,10 @@ const Index = () => {
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
 
+            <div className="flex justify-center mb-8">
+              <img src="/assets/logo.png" alt="RialNexus Logo" className="h-24 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
+            </div>
+
             <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight text-background">
               Master Your Money, <span className="text-background">Your Way</span>.
             </h1>
@@ -148,7 +152,7 @@ const Index = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold">Why Choose Budget Blueprint?</h2>
+              <h2 className="text-3xl font-bold">Why Choose RialNexus?</h2>
               <ul className="space-y-4">
                 {[
                   'Zero-knowledge local storage option',
@@ -187,7 +191,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="mt-auto py-8 border-t border-border/50">
         <div className="container mx-auto px-4 text-center text-muted-foreground text-sm">
-          <p>&copy; {new Date().getFullYear()} Budget Blueprint. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} RialNexus. All rights reserved.</p>
         </div>
       </footer>
     </div>

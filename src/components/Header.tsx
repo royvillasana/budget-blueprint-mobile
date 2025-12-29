@@ -150,10 +150,8 @@ export const Header = () => {
           <div className="flex items-center gap-4 md:gap-6">
             {/* Logo/Brand */}
             <Link to="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">B</span>
-              </div>
-              <span className="font-semibold text-foreground hidden sm:block">Budget Pro</span>
+              <img src="/assets/logo.png" alt="RialNexus Logo" className="w-8 h-8 object-contain" />
+              <span className="font-semibold text-foreground hidden sm:block">RialNexus</span>
             </Link>
 
             {/* Desktop Navigation - Only show if logged in */}

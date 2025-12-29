@@ -85,8 +85,11 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Budget Blueprint</CardTitle>
+        <CardHeader className="text-center flex flex-col items-center">
+          <div className="w-12 h-12 mb-4">
+            <img src="/assets/logo.png" alt="RialNexus Logo" className="w-full h-full object-contain" />
+          </div>
+          <CardTitle className="text-2xl">RialNexus</CardTitle>
           <CardDescription>Accede a tu controlador financiero</CardDescription>
         </CardHeader>
         <CardContent>
