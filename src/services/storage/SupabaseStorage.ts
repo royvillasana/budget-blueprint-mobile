@@ -119,6 +119,7 @@ export class SupabaseStorage implements StorageService {
       currency: (data.currency as any) || 'EUR',
       monthlyIncome: Number(data.monthly_income) || 0,
       language: (data.language as any) || 'es',
+      avatarUrl: (data as any).avatar_url || '',
     };
   }
 
@@ -131,6 +132,7 @@ export class SupabaseStorage implements StorageService {
         currency: settings.currency,
         language: settings.language,
         monthly_income: settings.monthlyIncome,
+        avatar_url: settings.avatarUrl,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'user_id'
@@ -170,7 +172,7 @@ export class SupabaseStorage implements StorageService {
   }
 
   async getFinancialGoals(userId: string): Promise<any[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('financial_goals')
       .select('*')
       .eq('user_id', userId)

@@ -35,6 +35,7 @@ export interface AppConfig {
   monthlyIncome: number;
   language: Language;
   openaiApiKey?: string;
+  avatarUrl?: string;
 }
 
 interface AppContextType {

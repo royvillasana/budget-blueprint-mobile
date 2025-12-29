@@ -185,6 +185,7 @@ export class LocalStorage implements StorageService {
       currency: settings.currency || 'EUR',
       monthlyIncome: Number(settings.monthly_income) || 0,
       language: settings.language || 'es',
+      avatarUrl: settings.avatar_url || '',
     };
   }
 
@@ -197,6 +198,7 @@ export class LocalStorage implements StorageService {
       currency: settings.currency,
       language: settings.language,
       monthly_income: settings.monthlyIncome,
+      avatar_url: settings.avatarUrl,
       updated_at: new Date().toISOString(),
     });
   }

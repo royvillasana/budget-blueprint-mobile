@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { AvatarUpload } from '@/components/AvatarUpload';
 
 const Settings = () => {
   const { config, updateConfig, loadingSettings } = useApp();
@@ -27,6 +28,7 @@ const Settings = () => {
     currency: config.currency,
     language: config.language,
     openaiApiKey: config.openaiApiKey || '',
+    avatarUrl: config.avatarUrl || '',
   });
 
   // Update form when config loads from database
@@ -37,6 +39,7 @@ const Settings = () => {
       currency: config.currency,
       language: config.language,
       openaiApiKey: config.openaiApiKey || '',
+      avatarUrl: config.avatarUrl || '',
     });
   }, [config]);
 
@@ -49,6 +52,7 @@ const Settings = () => {
         currency: formData.currency as 'EUR' | 'USD',
         language: formData.language as 'es' | 'en',
         openaiApiKey: formData.openaiApiKey,
+        avatarUrl: formData.avatarUrl,
       });
 
       toast({
@@ -93,6 +97,14 @@ const Settings = () => {
               <CardTitle>Información Personal</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
+              <div className="flex justify-center mb-4">
+                <AvatarUpload
+                  url={formData.avatarUrl}
+                  onUpload={(url) => setFormData({ ...formData, avatarUrl: url })}
+                  displayName={formData.ownerName}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="ownerName">{t.ownerName}</Label>
                 <Input

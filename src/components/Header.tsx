@@ -178,9 +178,9 @@ export const Header = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src="" alt={userEmail || ''} />
+                        <AvatarImage src={config.avatarUrl} alt={config.ownerName || userEmail || ''} />
                         <AvatarFallback className="bg-primary/10 text-primary">
-                          {userEmail ? userEmail.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                          {config.ownerName ? config.ownerName.charAt(0).toUpperCase() : (userEmail ? userEmail.charAt(0).toUpperCase() : <User className="h-4 w-4" />)}
                         </AvatarFallback>
                       </Avatar>
                     </Button>

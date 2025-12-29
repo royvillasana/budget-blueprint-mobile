@@ -14,9 +14,10 @@ import { getLevelTitle } from '@/utils/gamification';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
+import { AvatarUpload } from '@/components/AvatarUpload';
 
 const Profile = () => {
-    const { config } = useApp();
+    const { config, updateConfig } = useApp();
     const t = translations[config.language];
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [gamificationProfile, setGamificationProfile] = useState<GamificationProfile | null>(null);
@@ -73,12 +74,14 @@ const Profile = () => {
                             <div className="h-24 bg-gradient-to-r from-primary/20 to-secondary/20 group-hover:from-primary/30 group-hover:to-secondary/30 transition-all duration-500" />
                             <CardContent className="relative pt-0 text-center pb-8 px-6">
                                 <div className="relative inline-block -mt-12 mb-4">
-                                    <Avatar className="h-24 w-24 border-4 border-background shadow-xl ring-2 ring-border/20">
-                                        <AvatarImage src="" alt={userEmail || ''} />
-                                        <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                                            {userEmail ? userEmail.charAt(0).toUpperCase() : <User className="h-8 w-8" />}
-                                        </AvatarFallback>
-                                    </Avatar>
+                                    <div className="ring-2 ring-border/20 rounded-full">
+                                        <AvatarUpload
+                                            url={config.avatarUrl || ''}
+                                            displayName={config.ownerName || userEmail || ''}
+                                            onUpload={(url) => updateConfig({ avatarUrl: url })}
+                                            size="md"
+                                        />
+                                    </div>
                                     {levelInfo && (
                                         <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-1 shadow-sm border border-border">
                                             <div className="text-xl animate-bounce-slow" title={`Level ${gamificationProfile?.current_level} - ${levelInfo.title}`}>
