@@ -11,6 +11,9 @@ import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/i18n/translations';
 import { supabase } from '@/integrations/supabase/client';
 
+import { SixtySixDaysChallenge } from './SixtySixDaysChallenge';
+import { LeagueStandings } from './LeagueStandings';
+
 export const GamificationDashboard = () => {
     const [profile, setProfile] = useState<GamificationProfile | null>(null);
     const [badges, setBadges] = useState<UserBadge[]>([]);
@@ -98,9 +101,11 @@ export const GamificationDashboard = () => {
             </div>
 
             <Tabs defaultValue="challenges" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="challenges">{t.gamification.challenges}</TabsTrigger>
-                    <TabsTrigger value="badges">{t.gamification.badges}</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="challenges" className="text-xs">{t.gamification.challenges}</TabsTrigger>
+                    <TabsTrigger value="badges" className="text-xs">{t.gamification.badges}</TabsTrigger>
+                    <TabsTrigger value="habit" className="text-xs">Hábitos</TabsTrigger>
+                    <TabsTrigger value="league" className="text-xs">Liga</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="challenges" className="space-y-4 mt-4">
@@ -135,6 +140,14 @@ export const GamificationDashboard = () => {
 
                 <TabsContent value="badges" className="mt-4">
                     <BadgesGrid badges={badges} />
+                </TabsContent>
+
+                <TabsContent value="habit" className="mt-4">
+                    <SixtySixDaysChallenge />
+                </TabsContent>
+
+                <TabsContent value="league" className="mt-4">
+                    <LeagueStandings />
                 </TabsContent>
             </Tabs>
         </div>

@@ -70,6 +70,8 @@ export interface ExtendedAIMessage extends AIMessage {
         description: string;
         value: string;
     }>;
+    is_hidden?: boolean;
+    metadata?: any;
 }
 
 // Small component to access attachment hook
@@ -443,6 +445,7 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
             remainingBudget,
             daysLeftInMonth,
             comprehensiveData,
+            transactions: currentMonthTransactions,
             currentMonth: month,
             currentYear: year
         };
@@ -646,12 +649,20 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                                 resultData = { historicalAverage: average, trend: comp.financialHealth.expenseTrend };
                             } else if (functionName === 'createFinancialGoal') {
                                 const currentMonth = functionArgs.monthId || (new Date().getMonth() + 1);
-                                const { data } = await supabase.from('financial_goals').insert({ user_id: userData.user.id, month_id: currentMonth, goal_type: functionArgs.goalType, target_amount: functionArgs.targetAmount, current_amount: 0, description: functionArgs.description, is_completed: false }).select().single();
+                                const { data } = await supabase.from('financial_goals').insert({
+                                    user_id: userData.user.id,
+                                    month_id: currentMonth,
+                                    goal_type: functionArgs.goalType,
+                                    target_amount: functionArgs.targetAmount,
+                                    current_amount: 0,
+                                    description: functionArgs.description,
+                                    is_completed: false
+                                } as any).select().single();
                                 resultData = { success: true, goal: data };
                                 if (data) GamificationService.emitEvent('goal_created', { action_id: data.id });
                                 window.dispatchEvent(new CustomEvent('financial-goals-updated'));
                             } else if (functionName === 'updateFinancialGoal') {
-                                const { data } = await supabase.from('financial_goals').update(functionArgs.updates).eq('id', functionArgs.goalId).select().single();
+                                const { data } = await supabase.from('financial_goals').update(functionArgs.updates as any).eq('id', functionArgs.goalId).select().single();
                                 resultData = { success: true, goal: data };
                                 window.dispatchEvent(new CustomEvent('financial-goals-updated'));
                             } else if (functionName === 'deleteFinancialGoal') {
@@ -659,9 +670,9 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                                 resultData = { success: true };
                                 window.dispatchEvent(new CustomEvent('financial-goals-updated'));
                             } else if (functionName === 'getFinancialGoals') {
-                                let q: any = supabase.from('financial_goals').select('*').eq('user_id', userData.user.id);
-                                if (functionArgs.monthId) q = q.eq('month_id', functionArgs.monthId);
-                                const { data } = await q;
+                                const q = (supabase.from('financial_goals') as any).select('*').eq('user_id', userData.user.id);
+                                const finalQuery = functionArgs.monthId ? q.eq('month_id', functionArgs.monthId) : q;
+                                const { data } = await finalQuery;
                                 resultData = { success: true, goals: data };
                             } else if (functionName === 'generatePersonalizedRecommendations') {
                                 const comp = await financialService.getComprehensiveFinancialData(userData.user.id);
@@ -676,6 +687,36 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                         }
                     } catch (err: any) {
                         newMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: `Error executing ${functionName}: ${err.message}`, name: functionName });
+                    }
+                } else if (functionName === 'getGamificationStatus' || functionName === 'getAvailableBadges' || functionName === 'getActiveChallenges' || functionName === 'getLeagueStandings') {
+                    try {
+                        let resultData;
+                        if (functionName === 'getGamificationStatus') {
+                            resultData = await GamificationService.getProfile();
+                        } else if (functionName === 'getAvailableBadges') {
+                            const badges = await GamificationService.getBadges();
+                            resultData = badges;
+                            if (functionArgs.category) {
+                                resultData = (resultData as any[]).filter(b => b.badge?.category === functionArgs.category);
+                            }
+                            if (functionArgs.earnedOnly) {
+                                resultData = (resultData as any[]).filter(b => b.earned_at);
+                            }
+                        } else if (functionName === 'getActiveChallenges') {
+                            const challenges = await GamificationService.getActiveChallenges();
+                            resultData = challenges;
+                            if (functionArgs.type) {
+                                resultData = (resultData as any[]).filter(c => c.challenge?.type === functionArgs.type);
+                            }
+                        } else if (functionName === 'getLeagueStandings') {
+                            const today = new Date();
+                            const periodKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                            resultData = await GamificationService.getLeagueStandings(periodKey);
+                        }
+                        newMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(resultData), name: functionName });
+                        shouldCallAI = true;
+                    } catch (err: any) {
+                        newMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: `Error executing gamification tool ${functionName}: ${err.message}`, name: functionName });
                     }
                 }
             }

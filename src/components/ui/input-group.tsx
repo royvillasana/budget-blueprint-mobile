@@ -17,14 +17,24 @@ const InputGroup = React.forwardRef<
 })
 InputGroup.displayName = "InputGroup"
 
+interface InputGroupAddonProps extends React.HTMLAttributes<HTMLDivElement> {
+    align?: "block-start" | "block-end" | "center";
+}
+
 const InputGroupAddon = React.forwardRef<
     HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
+    InputGroupAddonProps
+>(({ className, align, ...props }, ref) => {
     return (
         <div
             ref={ref}
-            className={cn("flex items-center px-3", className)}
+            className={cn(
+                "flex items-center px-3",
+                align === "block-start" && "items-start",
+                align === "block-end" && "items-end",
+                align === "center" && "items-center",
+                className
+            )}
             {...props}
         />
     )

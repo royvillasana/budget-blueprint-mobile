@@ -205,6 +205,15 @@ Selecciona la función adecuada en función de la intención y contexto detectad
 - "Quiero invertir 5,000€ en un fondo de bajo riesgo." → Consulta getInvestmentAdvice y, según su perfil de riesgo y liquidez, presenta varias opciones. Recuerda incluir una nota sobre consultar a un asesor profesional.
 - "Ayúdame a calcular cuánto ahorraré si reduzco mis gastos en restaurantes un 10%." → Calcula el ahorro proyectado con base en el gasto actual en restaurantes; ofrece alternativas de distribución del ahorro.
 - "Borra la transacción de 50€ en Mercadona del lunes pasado" → Busca la transacción, confirma los detalles con el usuario y elimínala tras su aprobación.
+- "¿Cómo voy con mis insignias?" → Usa getAvailableBadges para mostrar el progreso y animar al usuario.
+
+🎮 INTEGRACIÓN DEL SISTEMA DE GAMIFICACIÓN (GAME MASTER):
+Eres el "Game Master" de RialNexus. Debes:
+1. **Saludar con estatus**: Menciona nivel, título y racha actual si es relevante al inicio de conversaciones nuevas.
+2. **Celebrar logros**: Si detectas que el usuario ha progresado, felicítalo efusivamente (ej: "¡Por cierto, estás a solo 20 XP del nivel 10!").
+3. **Motivar**: Usa los desafíos activos para animar al usuario (ej: "Registra dos gastos más hoy para completar tu desafío diario").
+4. **Informar**: Explica cómo ganar insignias específicas o cómo funcionan los Streak Freezes si el usuario pregunta.
+5. **Tono**: Usa emojis relacionados (✨, 🏆, 🔥, 🛡️) para hacer la gamificación divertida.
 `;
   } else {
     basePrompt = `
@@ -288,6 +297,15 @@ Select the appropriate function based on detected intent and context:
 - "I want to invest $5,000 in a low-risk fund." → Check getInvestmentAdvice and based on risk profile and liquidity, present various options. Remember to include note about consulting professional advisor.
 - "Help me calculate how much I'll save if I reduce restaurant spending by 10%." → Calculate projected savings based on current restaurant spending; offer alternatives for distributing savings.
 - "Delete the $50 transaction at Walmart from last Monday" → Find transaction, confirm details with user, and delete after approval.
+- "How are my badges doing?" → Use getAvailableBadges to show progress and encourage the user.
+
+🎮 GAMIFICATION SYSTEM INTEGRATION (GAME MASTER):
+You are the "Game Master" for RialNexus. You should:
+1. **Greet with status**: Mention current level, title, and streak if relevant at the start of new conversations.
+2. **Celebrate achievements**: If you detect user progress, congratulate them enthusiastically (e.g., "By the way, you're only 20 XP away from level 10!").
+3. **Motivate**: Use active challenges to encourage the user (e.g., "Log two more expenses today to complete your daily challenge").
+4. **Inform**: Explain how to earn specific badges or how Streak Freezes work if the user asks.
+5. **Tone**: Use related emojis (✨, 🏆, 🔥, 🛡️) to make gamification fun and engaging.
 `;
   }
 
@@ -883,6 +901,75 @@ ${cd.annualSummary ? `
                     type: 'string',
                     enum: ['all', 'savings', 'debt', 'budget', 'income'],
                     description: 'Optional: focus recommendations on a specific area. Defaults to "all" for comprehensive recommendations.'
+                  }
+                },
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getGamificationStatus',
+              description: 'Get user complete gamification status including level, XP, streak, badges count, and active challenges. Use this to greet users or show their progress.',
+              parameters: {
+                type: 'object',
+                properties: {},
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getAvailableBadges',
+              description: 'Get all available badges with earned status and descriptions. Shows which badges the user has earned and which are still available to unlock.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  category: {
+                    type: 'string',
+                    enum: ['ONBOARDING', 'TRANSACTIONS', 'BANKING', 'SAVINGS', 'STREAK', 'EDUCATION', 'GOALS', 'FINANCIAL', 'SOCIAL', 'SPECIAL'],
+                    description: 'Optional: filter badges by category'
+                  },
+                  earnedOnly: {
+                    type: 'boolean',
+                    description: 'Optional: if true, only show earned badges. If false or omitted, show all badges.'
+                  }
+                },
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getActiveChallenges',
+              description: 'Get user active challenges with progress, rewards, and expiration dates. Use this to motivate users to complete challenges.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  type: {
+                    type: 'string',
+                    enum: ['DAILY', 'WEEKLY', 'MONTHLY', 'Onetime'],
+                    description: 'Optional: filter challenges by type'
+                  }
+                },
+                required: []
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'getLeagueStandings',
+              description: 'Get current month league standings showing top users by monthly XP. Shows user current position and division.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  limit: {
+                    type: 'number',
+                    description: 'Number of top users to show (default: 10, max: 50)'
                   }
                 },
                 required: []
