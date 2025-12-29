@@ -55,6 +55,8 @@ interface TransactionItem {
     name: string;
     emoji: string;
   } | null;
+  category_name?: string;
+  category_emoji?: string;
 }
 interface DebtItem {
   id: string;
@@ -64,6 +66,7 @@ interface DebtItem {
   accounts?: {
     name: string;
   } | null;
+  account_name?: string;
 }
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -210,7 +213,7 @@ const Dashboard = () => {
             {config.language === 'es' ? 'Controla tus finanzas y alcanza tus metas' : 'Track your finances and reach your goals'}
           </p>
         </div>
-        <Card className="sm:col-span-1 lg:col-span-1 p-2 flex items-center justify-center bg-card/50 backdrop-blur-sm border-primary/20 h-auto">
+        <Card className="sm:col-span-1 lg:col-span-1 flex items-center justify-center bg-card/50 backdrop-blur-sm border-primary/20 h-auto overflow-hidden">
           <GamificationHUD className="w-full" />
         </Card>
       </div>

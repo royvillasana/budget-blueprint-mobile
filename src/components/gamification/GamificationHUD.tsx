@@ -52,7 +52,7 @@ export const GamificationHUD: React.FC<GamificationHUDProps> = ({ className }) =
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <div className={`flex items-center justify-between gap-4 w-full cursor-pointer hover:opacity-80 transition-opacity ${className}`}>
+                <div className={`p-4 flex items-center justify-between gap-4 w-full cursor-pointer hover:opacity-80 transition-opacity ${className}`}>
                     <div className="flex items-center space-x-3 flex-1">
                         {/* Level Indicator */}
                         <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-sm shadow-sm">
@@ -73,30 +73,41 @@ export const GamificationHUD: React.FC<GamificationHUDProps> = ({ className }) =
                     </div>
                 </div>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0 overflow-hidden border-2 bg-popover/95 backdrop-blur-xl" align="end">
-                {/* Header Section */}
-                <div className="flex flex-col items-center p-6 bg-gradient-to-b from-primary/10 to-transparent space-y-2">
+            <PopoverContent
+                className="w-[var(--radix-popover-trigger-width)] min-w-[var(--radix-popover-trigger-width)] p-6 overflow-hidden border-2 bg-slate-950/95 backdrop-blur-xl border-slate-800"
+                align="center"
+                sideOffset={4}
+            >
+                {/* Image-Style Header Section */}
+                <div className="flex flex-col items-center space-y-4">
                     <div className="relative">
-                        <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-4xl shadow-inner border-2 border-primary/30">
-                            {icon}
+                        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#4fd1c5] to-[#2c7a7b] flex items-center justify-center text-5xl shadow-[0_0_20px_rgba(79,209,197,0.3)] border-2 border-white/10 overflow-hidden">
+                            <span className="drop-shadow-lg">{icon}</span>
                         </div>
-                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full shadow-sm border border-background">
-                            {t.profile.level} {currentLevel}
+                        <div className="absolute -bottom-1 -right-1 bg-[#4fd1c5] text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg border-2 border-slate-950">
+                            Lvl {currentLevel}
                         </div>
                     </div>
-                    <div className="text-center">
-                        <h3 className="text-lg font-bold text-foreground">{title}</h3>
-                        <p className="text-xs font-medium text-primary/80">{tier}</p>
-                        <p className="text-xs text-muted-foreground">{t.gamification.totalXP}: {profile.total_xp}</p>
+                    <div className="text-center space-y-1">
+                        <h3 className="text-2xl font-bold text-white tracking-tight">{title}</h3>
+                        <p className="text-xs font-semibold text-[#4fd1c5] uppercase tracking-wider">{tier}</p>
+                        <p className="text-[11px] text-slate-400 mt-2 font-medium">
+                            XP Total: {profile.total_xp.toLocaleString()}
+                        </p>
                     </div>
                 </div>
 
-                {/* Progress Bar Section */}
-                <div className="px-4 pb-2 space-y-1">
-                    <Progress value={percentage} className="h-3" />
-                    <div className="flex justify-between text-[10px] text-muted-foreground">
-                        <span>{Math.floor(xpProgress)} XP</span>
-                        <span>{Math.floor(xpNeeded)} {t.gamification.xpToNext}</span>
+                {/* Styled Progress Bar Section */}
+                <div className="mt-8 space-y-2">
+                    <div className="relative h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                            className="absolute top-0 left-0 h-full bg-[#4fd1c5] transition-all duration-1000 ease-out"
+                            style={{ width: `${percentage}%` }}
+                        />
+                    </div>
+                    <div className="flex justify-between text-[10px] font-medium text-slate-500 uppercase tracking-tighter px-0.5">
+                        <span>{Math.floor(xpProgress).toLocaleString()} XP</span>
+                        <span>{Math.floor(xpNeeded).toLocaleString()} {t.gamification.xpToNext}</span>
                     </div>
                 </div>
 
