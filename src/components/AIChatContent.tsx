@@ -17,6 +17,10 @@ import { ConversationTabs } from '@/components/ConversationTabs';
 import { ConversationHistory } from '@/components/ConversationHistory';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useUsage } from '@/hooks/useSubscription';
+import { UsageLimitPrompt } from '@/components/UpgradePrompt';
+import { SubscriptionService } from '@/services/SubscriptionService';
+import { subDays, format as formatDate } from 'date-fns';
 import {
     ConversationEmptyState,
 } from '@/components/ai-elements/conversation';
@@ -223,6 +227,10 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
     } = useConversations();
     const [showHistory, setShowHistory] = useState(false);
 
+    // Usage tracking for subscription limits
+    const { chatMessages, incrementChatUsage, refetch: refetchUsage } = useUsage();
+    const [showUsageLimitPrompt, setShowUsageLimitPrompt] = useState(false);
+
     // Initialize AI Service
     const aiService = useRef(new AIService(config.openaiApiKey)).current;
 
@@ -365,12 +373,25 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
         let totalSpentThisMonth = 0;
 
         try {
-            const { data, error } = await supabase
+            // Apply date restrictions based on subscription tier
+            const daysLimit = await SubscriptionService.getTransactionDaysLimit();
+            let query = supabase
                 .from(tableName as any)
                 .select('*')
                 .gte('date', startDate)
-                .lte('date', endDate)
-                .order('date', { ascending: false });
+                .lte('date', endDate);
+
+            // Apply date restriction for Free tier users
+            if (daysLimit !== null) {
+                const cutoffDate = subDays(new Date(), daysLimit);
+                const cutoffDateStr = formatDate(cutoffDate, 'yyyy-MM-dd');
+                // Only apply if the cutoff is more restrictive than the month start
+                if (cutoffDateStr > startDate) {
+                    query = query.gte('date', cutoffDateStr);
+                }
+            }
+
+            const { data, error } = await query.order('date', { ascending: false });
 
             if (!error && data) {
                 currentMonthTransactions = data;
@@ -535,7 +556,14 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                     const tableName = getTableName('monthly_transactions', month);
                     let currentMonthSpent = 0;
                     try {
-                        const { data: currentTxns } = await supabase.from(tableName as any).select('amount, type').gte('date', `${year}-${String(month).padStart(2, '0')}-01`).lte('date', `${year}-${String(month).padStart(2, '0')}-${daysInMonth}`);
+                        const daysLimit = await SubscriptionService.getTransactionDaysLimit();
+                        let query = supabase.from(tableName as any).select('amount, type').gte('date', `${year}-${String(month).padStart(2, '0')}-01`).lte('date', `${year}-${String(month).padStart(2, '0')}-${daysInMonth}`);
+                        if (daysLimit !== null) {
+                            const cutoffDate = subDays(new Date(), daysLimit);
+                            const cutoffDateStr = formatDate(cutoffDate, 'yyyy-MM-dd');
+                            query = query.gte('date', cutoffDateStr);
+                        }
+                        const { data: currentTxns } = await query;
                         if (currentTxns) {
                             (currentTxns as any[]).forEach(t => { if (t.type === 'expense' || t.amount < 0) currentMonthSpent += Math.abs(t.amount); });
                         }
@@ -546,13 +574,20 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                     const monthsToAnalyze = functionArgs.monthsToAnalyze || 3;
                     const today = new Date();
                     const analysisData = [];
+                    const daysLimit = await SubscriptionService.getTransactionDaysLimit();
                     for (let i = 0; i < monthsToAnalyze; i++) {
                         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
                         const m = d.getMonth() + 1;
                         const y = d.getFullYear();
                         const tableName = getTableName('monthly_transactions', m);
                         try {
-                            const { data } = await supabase.from(tableName as any).select('*').order('date', { ascending: false });
+                            let query = supabase.from(tableName as any).select('*');
+                            if (daysLimit !== null) {
+                                const cutoffDate = subDays(new Date(), daysLimit);
+                                const cutoffDateStr = formatDate(cutoffDate, 'yyyy-MM-dd');
+                                query = query.gte('date', cutoffDateStr);
+                            }
+                            const { data } = await query.order('date', { ascending: false });
                             if (data) analysisData.push({ month: m, year: y, transactions: data });
                         } catch (e) { }
                     }
@@ -573,7 +608,14 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                     const { month, year } = functionArgs;
                     const tableName = getTableName('monthly_transactions', month);
                     try {
-                        const { data } = await supabase.from(tableName as any).select('*').gte('date', `${year}-${String(month).padStart(2, '0')}-01`).lte('date', `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`).order('date', { ascending: false });
+                        const daysLimit = await SubscriptionService.getTransactionDaysLimit();
+                        let query = supabase.from(tableName as any).select('*').gte('date', `${year}-${String(month).padStart(2, '0')}-01`).lte('date', `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`);
+                        if (daysLimit !== null) {
+                            const cutoffDate = subDays(new Date(), daysLimit);
+                            const cutoffDateStr = formatDate(cutoffDate, 'yyyy-MM-dd');
+                            query = query.gte('date', cutoffDateStr);
+                        }
+                        const { data } = await query.order('date', { ascending: false });
                         newMessages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(data), name: functionName });
                         shouldCallAI = true;
                     } catch (err) {
@@ -652,6 +694,13 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
 
     const handleSend = async (message: { text: string; files?: FileUIPart[] }, isHidden: boolean = false) => {
         if (!message.text && (!message.files || message.files.length === 0)) return;
+
+        // Check usage limit before sending (only for user messages, not hidden system messages)
+        if (!isHidden && chatMessages?.has_exceeded) {
+            setShowUsageLimitPrompt(true);
+            return;
+        }
+
         setIsLoading(true);
         let userMessage: ExtendedAIMessage;
         if (message.files && message.files.length > 0) {
@@ -667,6 +716,17 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
             const context = await buildFinancialContext();
             const response = await aiService.sendMessage([...messages, userMessage], context, config.language, systemPromptType);
             await processAIResponse(response, [...messages, userMessage]);
+
+            // Increment usage after successful message send (only for user messages, not hidden system messages)
+            if (!isHidden) {
+                try {
+                    await incrementChatUsage();
+                    await refetchUsage(); // Refresh usage data
+                } catch (error) {
+                    console.error('Error incrementing chat usage:', error);
+                    // Don't block the user experience if usage tracking fails
+                }
+            }
         } catch (error) {
             console.error('Error sending message:', error);
             toast({ title: "Error", description: "No pude conectar con el asistente.", variant: "destructive" });
@@ -803,6 +863,15 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                     </div>
                 </>
             )}
+
+            {/* Usage Limit Prompt */}
+            <UsageLimitPrompt
+                open={showUsageLimitPrompt}
+                onOpenChange={setShowUsageLimitPrompt}
+                current={chatMessages?.count || 0}
+                limit={chatMessages?.limit || 0}
+                metric="AI chat messages"
+            />
         </div>
     );
 };

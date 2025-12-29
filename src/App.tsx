@@ -17,6 +17,8 @@ const Catalog = lazy(() => import("./pages/Catalog"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Banking = lazy(() => import("./pages/Banking"));
 const BankingCallback = lazy(() => import("./pages/BankingCallback"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Billing = lazy(() => import("./pages/Billing"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -123,6 +125,15 @@ const App = () => {
                           element={
                             <ProtectedRoute>
                               <BankingCallback />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route path="/pricing" element={<Pricing />} />
+                        <Route
+                          path="/billing"
+                          element={
+                            <ProtectedRoute>
+                              <Billing />
                             </ProtectedRoute>
                           }
                         />

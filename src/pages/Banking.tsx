@@ -7,14 +7,21 @@ import { BankAccountsList } from '@/components/banking/BankAccountsList';
 import { TransactionReviewModal } from '@/components/banking/TransactionReviewModal';
 import { BankingService } from '@/services/BankingService';
 import type { BankAccount } from '@/types/banking';
-import { Building2, CreditCard, TrendingUp } from 'lucide-react';
+import { Building2, CreditCard, TrendingUp, Lock } from 'lucide-react';
+import { useEntitlements } from '@/hooks/useSubscription';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 export default function Banking() {
+  const navigate = useNavigate();
+  const { canConnectBanks, loading: entitlementsLoading } = useEntitlements();
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [totalBalance, setTotalBalance] = useState<number>(0);
   const [transactionCount, setTransactionCount] = useState<number>(0);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
   useEffect(() => {
     loadBankingData();
@@ -65,8 +72,41 @@ export default function Banking() {
             Conecta tus cuentas bancarias y sincroniza transacciones automáticamente
           </p>
         </div>
-        <ConnectBankButton />
+        {canConnectBanks ? (
+          <ConnectBankButton />
+        ) : (
+          <Button
+            onClick={() => setShowUpgradePrompt(true)}
+            variant="default"
+            className="gap-2"
+          >
+            <Lock className="h-4 w-4" />
+            Conectar Banco (Premium)
+          </Button>
+        )}
       </div>
+
+      {/* Upgrade Notice for Free Users */}
+      {!canConnectBanks && accounts.length === 0 && (
+        <Card className="border-yellow-500/50 bg-yellow-500/5">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-yellow-500/10 rounded-lg">
+                <Lock className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium mb-1">Bank Connections Available on Paid Plans</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Connect your bank accounts and automatically import transactions with Essential or Pro plans.
+                </p>
+                <Button onClick={() => navigate('/pricing')} size="sm">
+                  View Plans
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Info Cards */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -191,6 +231,14 @@ export default function Banking() {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
         onImportComplete={handleImportComplete}
+      />
+
+      {/* Upgrade Prompt */}
+      <UpgradePrompt
+        open={showUpgradePrompt}
+        onOpenChange={setShowUpgradePrompt}
+        feature="Bank Connections"
+        description="Connect your bank accounts via Tink and automatically import transactions. Available on Essential and Pro plans."
       />
       </div>
     </>

@@ -1,4 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
+import { SubscriptionService } from '@/services/SubscriptionService';
+import { subDays, format } from 'date-fns';
 
 export interface ComprehensiveFinancialData {
   // All historical data
@@ -249,11 +251,22 @@ export class FinancialDataService {
   }
 
   private async getAllTransactions(userId: string): Promise<TransactionData[]> {
-    const { data, error } = await supabase
+    // Check subscription entitlements for transaction date limits
+    const daysLimit = await SubscriptionService.getTransactionDaysLimit();
+
+    let query = supabase
       .from('view_transactions_all')
       .select('*')
-      .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .eq('user_id', userId);
+
+    // Apply date restriction for Free tier users
+    if (daysLimit !== null) {
+      const cutoffDate = subDays(new Date(), daysLimit);
+      const cutoffDateStr = format(cutoffDate, 'yyyy-MM-dd');
+      query = query.gte('date', cutoffDateStr);
+    }
+
+    const { data, error } = await query.order('date', { ascending: false });
 
     if (error) {
       console.error('Error fetching all transactions:', error);
@@ -263,11 +276,22 @@ export class FinancialDataService {
   }
 
   private async getAllIncome(userId: string): Promise<IncomeData[]> {
-    const { data, error } = await supabase
+    // Check subscription entitlements for transaction date limits
+    const daysLimit = await SubscriptionService.getTransactionDaysLimit();
+
+    let query = supabase
       .from('view_income_all')
       .select('*')
-      .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .eq('user_id', userId);
+
+    // Apply date restriction for Free tier users
+    if (daysLimit !== null) {
+      const cutoffDate = subDays(new Date(), daysLimit);
+      const cutoffDateStr = format(cutoffDate, 'yyyy-MM-dd');
+      query = query.gte('date', cutoffDateStr);
+    }
+
+    const { data, error } = await query.order('date', { ascending: false });
 
     if (error) {
       console.error('Error fetching all income:', error);

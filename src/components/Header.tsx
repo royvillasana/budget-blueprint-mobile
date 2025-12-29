@@ -4,7 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import { useStorage } from '@/contexts/StorageContext';
 import { translations } from '@/i18n/translations';
 import { Button } from './ui/button';
-import { Calendar, Menu, LogOut, User, Settings as SettingsIcon, Activity, Building2, Sun, Moon } from 'lucide-react';
+import { Menu, LogOut, User, Settings as SettingsIcon, Activity, Building2, Sun, Moon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
@@ -70,7 +70,6 @@ export const Header = () => {
               : 'text-muted-foreground hover:bg-muted/50'
               }`}
           >
-            <Calendar className="h-4 w-4" />
             <span>
               {currentMonth ? getMonthName(currentMonth, config.language) : t.budget}
             </span>
@@ -128,6 +127,18 @@ export const Header = () => {
       >
         <Building2 className={`h-4 w-4 ${mobile ? 'inline mr-2' : 'hidden'}`} />
         {config.language === 'es' ? 'Banca' : 'Banking'}
+      </Link>
+
+      <Link
+        to="/billing"
+        onClick={onClose}
+        className={`text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md ${mobile ? 'block w-full' : ''
+          } ${isActive('/billing')
+            ? 'text-primary bg-primary/10'
+            : 'text-muted-foreground hover:bg-muted/50'
+          }`}
+      >
+        {config.language === 'es' ? 'Suscripción' : 'Billing'}
       </Link>
     </>
   );
