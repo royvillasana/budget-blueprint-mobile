@@ -6,7 +6,7 @@ import { Flame, Shield } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { getLevelTitle } from '@/utils/gamification';
+import { getLevelTitle, getXPProgress } from '@/utils/gamification';
 import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/i18n/translations';
 
@@ -44,14 +44,10 @@ export const GamificationHUD: React.FC<GamificationHUDProps> = ({ className }) =
 
     if (!profile) return null;
 
-    // XP calculation logic...
+    // Use new XP calculation functions
     const currentLevel = profile.current_level;
-    const { title, icon } = getLevelTitle(currentLevel);
-    const xpForCurrentLevel = 100 * Math.pow(currentLevel, 2);
-    const xpForNextLevel = 100 * Math.pow(currentLevel + 1, 2);
-    const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-    const xpProgress = profile.total_xp - xpForCurrentLevel;
-    const percentage = Math.min(100, Math.max(0, (xpProgress / xpNeeded) * 100));
+    const { title, icon, tier } = getLevelTitle(currentLevel);
+    const { current: xpProgress, needed: xpNeeded, percentage } = getXPProgress(profile.total_xp);
 
     return (
         <Popover>
@@ -90,6 +86,7 @@ export const GamificationHUD: React.FC<GamificationHUDProps> = ({ className }) =
                     </div>
                     <div className="text-center">
                         <h3 className="text-lg font-bold text-foreground">{title}</h3>
+                        <p className="text-xs font-medium text-primary/80">{tier}</p>
                         <p className="text-xs text-muted-foreground">{t.gamification.totalXP}: {profile.total_xp}</p>
                     </div>
                 </div>

@@ -6,9 +6,10 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Flame, Shield } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getLevelTitle } from '@/utils/gamification';
+import { getLevelTitle, getXPProgress } from '@/utils/gamification';
 import { useApp } from '@/contexts/AppContext';
 import { translations } from '@/i18n/translations';
+import { supabase } from '@/integrations/supabase/client';
 
 export const GamificationDashboard = () => {
     const [profile, setProfile] = useState<GamificationProfile | null>(null);
@@ -45,15 +46,11 @@ export const GamificationDashboard = () => {
 
     if (!profile) return <div className="p-8 text-center">Profile not found. Please log in.</div>;
 
-    const { title, icon } = getLevelTitle(profile.current_level);
+    const { title, icon, tier } = getLevelTitle(profile.current_level);
 
-    // XP calc
+    // Use new XP calculation
     const currentLevel = profile.current_level;
-    const xpForCurrentLevel = 100 * Math.pow(currentLevel, 2);
-    const xpForNextLevel = 100 * Math.pow(currentLevel + 1, 2);
-    const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-    const xpProgress = profile.total_xp - xpForCurrentLevel;
-    const percentage = Math.min(100, Math.max(0, (xpProgress / xpNeeded) * 100));
+    const { current: xpProgress, needed: xpNeeded, percentage } = getXPProgress(profile.total_xp);
 
     return (
         <div className="space-y-6">
@@ -70,6 +67,7 @@ export const GamificationDashboard = () => {
                     </div>
                 </div>
                 <h1 className="text-2xl font-bold mt-2">{title}</h1>
+                <p className="text-sm font-medium text-primary/80">{tier}</p>
                 <p className="text-muted-foreground text-sm">{t.gamification.totalXP}: {profile.total_xp.toLocaleString()}</p>
 
                 <div className="w-full max-w-xs space-y-1 mt-2">
@@ -136,24 +134,159 @@ export const GamificationDashboard = () => {
                 </TabsContent>
 
                 <TabsContent value="badges" className="mt-4">
-                    <div className="grid grid-cols-3 gap-3">
-                        {badges.map(b => (
-                            <div key={b.id} className="flex flex-col items-center text-center p-2 bg-card rounded-lg border">
-                                <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-2xl mb-2">
-                                    {b.badge?.icon_url || '🏅'}
-                                </div>
-                                <span className="text-xs font-medium line-clamp-2">{b.badge?.name}</span>
-                                <span className="text-[10px] text-muted-foreground uppercase mt-1">{b.badge?.tier}</span>
+                    <BadgesGrid badges={badges} />
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+};
+
+// New BadgesGrid component with progressive disclosure
+const BadgesGrid = ({ badges }: { badges: UserBadge[] }) => {
+    const [allBadges, setAllBadges] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { config } = useApp();
+    const t = translations[config.language];
+
+    useEffect(() => {
+        async function loadAllBadges() {
+            try {
+                const { data, error } = await supabase
+                    .from('badges')
+                    .select('*')
+                    .order('tier', { ascending: true })
+                    .order('category', { ascending: true });
+
+                if (error) throw error;
+
+                // Merge with earned badges
+                const earnedBadgeIds = new Set(badges.map(b => b.badge_id));
+                const mergedBadges = data?.map(badge => ({
+                    ...badge,
+                    earned: earnedBadgeIds.has(badge.id),
+                    earned_at: badges.find(b => b.badge_id === badge.id)?.awarded_at
+                })) || [];
+
+                setAllBadges(mergedBadges);
+            } catch (err) {
+                console.error('Error loading badges:', err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadAllBadges();
+    }, [badges]);
+
+    if (loading) {
+        return <div className="text-center py-8 text-muted-foreground">Cargando insignias...</div>;
+    }
+
+    // Group badges by category
+    const categories = Array.from(new Set(allBadges.map(b => b.category)));
+
+    return (
+        <div className="space-y-6">
+            {categories.map(category => {
+                const categoryBadges = allBadges.filter(b => b.category === category);
+                const earnedCount = categoryBadges.filter(b => b.earned).length;
+
+                return (
+                    <div key={category} className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-foreground">
+                                {category}
+                            </h3>
+                            <span className="text-xs text-muted-foreground">
+                                {earnedCount}/{categoryBadges.length}
+                            </span>
+                        </div>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                            {categoryBadges.map(badge => (
+                                <BadgeCard key={badge.id} badge={badge} />
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
+            {allBadges.length === 0 && (
+                <div className="col-span-3 text-center py-8 text-muted-foreground">
+                    {t.gamification.noBadges}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Individual badge card with tooltip
+const BadgeCard = ({ badge }: { badge: any }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const isEarned = badge.earned;
+
+    // Tier colors
+    const tierColors: Record<string, string> = {
+        'COMMON': 'border-gray-400',
+        'RARE': 'border-blue-500',
+        'EPIC': 'border-purple-500',
+        'LEGENDARY': 'border-yellow-500'
+    };
+
+    return (
+        <div
+            className="relative"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+        >
+            <div
+                className={`flex flex-col items-center text-center p-3 rounded-lg border-2 transition-all cursor-pointer ${isEarned
+                    ? `bg-card ${tierColors[badge.tier] || 'border-gray-400'} shadow-sm hover:shadow-md`
+                    : 'bg-muted/30 border-muted grayscale opacity-60 hover:opacity-80'
+                    }`}
+            >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-2 ${isEarned ? 'bg-secondary' : 'bg-muted'
+                    }`}>
+                    {badge.icon_url || '🏅'}
+                </div>
+                <span className={`text-xs font-medium line-clamp-2 ${isEarned ? 'text-foreground' : 'text-muted-foreground'
+                    }`}>
+                    {badge.name}
+                </span>
+                <span className={`text-[10px] uppercase mt-1 ${isEarned ? 'text-primary' : 'text-muted-foreground'
+                    }`}>
+                    {badge.tier}
+                </span>
+                {isEarned && badge.earned_at && (
+                    <span className="text-[9px] text-muted-foreground mt-1">
+                        {new Date(badge.earned_at).toLocaleDateString()}
+                    </span>
+                )}
+            </div>
+
+            {/* Tooltip */}
+            {showTooltip && (
+                <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-popover border rounded-lg shadow-lg">
+                    <div className="space-y-2">
+                        <div className="flex items-start gap-2">
+                            <span className="text-2xl">{badge.icon_url || '🏅'}</span>
+                            <div className="flex-1">
+                                <h4 className="font-semibold text-sm">{badge.name}</h4>
+                                <p className="text-xs text-muted-foreground uppercase">{badge.tier}</p>
                             </div>
-                        ))}
-                        {badges.length === 0 && (
-                            <div className="col-span-3 text-center py-8 text-muted-foreground">
-                                {t.gamification.noBadges}
+                        </div>
+                        <p className="text-xs text-foreground">{badge.description}</p>
+                        {isEarned && badge.earned_at && (
+                            <div className="pt-2 border-t">
+                                <p className="text-xs text-green-600 font-medium">
+                                    ✓ Desbloqueada el {new Date(badge.earned_at).toLocaleDateString()}
+                                </p>
                             </div>
                         )}
                     </div>
-                </TabsContent>
-            </Tabs>
+                    {/* Arrow */}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                        <div className="w-2 h-2 bg-popover border-r border-b rotate-45"></div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

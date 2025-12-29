@@ -19,6 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, RadialBarChart, RadialBar, PolarRadiusAxis, PolarGrid, Label } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { GamificationHUD } from '@/components/gamification/GamificationHUD';
+import { useGamificationNotifications } from '@/hooks/useGamificationNotifications';
 interface MonthlySummary {
   month_name: string | null;
   month_id: number | null;
@@ -71,6 +72,9 @@ const Dashboard = () => {
   } = useApp();
   const { storage } = useStorage();
   const t = translations[config.language];
+
+  // Enable gamification notifications
+  useGamificationNotifications();
   const [monthlySummaries, setMonthlySummaries] = useState<MonthlySummary[]>([]);
   const [annualSummary, setAnnualSummary] = useState<AnnualSummary | null>(null);
   const [loading, setLoading] = useState(true);
