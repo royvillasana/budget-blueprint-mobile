@@ -266,60 +266,7 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
         scrollToBottom();
     }, [messages]);
 
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorderRef.current = mediaRecorder;
-            chunksRef.current = [];
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) {
-                    chunksRef.current.push(e.data);
-                }
-            };
-
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-                const audioFile = new File([audioBlob], 'voice_note.webm', { type: 'audio/webm' });
-
-                setIsLoading(true);
-                try {
-                    const transcription = await aiService.transcribeAudio(audioFile);
-                    handleSend({ text: transcription });
-                } catch (error) {
-                    console.error('Transcription error:', error);
-                    toast({
-                        title: "Error",
-                        description: "No pude entender el audio.",
-                        variant: "destructive"
-                    });
-                    setIsLoading(false);
-                }
-
-                stream.getTracks().forEach(track => track.stop());
-            };
-
-            mediaRecorder.start();
-            setIsRecording(true);
-        } catch (error) {
-            console.error('Error accessing microphone:', error);
-            toast({
-                title: "Error",
-                description: "No puedo acceder al micrófono.",
-                variant: "destructive"
-            });
-        }
-    };
-
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-        }
-    };
-
-    const addMessageToConversation = async (message: ExtendedAIMessage) => {
+    async function addMessageToConversation(message: ExtendedAIMessage) {
         setMessages(prev => [...prev, message]);
         if (currentConversation) {
             await addMessage({
@@ -337,9 +284,9 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                 }
             });
         }
-    };
+    }
 
-    const addMessagesToConversation = async (newMessages: ExtendedAIMessage[]) => {
+    async function addMessagesToConversation(newMessages: ExtendedAIMessage[]) {
         setMessages(prev => [...prev, ...newMessages]);
         if (currentConversation) {
             for (const msg of newMessages) {
@@ -359,9 +306,9 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                 });
             }
         }
-    };
+    }
 
-    const buildFinancialContext = async () => {
+    async function buildFinancialContext() {
         const today = new Date();
         const month = today.getMonth() + 1;
         const year = today.getFullYear();
@@ -449,10 +396,66 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
             currentMonth: month,
             currentYear: year
         };
-    };
+    }
 
-    const processAIResponse = async (response: any, currentHistory: ExtendedAIMessage[]) => {
+    async function streamResponse(history: ExtendedAIMessage[], context: any) {
+        const stream = aiService.sendMessageStream(history, context, config.language, systemPromptType);
+        let assistantMessage: ExtendedAIMessage = { role: 'assistant', content: '' };
+
+        // Add empty assistant message to UI
+        setMessages(prev => [...prev, assistantMessage]);
+
+        let hasStartedData = false;
+
+        for await (const chunk of stream) {
+            if (!hasStartedData) {
+                setIsLoading(false);
+                hasStartedData = true;
+            }
+
+            if (chunk.type === 'content') {
+                assistantMessage.content = chunk.content;
+                setMessages(prev => {
+                    const newMsgs = [...prev];
+                    newMsgs[newMsgs.length - 1] = { ...assistantMessage };
+                    return newMsgs;
+                });
+                scrollToBottom();
+            } else if (chunk.type === 'tool_calls') {
+                // If we got tool calls, we need to process them
+                // First, remove the empty/partial assistant message if it's empty
+                if (!assistantMessage.content) {
+                    setMessages(prev => prev.slice(0, -1));
+                } else {
+                    // If it has content, save it
+                    if (currentConversation) {
+                        await addMessage({
+                            conversation_id: currentConversation.id,
+                            role: assistantMessage.role,
+                            content: assistantMessage.content
+                        });
+                    }
+                }
+
+                await processAIResponse({ tool_calls: chunk.tool_calls }, history);
+                return;
+            }
+        }
+
+        // Save final content message to DB
+        if (assistantMessage.content && currentConversation) {
+            await addMessage({
+                conversation_id: currentConversation.id,
+                role: assistantMessage.role,
+                content: assistantMessage.content
+            });
+        }
+        setIsLoading(false);
+    }
+
+    async function processAIResponse(response: any, currentHistory: ExtendedAIMessage[]) {
         if (response.tool_calls) {
+            setIsLoading(true);
             const assistantMessage: ExtendedAIMessage = {
                 role: 'assistant',
                 content: response.content || null,
@@ -725,8 +728,7 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
 
             if (shouldCallAI) {
                 const context = await buildFinancialContext();
-                const followUpResponse = await aiService.sendMessage([...currentHistory, ...newMessages], context, config.language, systemPromptType);
-                await processAIResponse(followUpResponse, [...currentHistory, ...newMessages]);
+                await streamResponse([...currentHistory, ...newMessages], context);
             } else {
                 setIsLoading(false);
             }
@@ -734,12 +736,11 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
             await addMessageToConversation({ role: 'assistant', content: response.content });
             setIsLoading(false);
         }
-    };
+    }
 
-    const handleSend = async (message: { text: string; files?: FileUIPart[] }, isHidden: boolean = false) => {
+    async function handleSend(message: { text: string; files?: FileUIPart[] }, isHidden: boolean = false) {
         if (!message.text && (!message.files || message.files.length === 0)) return;
 
-        // Check usage limit before sending (only for user messages, not hidden system messages)
         if (!isHidden && chatMessages?.has_exceeded) {
             setShowUsageLimitPrompt(true);
             return;
@@ -750,26 +751,30 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
         if (message.files && message.files.length > 0) {
             const content: any[] = [{ type: 'text', text: message.text }];
             const attachments: any[] = [];
-            message.files.forEach(file => { if (file.url) { content.push({ type: 'image_url', image_url: { url: file.url } }); attachments.push({ url: file.url, type: 'image' }); } });
+            message.files.forEach(file => {
+                if (file.url) {
+                    content.push({ type: 'image_url', image_url: { url: file.url } });
+                    attachments.push({ url: file.url, type: 'image' });
+                }
+            });
             userMessage = { role: 'user', content, attachments, isHidden };
         } else {
             userMessage = { role: 'user', content: message.text, isHidden };
         }
+
         await addMessageToConversation(userMessage);
+
         try {
             const context = await buildFinancialContext();
-            const response = await aiService.sendMessage([...messages, userMessage], context, config.language, systemPromptType);
-            await processAIResponse(response, [...messages, userMessage]);
+            await streamResponse([...messages, userMessage], context);
 
-            // Increment usage after successful message send (only for user messages, not hidden system messages)
             if (!isHidden) {
                 try {
                     await incrementChatUsage();
-                    await refetchUsage(); // Refresh usage data
+                    await refetchUsage();
                     GamificationService.emitEvent('chat_turn');
                 } catch (error) {
                     console.error('Error incrementing chat usage:', error);
-                    // Don't block the user experience if usage tracking fails
                 }
             }
         } catch (error) {
@@ -777,17 +782,69 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
             toast({ title: "Error", description: "No pude conectar con el asistente.", variant: "destructive" });
             setIsLoading(false);
         }
-    };
+    }
 
-    const handleCategorySelect = async (categoryName: string, categoryId: string) => {
+    async function handleCategorySelect(categoryName: string, categoryId: string) {
         const hiddenMessage: ExtendedAIMessage = { role: 'user', content: `Categoría seleccionada: ${categoryName} (ID: ${categoryId})`, isHidden: true };
         await addMessageToConversation(hiddenMessage);
         setIsLoading(true);
         try {
             const context = await buildFinancialContext();
-            const response = await aiService.sendMessage([...messages, hiddenMessage], context, config.language, systemPromptType);
-            await processAIResponse(response, [...messages, hiddenMessage]);
+            await streamResponse([...messages, hiddenMessage], context);
         } catch (error) { setIsLoading(false); }
+    }
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            chunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) {
+                    chunksRef.current.push(e.data);
+                }
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
+                const audioFile = new File([audioBlob], 'voice_note.webm', { type: 'audio/webm' });
+
+                setIsLoading(true);
+                try {
+                    const transcription = await aiService.transcribeAudio(audioFile);
+                    handleSend({ text: transcription });
+                } catch (error) {
+                    console.error('Transcription error:', error);
+                    toast({
+                        title: "Error",
+                        description: "No pude entender el audio.",
+                        variant: "destructive"
+                    });
+                    setIsLoading(false);
+                }
+
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            toast({
+                title: "Error",
+                description: "No puedo acceder al micrófono.",
+                variant: "destructive"
+            });
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+        }
     };
 
     const handleExpertAdvisorClick = () => {
@@ -799,11 +856,11 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
     const handleConfirmation = (confirmed: boolean) => { handleSend({ text: confirmed ? "Ingresar" : "Modificar" }); };
     const handlePillClick = (text: string) => { handleSend({ text }); };
 
-    const getAllCategories = () => {
+    function getAllCategories() {
         const allCats: { id: string, name: string, type: string }[] = [];
         Object.entries(budgetCategories).forEach(([key, group]: [string, any]) => { group.categories.forEach((cat: any) => { allCats.push({ ...cat, type: key }); }); });
         return allCats;
-    };
+    }
 
     return (
         <div className={`fixed top-0 right-0 h-full bg-background border-l shadow-lg z-50 flex flex-col w-full md:w-1/4 transition-transform duration-300 ease-in-out translate-x-0`} style={{ touchAction: 'manipulation' }}>

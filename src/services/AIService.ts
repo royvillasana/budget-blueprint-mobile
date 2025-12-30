@@ -325,8 +325,86 @@ export class AIService {
   }
 
   async sendMessage(messages: AIMessage[], context: AIContext, language: 'es' | 'en' = 'es', systemPromptType: 'standard' | 'expert_advisor' = 'standard') {
-    // Prepare the context message
-    // Helper to format categories for the AI
+    const contextValues = await this.prepareContextValues(context);
+    const contextMessage = this.prepareContextMessage(contextValues);
+    const formattedMessages = this.formatMessages(messages);
+
+    const allMessages = [
+      { role: 'system', content: getSystemPrompt(language, systemPromptType) },
+      contextMessage,
+      ...formattedMessages
+    ];
+
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: allMessages as any,
+        tools: this.getTools(),
+        tool_choice: 'auto'
+      });
+      return response.choices[0].message;
+    } catch (error) {
+      console.error('Error in AIService:', error);
+      throw error;
+    }
+  }
+
+  async *sendMessageStream(messages: AIMessage[], context: AIContext, language: 'es' | 'en' = 'es', systemPromptType: 'standard' | 'expert_advisor' = 'standard') {
+    const contextValues = await this.prepareContextValues(context);
+    const contextMessage = this.prepareContextMessage(contextValues);
+    const formattedMessages = this.formatMessages(messages);
+
+    const allMessages = [
+      { role: 'system', content: getSystemPrompt(language, systemPromptType) },
+      contextMessage,
+      ...formattedMessages
+    ];
+
+    try {
+      const stream = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: allMessages as any,
+        tools: this.getTools(),
+        tool_choice: 'auto',
+        stream: true
+      });
+
+      let fullContent = '';
+      let toolCalls: any[] = [];
+
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta;
+        
+        if (delta?.content) {
+          fullContent += delta.content;
+          yield { type: 'content', content: fullContent, delta: delta.content };
+        }
+
+        if (delta?.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            if (!toolCalls[tc.index]) {
+              toolCalls[tc.index] = { 
+                id: tc.id,
+                type: 'function',
+                function: { name: '', arguments: '' } 
+              };
+            }
+            if (tc.function?.name) toolCalls[tc.index].function.name += tc.function.name;
+            if (tc.function?.arguments) toolCalls[tc.index].function.arguments += tc.function.arguments;
+          }
+        }
+      }
+
+      if (toolCalls.length > 0) {
+        yield { type: 'tool_calls', tool_calls: toolCalls.filter(Boolean) };
+      }
+    } catch (error) {
+      console.error('Error in AIService stream:', error);
+      throw error;
+    }
+  }
+
+  private async prepareContextValues(context: AIContext) {
     const formatCategories = (categories: any) => {
       const formatted: string[] = [];
       Object.values(categories).forEach((group: any) => {
@@ -337,7 +415,6 @@ export class AIService {
       return formatted.join('\n');
     };
 
-    // Prepare comprehensive financial summary
     const calculatePercentage = (spent: number, budgeted: number) => {
       if (budgeted === 0) return '0.0';
       return ((spent / budgeted) * 100).toFixed(1);
@@ -355,21 +432,15 @@ export class AIService {
       Days Left in Month: ${context.daysLeftInMonth || 0}`
       : '';
 
-    // NEW: Build comprehensive financial data summary if available
     let comprehensiveDataSummary = '';
     if (context.comprehensiveData) {
       const cd = context.comprehensiveData;
-
-      // Helper function to safely format numbers
       const safeFixed = (value: any, decimals: number = 2): string => {
         return value != null && !isNaN(Number(value)) ? Number(value).toFixed(decimals) : '0';
       };
 
       comprehensiveDataSummary = `
-═══════════════════════════════════════════════════════════
 📊 COMPREHENSIVE FINANCIAL DATA SUMMARY
-═══════════════════════════════════════════════════════════
-
 🏦 ANNUAL SUMMARY:
 ${cd.annualSummary ? `
   - Annual Income: ${safeFixed(cd.annualSummary.annual_income, 2)} ${context.currency}
@@ -378,97 +449,64 @@ ${cd.annualSummary ? `
   - Annual Savings Rate: ${safeFixed(cd.annualSummary.annual_savings_rate, 1)}%
   - Annual Total Debt: ${safeFixed(cd.annualSummary.annual_total_debt, 2)} ${context.currency}
 ` : 'No annual data available'}
-
 💳 FINANCIAL HEALTH SCORE: ${safeFixed(cd.financialHealth.overallHealthScore, 1)}/100
-  - Debt Management: ${safeFixed(cd.financialHealth.healthScoreBreakdown.debtManagement, 1)}/100
-  - Savings Habits: ${safeFixed(cd.financialHealth.healthScoreBreakdown.savingsHabits, 1)}/100
-  - Budget Discipline: ${safeFixed(cd.financialHealth.healthScoreBreakdown.budgetDiscipline, 1)}/100
-  - Income Stability: ${safeFixed(cd.financialHealth.healthScoreBreakdown.incomeStability, 1)}/100
-
 💰 KEY METRICS:
   - Debt-to-Income Ratio: ${safeFixed(cd.financialHealth.debtToIncomeRatio, 2)}
-  - Total Debt: ${safeFixed(cd.financialHealth.totalDebt, 2)} ${context.currency}
   - Average Monthly Expenses: ${safeFixed(cd.financialHealth.averageMonthlyExpenses, 2)} ${context.currency}
   - Average Monthly Income: ${safeFixed(cd.financialHealth.averageMonthlyIncome, 2)} ${context.currency}
-  - Average Monthly Savings: ${safeFixed(cd.financialHealth.averageMonthlySavings, 2)} ${context.currency}
   - Savings Rate: ${safeFixed(cd.financialHealth.savingsRate, 1)}%
-  - Expense Trend: ${cd.financialHealth.expenseTrend || 'stable'}
-
-📈 HISTORICAL DATA AVAILABLE:
+📈 HISTORICAL DATA:
   - Total Transactions: ${cd.allTransactions.length}
-  - Total Income Entries: ${cd.allIncome.length}
-  - Total Budget Entries: ${cd.allBudgets.length}
-  - Total Debt Entries: ${cd.allDebts.length}
   - Monthly Summaries: ${cd.monthlySummaries.length} months
-  - Categories: ${cd.categories.length}
-  - Accounts: ${cd.accounts.length}
-  - Payment Methods: ${cd.paymentMethods.length}
-
-⚠️ ALERTS:
-  ${cd.financialHealth.overBudgetCategories.length > 0 ? `- Over Budget Categories: ${cd.financialHealth.overBudgetCategories.join(', ')}` : ''}
-  ${cd.financialHealth.underutilizedCategories.length > 0 ? `- Underutilized Categories: ${cd.financialHealth.underutilizedCategories.join(', ')}` : ''}
-  ${cd.financialHealth.highestExpenseCategory ? `- Highest Expense Category: ${cd.financialHealth.highestExpenseCategory.name} (${safeFixed(cd.financialHealth.highestExpenseCategory.amount, 2)} ${context.currency})` : ''}
-
-💡 Use this comprehensive data to provide deeply personalized financial advice!
-═══════════════════════════════════════════════════════════
 `;
     }
 
-    // Prepare the context message
-    const contextMessage = {
+    return {
+      monthlyIncome: context.monthlyIncome,
+      currency: context.currency,
+      currentMonth: context.currentMonth,
+      currentYear: context.currentYear,
+      budgetSummaryText,
+      categoriesList: formatCategories(context.budgetCategories),
+      recentTransactions: JSON.stringify(context.currentMonthTransactions || context.transactions.slice(-10)),
+      comprehensiveDataSummary
+    };
+  }
+
+  private prepareContextMessage(cv: any) {
+    return {
       role: 'system',
       content: `Current Financial Context:
-      Monthly Income: ${context.monthlyIncome} ${context.currency}
-      Current Month: ${context.currentMonth || 'N/A'}
-      Current Year: ${context.currentYear || 'N/A'}
+      Monthly Income: ${cv.monthlyIncome} ${cv.currency}
+      Current Month: ${cv.currentMonth || 'N/A'}
+      Current Year: ${cv.currentYear || 'N/A'}
 
-      ${budgetSummaryText}
+      ${cv.budgetSummaryText}
 
-      Available Budget Categories (Use these IDs strictly):
-      ${formatCategories(context.budgetCategories)}
+      Available Budget Categories:
+      ${cv.categoriesList}
 
-      Current Month Transactions (${context.currentMonthTransactions?.length || 0} total):
-      ${JSON.stringify(context.currentMonthTransactions || context.transactions.slice(-10))}
+      Current Month Transactions:
+      ${cv.recentTransactions}
 
-      ${comprehensiveDataSummary}
+      ${cv.comprehensiveDataSummary}
       `
     };
+  }
 
-    // Transform messages for OpenAI API
-    // Ensure content is correctly formatted for multimodal inputs and tool_calls are preserved
-    const formattedMessages = messages.map(msg => {
+  private formatMessages(messages: AIMessage[]) {
+    return messages.map(msg => {
       const formatted: any = { role: msg.role };
-      
-      if (msg.content) {
-        formatted.content = msg.content;
-      }
-
-      if (msg.tool_calls) {
-        formatted.tool_calls = msg.tool_calls;
-      }
-
-      if (msg.tool_call_id) {
-        formatted.tool_call_id = msg.tool_call_id;
-      }
-      
-      if (msg.name) {
-        formatted.name = msg.name;
-      }
-
+      if (msg.content) formatted.content = msg.content;
+      if (msg.tool_calls) formatted.tool_calls = msg.tool_calls;
+      if (msg.tool_call_id) formatted.tool_call_id = msg.tool_call_id;
+      if (msg.name) formatted.name = msg.name;
       return formatted;
     });
+  }
 
-    const allMessages = [
-      { role: 'system', content: getSystemPrompt(language, systemPromptType) },
-      contextMessage,
-      ...formattedMessages
-    ];
-
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o', // gpt-4o supports vision
-        messages: allMessages as any,
-        tools: [
+  private getTools(): any[] {
+    return [
           {
             type: 'function',
             function: {
@@ -976,16 +1014,9 @@ ${cd.annualSummary ? `
               }
             }
           }
-        ],
-        tool_choice: 'auto'
-      });
-
-      return response.choices[0].message;
-    } catch (error) {
-      console.error('Error calling OpenAI:', error);
-      throw error;
-    }
+    ];
   }
+
   async transcribeAudio(audioFile: File): Promise<string> {
     try {
       const response = await this.openai.audio.transcriptions.create({
