@@ -64,6 +64,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     monthlyIncome: 0,
     language: 'es',
     openaiApiKey: '',
+    avatarUrl: '',
   });
 
   const [loadingSettings, setLoadingSettings] = useState(true);
@@ -135,6 +136,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             monthlyIncome: Number(settings.monthlyIncome) || 0,
             language: (settings.language as Language) || 'es',
             openaiApiKey: settings.openaiApiKey || '',
+            avatarUrl: settings.avatarUrl || '',
           });
         }
       } catch (error) {
@@ -221,6 +223,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           monthlyIncome: 0,
           language: 'es',
           openaiApiKey: '',
+          avatarUrl: '',
         });
       }
     });
