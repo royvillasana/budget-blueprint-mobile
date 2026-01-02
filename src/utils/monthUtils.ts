@@ -24,6 +24,16 @@ export const getMonthName = (month: number, language: 'es' | 'en' = 'es'): strin
   return language === 'es' ? info?.name : info?.nameEn;
 };
 
+/**
+ * Get table name for monthly data
+ * Note: Tables now support multi-year data via a 'year' column in the database
+ * The table name remains the same (e.g., 'monthly_transactions_jan') but queries
+ * should filter by the 'year' column to get data for specific years
+ *
+ * @param baseTable - Base table name (e.g., 'monthly_transactions')
+ * @param month - Month number (1-12)
+ * @returns Table name with month suffix (e.g., 'monthly_transactions_jan')
+ */
 export const getTableName = (baseTable: string, month: number): string => {
   const suffix = getMonthSuffix(month);
   return `${baseTable}_${suffix}`;

@@ -14,8 +14,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getMonthName, MONTH_INFO } from '@/utils/monthUtils';
+import { getMonthName } from '@/utils/monthUtils';
 import { useTheme } from '@/contexts/ThemeContext';
+import { MonthYearPicker } from '@/components/MonthYearPicker';
 
 export const Header = () => {
   const { config } = useApp();
@@ -38,9 +39,8 @@ export const Header = () => {
     navigate('/');
   };
 
-  const currentMonth = params.month ? parseInt(params.month) : null;
-
-
+  const currentMonth = params.month ? parseInt(params.month) : new Date().getMonth() + 1;
+  const currentYear = params.year ? parseInt(params.year) : new Date().getFullYear();
 
   const isActive = (path: string) => location.pathname === path;
   const isBudgetRoute = location.pathname.startsWith('/budget');
@@ -59,37 +59,21 @@ export const Header = () => {
         {t.dashboard}
       </Link>
 
-      {/* Month Selector Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`flex items-center gap-2 ${mobile ? 'w-full justify-start' : ''} ${isBudgetRoute
-              ? 'text-primary bg-primary/10'
-              : 'text-muted-foreground hover:bg-muted/50'
-              }`}
-          >
-            <span>
-              {currentMonth ? getMonthName(currentMonth, config.language) : t.budget}
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48 bg-card border-border/50">
-          {Object.entries(MONTH_INFO).map(([num, info]) => (
-            <DropdownMenuItem
-              key={num}
-              onClick={() => {
-                navigate(`/budget/2025/${num}`);
-                onClose();
-              }}
-              className={currentMonth === parseInt(num) ? 'bg-primary/10 text-primary' : ''}
-            >
-              {getMonthName(parseInt(num), config.language)}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Month Year Picker */}
+      <MonthYearPicker
+        selectedMonth={currentMonth}
+        selectedYear={currentYear}
+        onSelect={(month, year) => {
+          navigate(`/budget/${year}/${month}`);
+          onClose();
+        }}
+        buttonClassName={`${mobile ? 'w-full justify-start' : ''} ${isBudgetRoute
+          ? 'text-primary bg-primary/10'
+          : 'text-muted-foreground hover:bg-muted/50'
+          }`}
+        buttonVariant="ghost"
+        displayText={getMonthName(currentMonth, config.language) + (currentYear !== new Date().getFullYear() ? ` ${currentYear}` : '')}
+      />
 
       <Link
         to="/catalog"
