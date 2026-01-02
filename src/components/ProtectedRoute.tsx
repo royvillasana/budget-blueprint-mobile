@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { TrialBanner } from '@/components/trial/TrialBanner';
+import { TrialExpiredModal } from '@/components/trial/TrialExpiredModal';
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const [session, setSession] = useState<boolean | null>(null);
@@ -29,5 +31,11 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
         return <Navigate to="/" state={{ from: location }} replace />;
     }
 
-    return <>{children}</>;
+    return (
+        <>
+            <TrialBanner />
+            <TrialExpiredModal />
+            {children}
+        </>
+    );
 };

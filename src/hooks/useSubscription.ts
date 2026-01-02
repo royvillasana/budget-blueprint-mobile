@@ -1,17 +1,22 @@
 // Custom hook for subscription and entitlements
 import { useState, useEffect } from 'react';
-import { SubscriptionService, type BillingInfo } from '@/services/SubscriptionService';
+import { SubscriptionService, type BillingInfo, type TrialStatus } from '@/services/SubscriptionService';
 
 export function useSubscription() {
   const [billingInfo, setBillingInfo] = useState<BillingInfo | null>(null);
+  const [trialStatus, setTrialStatus] = useState<TrialStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchBillingInfo = async () => {
     try {
       setLoading(true);
-      const data = await SubscriptionService.getBillingInfo();
-      setBillingInfo(data);
+      const [billing, trial] = await Promise.all([
+        SubscriptionService.getBillingInfo(),
+        SubscriptionService.getTrialStatus(),
+      ]);
+      setBillingInfo(billing);
+      setTrialStatus(trial);
       setError(null);
     } catch (err) {
       setError(err as Error);
@@ -27,12 +32,16 @@ export function useSubscription() {
 
   return {
     billingInfo,
+    trialStatus,
     loading,
     error,
     refetch: fetchBillingInfo,
     subscription: billingInfo?.subscription,
     entitlements: billingInfo?.entitlements,
     usage: billingInfo?.usage,
+    isTrialing: trialStatus?.is_trialing ?? false,
+    daysRemaining: trialStatus?.days_remaining ?? 0,
+    trialExpired: trialStatus?.trial_expired ?? false,
   };
 }
 

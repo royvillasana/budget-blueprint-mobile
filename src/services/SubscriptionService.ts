@@ -31,6 +31,17 @@ export interface Usage {
   remaining: number | null;
 }
 
+export interface TrialStatus {
+  has_trial: boolean;
+  is_trialing: boolean;
+  trial_start: string | null;
+  trial_end: string | null;
+  trial_expired: boolean;
+  days_remaining: number;
+  current_plan: Plan;
+  current_status: SubscriptionStatus;
+}
+
 export interface BillingInfo {
   subscription: Subscription;
   entitlements: Entitlements;
@@ -224,5 +235,31 @@ export class SubscriptionService {
       console.error('Error getting transaction days limit:', error);
       return 30; // Default to Free tier limit
     }
+  }
+
+  /**
+   * Get trial status for current user
+   */
+  static async getTrialStatus(): Promise<TrialStatus> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase.rpc('get_trial_status', {
+      p_user_id: user.id,
+    });
+
+    if (error) throw error;
+    return data;
+  }
+
+  /**
+   * Check and expire trials (admin function)
+   */
+  static async checkAndExpireTrials(): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('Not authenticated');
+
+    const { error } = await supabase.rpc('check_and_expire_trials');
+    if (error) throw error;
   }
 }
