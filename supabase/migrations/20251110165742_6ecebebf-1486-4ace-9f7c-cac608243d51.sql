@@ -1,5 +1,5 @@
 -- Create monthly_budgets table
-CREATE TABLE public.monthly_budgets (
+CREATE TABLE IF NOT EXISTS public.monthly_budgets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   year INTEGER NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE public.monthly_budgets (
 );
 
 -- Create income_items table
-CREATE TABLE public.income_items (
+CREATE TABLE IF NOT EXISTS public.income_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   monthly_budget_id UUID NOT NULL REFERENCES public.monthly_budgets(id) ON DELETE CASCADE,
   concept TEXT NOT NULL,
@@ -28,7 +28,7 @@ CREATE TABLE public.income_items (
 );
 
 -- Create budget_categories table
-CREATE TABLE public.budget_categories (
+CREATE TABLE IF NOT EXISTS public.budget_categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   monthly_budget_id UUID NOT NULL REFERENCES public.monthly_budgets(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('needs', 'desires', 'savings', 'investments', 'debts')),
@@ -40,7 +40,7 @@ CREATE TABLE public.budget_categories (
 );
 
 -- Create transactions table
-CREATE TABLE public.transactions (
+CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   monthly_budget_id UUID NOT NULL REFERENCES public.monthly_budgets(id) ON DELETE CASCADE,
   category TEXT NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE public.transactions (
 );
 
 -- Create annual_goals table
-CREATE TABLE public.annual_goals (
+CREATE TABLE IF NOT EXISTS public.annual_goals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   year INTEGER NOT NULL,
@@ -62,7 +62,7 @@ CREATE TABLE public.annual_goals (
 );
 
 -- Create financial_goals table
-CREATE TABLE public.financial_goals (
+CREATE TABLE IF NOT EXISTS public.financial_goals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   annual_goal_id UUID NOT NULL REFERENCES public.annual_goals(id) ON DELETE CASCADE,
   goal_text TEXT NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE public.financial_goals (
 );
 
 -- Create wish_list table
-CREATE TABLE public.wish_list (
+CREATE TABLE IF NOT EXISTS public.wish_list (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   monthly_budget_id UUID NOT NULL REFERENCES public.monthly_budgets(id) ON DELETE CASCADE,
   wish_text TEXT NOT NULL,
@@ -80,7 +80,7 @@ CREATE TABLE public.wish_list (
 );
 
 -- Create todo_list table
-CREATE TABLE public.todo_list (
+CREATE TABLE IF NOT EXISTS public.todo_list (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   monthly_budget_id UUID NOT NULL REFERENCES public.monthly_budgets(id) ON DELETE CASCADE,
   task_text TEXT NOT NULL,
