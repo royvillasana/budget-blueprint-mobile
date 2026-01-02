@@ -61,14 +61,8 @@ CREATE TABLE IF NOT EXISTS public.annual_goals (
   UNIQUE(user_id, year)
 );
 
--- Create financial_goals table
-CREATE TABLE IF NOT EXISTS public.financial_goals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  annual_goal_id UUID NOT NULL REFERENCES public.annual_goals(id) ON DELETE CASCADE,
-  goal_text TEXT NOT NULL,
-  is_completed BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
+-- Note: financial_goals table is created in migration 20251209000001_create_financial_goals_table.sql
+-- with a different schema (user_id, month_id, goal_type, etc.)
 
 -- Create wish_list table
 CREATE TABLE IF NOT EXISTS public.wish_list (
@@ -94,7 +88,7 @@ ALTER TABLE public.income_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.budget_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.annual_goals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.financial_goals ENABLE ROW LEVEL SECURITY;
+-- Note: financial_goals RLS is enabled in migration 20251209000001_create_financial_goals_table.sql
 ALTER TABLE public.wish_list ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.todo_list ENABLE ROW LEVEL SECURITY;
 
@@ -231,38 +225,7 @@ CREATE POLICY "Users can delete their own annual goals"
   ON public.annual_goals FOR DELETE
   USING (auth.uid() = user_id);
 
--- RLS Policies for financial_goals
-CREATE POLICY "Users can view their own financial goals"
-  ON public.financial_goals FOR SELECT
-  USING (EXISTS (
-    SELECT 1 FROM public.annual_goals
-    WHERE annual_goals.id = financial_goals.annual_goal_id
-    AND annual_goals.user_id = auth.uid()
-  ));
-
-CREATE POLICY "Users can create their own financial goals"
-  ON public.financial_goals FOR INSERT
-  WITH CHECK (EXISTS (
-    SELECT 1 FROM public.annual_goals
-    WHERE annual_goals.id = financial_goals.annual_goal_id
-    AND annual_goals.user_id = auth.uid()
-  ));
-
-CREATE POLICY "Users can update their own financial goals"
-  ON public.financial_goals FOR UPDATE
-  USING (EXISTS (
-    SELECT 1 FROM public.annual_goals
-    WHERE annual_goals.id = financial_goals.annual_goal_id
-    AND annual_goals.user_id = auth.uid()
-  ));
-
-CREATE POLICY "Users can delete their own financial goals"
-  ON public.financial_goals FOR DELETE
-  USING (EXISTS (
-    SELECT 1 FROM public.annual_goals
-    WHERE annual_goals.id = financial_goals.annual_goal_id
-    AND annual_goals.user_id = auth.uid()
-  ));
+-- Note: financial_goals RLS policies are created in migration 20251209000001_create_financial_goals_table.sql
 
 -- RLS Policies for wish_list
 CREATE POLICY "Users can view their own wish list"
