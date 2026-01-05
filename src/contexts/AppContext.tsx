@@ -333,6 +333,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       };
 
       setTransactions((prev) => [...prev, newTransaction]);
+
+      // Dispatch event to notify MonthlyBudget page to refresh
+      window.dispatchEvent(new CustomEvent('transaction-added'));
+
       return newTransaction;
     } catch (error) {
       console.error('Error adding transaction:', error);
@@ -342,6 +346,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         id: `txn-${Date.now()}`,
       };
       setTransactions((prev) => [...prev, fallbackTxn]);
+
+      // Dispatch event even for fallback
+      window.dispatchEvent(new CustomEvent('transaction-added'));
+
       return fallbackTxn;
     }
   };

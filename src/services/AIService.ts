@@ -329,6 +329,16 @@ export class AIService {
     const contextMessage = this.prepareContextMessage(contextValues);
     const formattedMessages = this.formatMessages(messages);
 
+    // Classify query complexity for hybrid model strategy
+    const { classifyQuery, getModelForComplexity, getToolsForComplexity } = await import('./QueryClassifier');
+    const lastUserMessage = messages[messages.length - 1]?.content || '';
+    const complexity = classifyQuery(lastUserMessage);
+    const modelToUse = getModelForComplexity(complexity);
+    const allTools = this.getTools();
+    const toolsToUse = getToolsForComplexity(complexity, allTools);
+
+    console.log(`[AI] Using ${modelToUse} for ${complexity} query (${toolsToUse.length}/${allTools.length} tools)`);
+
     const allMessages = [
       { role: 'system', content: getSystemPrompt(language, systemPromptType) },
       contextMessage,
@@ -337,10 +347,12 @@ export class AIService {
 
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: modelToUse,
         messages: allMessages as any,
-        tools: this.getTools(),
-        tool_choice: 'auto'
+        tools: toolsToUse,
+        tool_choice: 'auto',
+        max_tokens: 1500,
+        temperature: 0.7
       });
       return response.choices[0].message;
     } catch (error) {
@@ -354,6 +366,16 @@ export class AIService {
     const contextMessage = this.prepareContextMessage(contextValues);
     const formattedMessages = this.formatMessages(messages);
 
+    // Classify query complexity for hybrid model strategy
+    const { classifyQuery, getModelForComplexity, getToolsForComplexity } = await import('./QueryClassifier');
+    const lastUserMessage = messages[messages.length - 1]?.content || '';
+    const complexity = classifyQuery(lastUserMessage);
+    const modelToUse = getModelForComplexity(complexity);
+    const allTools = this.getTools();
+    const toolsToUse = getToolsForComplexity(complexity, allTools);
+
+    console.log(`[AI Stream] Using ${modelToUse} for ${complexity} query (${toolsToUse.length}/${allTools.length} tools)`);
+
     const allMessages = [
       { role: 'system', content: getSystemPrompt(language, systemPromptType) },
       contextMessage,
@@ -362,11 +384,14 @@ export class AIService {
 
     try {
       const stream = await this.openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: modelToUse,
         messages: allMessages as any,
-        tools: this.getTools(),
+        tools: toolsToUse,
         tool_choice: 'auto',
-        stream: true
+        stream: true,
+        max_tokens: 1500,
+        temperature: 0.7,
+        stream_options: { include_usage: true }
       });
 
       let fullContent = '';

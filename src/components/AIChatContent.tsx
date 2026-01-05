@@ -375,8 +375,17 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
         try {
             const { data: userData } = await supabase.auth.getUser();
             if (userData?.user?.id) {
-                const financialService = new FinancialDataService();
-                comprehensiveData = await financialService.getComprehensiveFinancialData(userData.user.id);
+                // Check cache first
+                const { contextCache } = await import('@/services/ContextCacheService');
+                comprehensiveData = contextCache.get(userData.user.id, year, month);
+
+                if (!comprehensiveData) {
+                    // Cache miss - fetch from database
+                    const financialService = new FinancialDataService();
+                    comprehensiveData = await financialService.getComprehensiveFinancialData(userData.user.id);
+                    // Cache the result
+                    contextCache.set(userData.user.id, year, month, comprehensiveData);
+                }
             }
         } catch (e) {
             console.error("Error fetching comprehensive financial data:", e);

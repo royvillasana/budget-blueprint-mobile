@@ -97,6 +97,9 @@ export function TransactionReviewModal({
         description: `${result.imported} importadas, ${result.skipped} omitidas`,
       });
 
+      // Dispatch event to notify MonthlyBudget page to refresh
+      window.dispatchEvent(new CustomEvent('transaction-added'));
+
       onOpenChange(false);
       onImportComplete?.();
     } catch (error: any) {
