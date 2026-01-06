@@ -1,10 +1,9 @@
-import OpenAI from 'openai';
+import { supabase } from '@/integrations/supabase/client';
 import { Transaction, Category } from '@/contexts/AppContext';
 import { ComprehensiveFinancialData } from './FinancialDataService';
 
-// Placeholder for the default API key - In a real app this should be an env var
-// The user promised to provide this, but hasn't yet.
-const DEFAULT_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
+// OpenAI API is now called via Edge Function (ai-chat)
+// This removes ~500kb from the client bundle
 
 export interface AIContext {
   // Legacy context (for backward compatibility)
@@ -314,14 +313,10 @@ You are the "Game Master" for RialNexus. You should:
 
 
 export class AIService {
-  private openai: OpenAI;
+  // No OpenAI client needed - using Edge Function instead
 
-  constructor(apiKey?: string) {
-    const key = apiKey || DEFAULT_API_KEY;
-    this.openai = new OpenAI({
-      apiKey: key,
-      dangerouslyAllowBrowser: true // Required for client-side usage
-    });
+  constructor() {
+    // Edge Function handles OpenAI API calls server-side
   }
 
   async sendMessage(messages: AIMessage[], context: AIContext, language: 'es' | 'en' = 'es', systemPromptType: 'standard' | 'expert_advisor' = 'standard') {
@@ -346,15 +341,21 @@ export class AIService {
     ];
 
     try {
-      const response = await this.openai.chat.completions.create({
-        model: modelToUse,
-        messages: allMessages as any,
-        tools: toolsToUse,
-        tool_choice: 'auto',
-        max_tokens: 1500,
-        temperature: 0.7
+      // Call Edge Function instead of OpenAI directly
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      const response = await supabase.functions.invoke('ai-chat', {
+        body: {
+          messages: allMessages,
+          tools: toolsToUse,
+          model: modelToUse,
+          stream: false
+        }
       });
-      return response.choices[0].message;
+
+      if (response.error) throw response.error;
+      return response.data.choices[0].message;
     } catch (error) {
       console.error('Error in AIService:', error);
       throw error;
@@ -383,39 +384,74 @@ export class AIService {
     ];
 
     try {
-      const stream = await this.openai.chat.completions.create({
-        model: modelToUse,
-        messages: allMessages as any,
-        tools: toolsToUse,
-        tool_choice: 'auto',
-        stream: true,
-        max_tokens: 1500,
-        temperature: 0.7,
-        stream_options: { include_usage: true }
+      // Call Edge Function with streaming enabled
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-chat`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: allMessages,
+          tools: toolsToUse,
+          model: modelToUse,
+          stream: true
+        })
       });
 
+      if (!response.ok) {
+        throw new Error(`Edge Function error: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let buffer = '';
       let fullContent = '';
       let toolCalls: any[] = [];
 
-      for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta;
-        
-        if (delta?.content) {
-          fullContent += delta.content;
-          yield { type: 'content', content: fullContent, delta: delta.content };
-        }
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-        if (delta?.tool_calls) {
-          for (const tc of delta.tool_calls) {
-            if (!toolCalls[tc.index]) {
-              toolCalls[tc.index] = { 
-                id: tc.id,
-                type: 'function',
-                function: { name: '', arguments: '' } 
-              };
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim() || !line.startsWith('data: ')) continue;
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+
+          try {
+            const chunk = JSON.parse(data);
+            const delta = chunk.choices[0]?.delta;
+
+            if (delta?.content) {
+              fullContent += delta.content;
+              yield { type: 'content', content: fullContent, delta: delta.content };
             }
-            if (tc.function?.name) toolCalls[tc.index].function.name += tc.function.name;
-            if (tc.function?.arguments) toolCalls[tc.index].function.arguments += tc.function.arguments;
+
+            if (delta?.tool_calls) {
+              for (const tc of delta.tool_calls) {
+                if (!toolCalls[tc.index]) {
+                  toolCalls[tc.index] = {
+                    id: tc.id,
+                    type: 'function',
+                    function: { name: '', arguments: '' }
+                  };
+                }
+                if (tc.function?.name) toolCalls[tc.index].function.name += tc.function.name;
+                if (tc.function?.arguments) toolCalls[tc.index].function.arguments += tc.function.arguments;
+              }
+            }
+          } catch (e) {
+            console.error('Error parsing stream chunk:', e);
           }
         }
       }

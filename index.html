@@ -5,6 +5,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+  <!-- Preconnect to external resources -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <!-- Performance hints -->
+  <meta name="theme-color" content="#000000">
+
   <title>budget-blueprint-mobile</title>
   <meta name="description" content="Lovable Generated Project" />
   <meta name="author" content="Lovable" />
@@ -17,16 +25,76 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@Lovable" />
   <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+  <!-- Critical CSS inline placeholder (Vite will inject) -->
+  <style>
+    /* Estilos críticos para evitar FOUC */
+    #root {
+      min-height: 100vh;
+      background-color: #000;
+    }
+    .loading-fallback {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  </style>
 </head>
 
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- Skeleton loader mientras carga React -->
+    <div class="loading-fallback">
+      <div style="
+        width: 32px;
+        height: 32px;
+        border: 2px solid rgba(255,255,255,0.1);
+        border-top-color: rgba(255,255,255,0.8);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      "></div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.tsx"></script>
-  <script type="text/javascript">
-    window.addEventListener('load', function () {
-      !function () { if (!window.UnicornStudio) { window.UnicornStudio = { isInitialized: !1 }; var i = document.createElement("script"); i.src = "https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.5.2/dist/unicornStudio.umd.js", i.onload = function () { window.UnicornStudio.isInitialized || (UnicornStudio.init(), window.UnicornStudio.isInitialized = !0) }, (document.head || document.body).appendChild(i) } }();
-    });
+
+  <!-- Cargar UnicornStudio de forma asíncrona y diferida -->
+  <script type="text/javascript" defer>
+    // Delay loading until page is interactive
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(function() {
+        initUnicornStudio();
+      }, { timeout: 2000 });
+    } else {
+      // Fallback for browsers that don't support requestIdleCallback
+      setTimeout(function() {
+        initUnicornStudio();
+      }, 1000);
+    }
+
+    function initUnicornStudio() {
+      if (!window.UnicornStudio) {
+        window.UnicornStudio = { isInitialized: false };
+        var script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@v1.5.2/dist/unicornStudio.umd.js";
+        script.async = true;
+        script.onload = function () {
+          if (!window.UnicornStudio.isInitialized) {
+            UnicornStudio.init();
+            window.UnicornStudio.isInitialized = true;
+          }
+        };
+        (document.head || document.body).appendChild(script);
+      }
+    }
   </script>
+
+  <style>
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </body>
 
 </html>
