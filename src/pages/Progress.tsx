@@ -5,10 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Trophy, Flame, Target, Star, Shield, Award } from 'lucide-react';
+import { Trophy, Flame, Target, Star, Shield, Award, Gift, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useMessageCredits } from '@/hooks/useMessageCredits';
+import { DailyCheckinWidget } from '@/components/DailyCheckinWidget';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const LEVEL_TIERS = [
     { max: 9, title: "Ant", icon: "🐜" },
@@ -28,10 +32,12 @@ const getLevelTitle = (level: number) => {
 };
 
 export default function ProgressPage() {
+    const navigate = useNavigate();
     const [profile, setProfile] = useState<GamificationProfile | null>(null);
     const [badges, setBadges] = useState<UserBadge[]>([]);
     const [challenges, setChallenges] = useState<UserChallenge[]>([]);
     const [loading, setLoading] = useState(true);
+    const { balance } = useMessageCredits();
 
     useEffect(() => {
         async function loadData() {
@@ -113,6 +119,49 @@ export default function ProgressPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Credits Section */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Gift className="h-5 w-5" />
+                        Créditos de Mensajes
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Balance actual:</span>
+                            <div className="flex items-center gap-1 bg-yellow-500/10 text-yellow-600 px-3 py-1.5 rounded-full">
+                                <Sparkles className="h-4 w-4" />
+                                <span className="text-2xl font-bold">{balance?.total_credits || 0}</span>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="space-y-1">
+                                <span className="text-muted-foreground">Total ganados:</span>
+                                <p className="text-lg font-semibold">{balance?.total_earned || 0}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <span className="text-muted-foreground">Total gastados:</span>
+                                <p className="text-lg font-semibold">{balance?.total_spent || 0}</p>
+                            </div>
+                        </div>
+
+                        {/* Daily Check-in Widget */}
+                        <DailyCheckinWidget />
+
+                        {/* Link to history */}
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate('/credit-history')}
+                            className="w-full"
+                        >
+                            Ver historial completo
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
 
             <Tabs defaultValue="challenges" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">

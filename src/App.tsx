@@ -27,6 +27,7 @@ const AIChat = lazy(() => import('./components/AIChat').then(module => ({ defaul
 const GlobalFABDialog = lazy(() => import('./components/GlobalFABDialog').then(module => ({ default: module.GlobalFABDialog })));
 const Progress = lazy(() => import("./pages/Progress"));
 const Profile = lazy(() => import("./pages/Profile"));
+const CreditHistory = lazy(() => import("./pages/CreditHistory"));
 const LoadingFallback = () => (
   <div className="h-screen w-full flex items-center justify-center bg-background">
     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -143,6 +144,14 @@ const App = () => {
                           element={
                             <ProtectedRoute>
                               <Progress />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/credit-history"
+                          element={
+                            <ProtectedRoute>
+                              <CreditHistory />
                             </ProtectedRoute>
                           }
                         />

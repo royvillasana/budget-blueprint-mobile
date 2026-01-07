@@ -22,6 +22,9 @@ import { useUsage } from '@/hooks/useSubscription';
 import { UsageLimitPrompt } from '@/components/UpgradePrompt';
 import { SubscriptionService } from '@/services/SubscriptionService';
 import { subDays, format as formatDate } from 'date-fns';
+import { useMessageCredits } from '@/hooks/useMessageCredits';
+import { useCreditNotifications } from '@/hooks/useCreditNotifications';
+import { MessageCreditsService } from '@/services/MessageCreditsService';
 import {
     ConversationEmptyState,
 } from '@/components/ai-elements/conversation';
@@ -233,6 +236,10 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
     // Usage tracking for subscription limits
     const { chatMessages, incrementChatUsage, refetch: refetchUsage } = useUsage();
     const [showUsageLimitPrompt, setShowUsageLimitPrompt] = useState(false);
+
+    // Credit system - hybrid payment (credits first, then subscription)
+    const { balance, refetch: refetchCredits } = useMessageCredits();
+    useCreditNotifications(); // Enable realtime credit notifications
 
     // Initialize AI Service
     const aiService = useRef(new AIService(config.openaiApiKey)).current;
@@ -750,9 +757,13 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
     async function handleSend(message: { text: string; files?: FileUIPart[] }, isHidden: boolean = false) {
         if (!message.text && (!message.files || message.files.length === 0)) return;
 
-        if (!isHidden && chatMessages?.has_exceeded) {
-            setShowUsageLimitPrompt(true);
-            return;
+        // Hybrid credit/subscription check: Check credits first, then subscription
+        if (!isHidden) {
+            const canSend = await MessageCreditsService.canSendMessage();
+            if (!canSend.can_send) {
+                setShowUsageLimitPrompt(true);
+                return;
+            }
         }
 
         setIsLoading(true);
@@ -777,13 +788,25 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
             const context = await buildFinancialContext();
             await streamResponse([...messages, userMessage], context);
 
+            // Process payment after successful message
             if (!isHidden) {
                 try {
-                    await incrementChatUsage();
+                    const result = await MessageCreditsService.processMessageSend();
+
+                    // Show toast if credit was used
+                    if (result.payment_method === 'credits' && result.credits_remaining !== undefined) {
+                        toast({
+                            title: "Crédito usado",
+                            description: `Créditos restantes: ${result.credits_remaining}`,
+                            duration: 2000,
+                        });
+                    }
+
                     await refetchUsage();
+                    await refetchCredits();
                     GamificationService.emitEvent('chat_turn');
                 } catch (error) {
-                    console.error('Error incrementing chat usage:', error);
+                    console.error('Error processing payment:', error);
                 }
             }
         } catch (error) {
@@ -878,7 +901,13 @@ export const AIChatContent = ({ onClose }: AIChatContentProps) => {
                     <Bot className="h-5 w-5 text-primary" />
                     <h2 className="font-semibold">Asistente Financiero</h2>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                    {balance && balance.total_credits > 0 && (
+                        <div className="flex items-center gap-1 bg-yellow-500/10 text-yellow-600 px-2 py-1 rounded-full">
+                            <Sparkles className="h-3 w-3" />
+                            <span className="text-sm font-semibold">{balance.total_credits}</span>
+                        </div>
+                    )}
                     <Button variant="ghost" size="icon" onClick={() => setShowHistory(!showHistory)} title="Historial de conversaciones">
                         <History className="h-4 w-4" />
                     </Button>
