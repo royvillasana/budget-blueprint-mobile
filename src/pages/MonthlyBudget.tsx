@@ -22,6 +22,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { getMonthName, getTableName } from '@/utils/monthUtils';
 import { IncomeExpenseChart } from '@/components/charts/IncomeExpenseChart';
 import { BudgetPieChart } from '@/components/charts/BudgetPieChart';
+import { VirtualizedTable } from '@/components/ui/VirtualizedTable';
 const MonthlyBudget = () => {
   const {
     year,
@@ -851,43 +852,76 @@ const MonthlyBudget = () => {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead>Categoría</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead className="text-right">Monto</TableHead>
-                    <TableHead className="text-center">Acción</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.map(txn => <TableRow key={txn.id} id={`txn-${txn.id}`}>
-                    <TableCell>{txn.date}</TableCell>
-                    <TableCell><span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">{txn.category_emoji || txn.categories?.emoji} {txn.category_name || txn.categories?.name}</span></TableCell>
-                    <TableCell>
-                      {txn.description}
-                      {txn.goal_id && <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        🎯 Meta
-                      </span>}
-                    </TableCell>
-                    <TableCell className="text-right text-desires">{formatCurrency(txn.amount)}</TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex gap-1 justify-center">
-                        <Button size="sm" variant="ghost" onClick={() => {
-                          setEditingTransaction(txn);
-                          setEditTransactionDialog(true);
-                        }}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => deleteTransaction(txn.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead>Descripción</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead className="text-center">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                </Table>
+                {transactions.length > 0 ? (
+                  <VirtualizedTable
+                    data={transactions}
+                    rowHeight={60}
+                    containerHeight={Math.min(transactions.length * 60, 400)}
+                    renderRow={(txn) => (
+                      <div
+                        id={`txn-${txn.id}`}
+                        className="grid grid-cols-5 border-b border-border hover:bg-muted/50 transition-colors"
+                        style={{ minHeight: '60px' }}
+                      >
+                        <div className="px-4 py-3 flex items-center text-sm">{txn.date}</div>
+                        <div className="px-4 py-3 flex items-center">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-muted text-sm">
+                            {txn.category_emoji || txn.categories?.emoji} {txn.category_name || txn.categories?.name}
+                          </span>
+                        </div>
+                        <div className="px-4 py-3 flex items-center text-sm">
+                          {txn.description}
+                          {txn.goal_id && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              🎯 Meta
+                            </span>
+                          )}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-end text-sm text-desires">
+                          {formatCurrency(txn.amount)}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-center">
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingTransaction(txn);
+                                setEditTransactionDialog(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteTransaction(txn.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>)}
-                </TableBody>
-              </Table>
+                    )}
+                  />
+                ) : (
+                  <div className="p-4 text-center text-muted-foreground text-sm">
+                    No hay transacciones registradas
+                  </div>
+                )}
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
@@ -918,40 +952,74 @@ const MonthlyBudget = () => {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Cuenta</TableHead>
-                    <TableHead className="text-right">Saldo Inicial</TableHead>
-                    <TableHead className="text-right">Interés APR</TableHead>
-                    <TableHead className="text-right">Pago</TableHead>
-                    <TableHead className="text-right">Saldo Final</TableHead>
-                    <TableHead className="text-center">Acción</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {debts.map(debt => <TableRow key={debt.id}>
-                    <TableCell>{accounts.find(a => a.id === debt.debt_account_id)?.name}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(debt.starting_balance)}</TableCell>
-                    <TableCell className="text-right">{debt.interest_rate_apr}%</TableCell>
-                    <TableCell className="text-right">{formatCurrency(debt.payment_made)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(debt.ending_balance)}</TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex gap-1 justify-center">
-                        <Button size="sm" variant="ghost" onClick={() => {
-                          setEditingDebt(debt);
-                          setEditDebtDialog(true);
-                        }}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => deleteDebt(debt.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cuenta</TableHead>
+                      <TableHead className="text-right">Saldo Inicial</TableHead>
+                      <TableHead className="text-right">Interés APR</TableHead>
+                      <TableHead className="text-right">Pago</TableHead>
+                      <TableHead className="text-right">Saldo Final</TableHead>
+                      <TableHead className="text-center">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                </Table>
+                {debts.length > 0 ? (
+                  <VirtualizedTable
+                    data={debts}
+                    rowHeight={60}
+                    containerHeight={Math.min(debts.length * 60, 300)}
+                    renderRow={(debt) => (
+                      <div
+                        className="grid grid-cols-6 border-b border-border hover:bg-muted/50 transition-colors"
+                        style={{ minHeight: '60px' }}
+                      >
+                        <div className="px-4 py-3 flex items-center text-sm">
+                          {accounts.find(a => a.id === debt.debt_account_id)?.name}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-end text-sm">
+                          {formatCurrency(debt.starting_balance)}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-end text-sm">
+                          {debt.interest_rate_apr}%
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-end text-sm">
+                          {formatCurrency(debt.payment_made)}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-end text-sm">
+                          {formatCurrency(debt.ending_balance)}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-center">
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingDebt(debt);
+                                setEditDebtDialog(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteDebt(debt.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>)}
-                </TableBody>
-              </Table>
+                    )}
+                  />
+                ) : (
+                  <div className="p-4 text-center text-muted-foreground text-sm">
+                    No hay deudas registradas
+                  </div>
+                )}
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
@@ -982,36 +1050,66 @@ const MonthlyBudget = () => {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Artículo</TableHead>
-                    <TableHead className="text-right">Costo Estimado</TableHead>
-                    <TableHead className="text-center">Prioridad</TableHead>
-                    <TableHead className="text-center">Acción</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {wishlist.map(wish => <TableRow key={wish.id}>
-                    <TableCell>{wish.item}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(wish.estimated_cost)}</TableCell>
-                    <TableCell className="text-center">{wish.priority}</TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex gap-1 justify-center">
-                        <Button size="sm" variant="ghost" onClick={() => {
-                          setEditingWish(wish);
-                          setEditWishDialog(true);
-                        }}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => deleteWish(wish.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Artículo</TableHead>
+                      <TableHead className="text-right">Costo Estimado</TableHead>
+                      <TableHead className="text-center">Prioridad</TableHead>
+                      <TableHead className="text-center">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                </Table>
+                {wishlist.length > 0 ? (
+                  <VirtualizedTable
+                    data={wishlist}
+                    rowHeight={60}
+                    containerHeight={Math.min(wishlist.length * 60, 300)}
+                    renderRow={(wish) => (
+                      <div
+                        className="grid grid-cols-4 border-b border-border hover:bg-muted/50 transition-colors"
+                        style={{ minHeight: '60px' }}
+                      >
+                        <div className="px-4 py-3 flex items-center text-sm">
+                          {wish.item}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-end text-sm">
+                          {formatCurrency(wish.estimated_cost)}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-center text-sm">
+                          {wish.priority}
+                        </div>
+                        <div className="px-4 py-3 flex items-center justify-center">
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingWish(wish);
+                                setEditWishDialog(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteWish(wish.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </TableCell>
-                  </TableRow>)}
-                </TableBody>
-              </Table>
+                    )}
+                  />
+                ) : (
+                  <div className="p-4 text-center text-muted-foreground text-sm">
+                    No hay artículos en la lista de deseos
+                  </div>
+                )}
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
