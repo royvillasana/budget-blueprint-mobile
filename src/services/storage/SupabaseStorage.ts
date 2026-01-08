@@ -13,10 +13,14 @@ import {
 
 export class SupabaseStorage implements StorageService {
   async getMonthlySummaries(userId: string): Promise<MonthlySummary[]> {
+    // Get current year to show data for the active year
+    const currentYear = new Date().getFullYear();
+
     const { data, error } = await supabase
       .from('view_monthly_summary')
       .select('*')
       .eq('user_id', userId)
+      .eq('year', currentYear)
       .order('month_id', { ascending: true });
 
     if (error) throw error;
@@ -24,10 +28,14 @@ export class SupabaseStorage implements StorageService {
   }
 
   async getAnnualSummary(userId: string): Promise<AnnualSummary | null> {
+    // Get current year to show data for the active year
+    const currentYear = new Date().getFullYear();
+
     const { data, error } = await supabase
       .from('view_annual_summary')
       .select('*')
       .eq('user_id', userId)
+      .eq('year', currentYear)
       .maybeSingle();
 
     if (error) throw error;
