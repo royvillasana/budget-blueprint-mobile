@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
       output: {
         // Code splitting simplificado para evitar problemas de dependencias
         manualChunks: (id) => {
-          // React core + ecosystem (React, React-DOM, React Router, Radix UI, React Query, Lucide)
+          // React core + ecosystem - TODO lo que podría depender de React
           // Agrupar todo lo que depende de React en un solo chunk para evitar problemas de carga
           if (
             id.includes('node_modules/react') ||
@@ -38,30 +38,26 @@ export default defineConfig(({ mode }) => ({
             id.includes('@tanstack/react-query') ||
             id.includes('react-hook-form') ||
             id.includes('@hookform') ||
-            id.includes('lucide-react')
+            id.includes('lucide-react') ||
+            id.includes('recharts') || // Usa React para renderizado
+            id.includes('react-day-picker') // Componente React
           ) {
             return 'vendor-react-ui';
           }
-          // Visualization libraries (solo recharts ahora)
-          if (id.includes('recharts')) {
-            return 'vendor-viz';
-          }
-          // Supabase
+          // Supabase (independiente de React)
           if (id.includes('@supabase/supabase-js')) {
             return 'vendor-db';
           }
-          // Date libraries
-          if (id.includes('date-fns') || id.includes('react-day-picker')) {
+          // Date utilities (independiente de React)
+          if (id.includes('date-fns')) {
             return 'vendor-dates';
           }
-          // Markdown y syntax highlighting (pesado)
-          if (id.includes('react-markdown') || id.includes('shiki')) {
+          // Markdown y syntax highlighting (independiente de React)
+          if (id.includes('shiki')) {
             return 'vendor-markdown';
           }
-          // Otros node_modules
-          if (id.includes('node_modules')) {
-            return 'vendor-other';
-          }
+          // NO incluir catch-all para evitar agrupar libs que dependen de React
+          // Todo lo demás permanece en el bundle principal para garantizar orden de carga
         },
         // Nombres de archivos con hash para cache
         entryFileNames: 'assets/[name]-[hash].js',
