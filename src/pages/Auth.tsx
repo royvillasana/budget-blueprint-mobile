@@ -23,6 +23,7 @@ const Auth = () => {
   useEffect(() => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session ? 'Session exists' : 'No session');
       if (session) {
         navigate('/dashboard');
       }
@@ -30,6 +31,7 @@ const Auth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session ? 'Session exists' : 'No session');
       if (session) {
         navigate('/dashboard');
       }
@@ -42,7 +44,9 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    console.log('Signing up with redirect to:', `${window.location.origin}/dashboard`);
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -51,15 +55,22 @@ const Auth = () => {
     });
 
     if (error) {
+      console.error('Signup error:', error);
       toast({
         title: t.auth.errors.signUp,
         description: error.message,
         variant: 'destructive'
       });
     } else {
+      console.log('Signup successful:', data);
+      // Check if email confirmation is required
+      const confirmationRequired = data.user && !data.session;
+
       toast({
         title: t.auth.success.signUp,
-        description: t.auth.success.signUpDesc
+        description: confirmationRequired
+          ? 'Por favor, revisa tu correo electrónico y haz clic en el enlace de confirmación para activar tu cuenta.'
+          : t.auth.success.signUpDesc
       });
     }
 
@@ -76,11 +87,20 @@ const Auth = () => {
     });
 
     if (error) {
+      // Provide more specific error messages
+      let errorMessage = error.message;
+      if (error.message.includes('Email not confirmed')) {
+        errorMessage = 'Por favor, confirma tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.';
+      } else if (error.message.includes('Invalid login credentials')) {
+        errorMessage = 'Correo o contraseña incorrectos. Por favor, verifica tus credenciales.';
+      }
+
       toast({
         title: t.auth.errors.signIn,
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive'
       });
+      console.error('Sign in error:', error);
     }
 
     setLoading(false);
