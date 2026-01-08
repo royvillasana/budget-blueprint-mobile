@@ -37,6 +37,9 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          VITE_SUPABASE_URL: "https://gqqlqxmiqjzusyivpkzm.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxcWxxeG1pcWp6dXN5aXZwa3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMzQxMjgsImV4cCI6MjA3ODgxMDEyOH0.a3YVs_hw41kbFaxd402F2IhKwuhk4z9AuIMO-ogvbIg"
+          VITE_SUPABASE_PROJECT_ID: "gqqlqxmiqjzusyivpkzm"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
