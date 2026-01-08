@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
       output: {
         // Code splitting simplificado para evitar problemas de dependencias
         manualChunks: (id) => {
-          // React core + ecosystem (React, React-DOM, React Router, Radix UI, React Query)
+          // React core + ecosystem (React, React-DOM, React Router, Radix UI, React Query, Lucide)
           // Agrupar todo lo que depende de React en un solo chunk para evitar problemas de carga
           if (
             id.includes('node_modules/react') ||
@@ -37,12 +37,13 @@ export default defineConfig(({ mode }) => ({
             id.includes('@radix-ui') ||
             id.includes('@tanstack/react-query') ||
             id.includes('react-hook-form') ||
-            id.includes('@hookform')
+            id.includes('@hookform') ||
+            id.includes('lucide-react')
           ) {
             return 'vendor-react-ui';
           }
-          // Visualization libraries
-          if (id.includes('recharts') || id.includes('lucide-react')) {
+          // Visualization libraries (solo recharts ahora)
+          if (id.includes('recharts')) {
             return 'vendor-viz';
           }
           // Supabase
