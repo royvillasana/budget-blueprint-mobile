@@ -26,48 +26,34 @@ export default defineConfig(({ mode }) => ({
     sourcemap: mode === 'development',
     rollupOptions: {
       output: {
-        // Code splitting mejorado
+        // Code splitting simplificado para evitar problemas de dependencias
         manualChunks: (id) => {
-          // React core
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'vendor-react';
-          }
-          // React Router
-          if (id.includes('node_modules/react-router-dom')) {
-            return 'vendor-router';
-          }
-          // Radix UI - split por categoria
-          if (id.includes('@radix-ui/react-dialog') || id.includes('@radix-ui/react-dropdown-menu')) {
-            return 'vendor-ui-dialogs';
-          }
-          if (id.includes('@radix-ui')) {
-            return 'vendor-ui-core';
+          // React core + ecosystem (React, React-DOM, React Router, Radix UI, React Query)
+          // Agrupar todo lo que depende de React en un solo chunk para evitar problemas de carga
+          if (
+            id.includes('node_modules/react') ||
+            id.includes('node_modules/react-dom') ||
+            id.includes('node_modules/react-router') ||
+            id.includes('@radix-ui') ||
+            id.includes('@tanstack/react-query') ||
+            id.includes('react-hook-form') ||
+            id.includes('@hookform')
+          ) {
+            return 'vendor-react-ui';
           }
           // Visualization libraries
           if (id.includes('recharts') || id.includes('lucide-react')) {
             return 'vendor-viz';
           }
-          // OpenAI (puede ser pesado)
-          if (id.includes('openai') || id.includes('node_modules/ai')) {
-            return 'vendor-ai';
-          }
           // Supabase
           if (id.includes('@supabase/supabase-js')) {
             return 'vendor-db';
-          }
-          // React Query
-          if (id.includes('@tanstack/react-query')) {
-            return 'vendor-query';
-          }
-          // Form libraries
-          if (id.includes('react-hook-form') || id.includes('@hookform')) {
-            return 'vendor-forms';
           }
           // Date libraries
           if (id.includes('date-fns') || id.includes('react-day-picker')) {
             return 'vendor-dates';
           }
-          // Markdown y syntax highlighting
+          // Markdown y syntax highlighting (pesado)
           if (id.includes('react-markdown') || id.includes('shiki')) {
             return 'vendor-markdown';
           }
