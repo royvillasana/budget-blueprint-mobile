@@ -4,6 +4,7 @@ export type { AppConfig, Category, Transaction };
 export interface MonthlySummary {
   month_name: string | null;
   month_id: number | null;
+  year: number | null;
   total_income: number | null;
   total_expenses: number | null;
   net_cash_flow: number | null;

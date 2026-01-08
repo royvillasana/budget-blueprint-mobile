@@ -13,14 +13,25 @@ import {
 
 export class SupabaseStorage implements StorageService {
   async getMonthlySummaries(userId: string): Promise<MonthlySummary[]> {
-    // Get current year to show data for the active year
-    const currentYear = new Date().getFullYear();
+    // Get data for the last 12 months (rolling window)
+    // Example: If today is Jan 2026, get data from Feb 2025 to Jan 2026
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
 
+    // Calculate 12 months ago
+    const twelveMonthsAgo = new Date(now);
+    twelveMonthsAgo.setMonth(now.getMonth() - 11); // -11 to include current month
+    const startYear = twelveMonthsAgo.getFullYear();
+    const startMonth = twelveMonthsAgo.getMonth() + 1; // 1-12
+
+    // Fetch data for the last 12 months
     const { data, error } = await supabase
       .from('view_monthly_summary')
       .select('*')
       .eq('user_id', userId)
-      .eq('year', currentYear)
+      .or(`and(year.eq.${startYear},month_id.gte.${startMonth}),and(year.eq.${currentYear},month_id.lte.${currentMonth})`)
+      .order('year', { ascending: true })
       .order('month_id', { ascending: true });
 
     if (error) throw error;
@@ -28,18 +39,34 @@ export class SupabaseStorage implements StorageService {
   }
 
   async getAnnualSummary(userId: string): Promise<AnnualSummary | null> {
-    // Get current year to show data for the active year
-    const currentYear = new Date().getFullYear();
+    // Calculate summary for the last 12 months (rolling window)
+    // This gives more meaningful data than just current year
+    const monthlySummaries = await this.getMonthlySummaries(userId);
 
-    const { data, error } = await supabase
-      .from('view_annual_summary')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('year', currentYear)
-      .maybeSingle();
+    if (!monthlySummaries || monthlySummaries.length === 0) {
+      return null;
+    }
 
-    if (error) throw error;
-    return data;
+    // Sum all values from the last 12 months
+    const summary = monthlySummaries.reduce((acc, month) => ({
+      annual_income: (acc.annual_income || 0) + (month.total_income || 0),
+      annual_expenses: (acc.annual_expenses || 0) + (month.total_expenses || 0),
+      annual_net_cash_flow: (acc.annual_net_cash_flow || 0) + (month.net_cash_flow || 0),
+      annual_needs_actual: (acc.annual_needs_actual || 0) + (month.needs_actual || 0),
+      annual_wants_actual: (acc.annual_wants_actual || 0) + (month.wants_actual || 0),
+      annual_future_actual: (acc.annual_future_actual || 0) + (month.future_actual || 0),
+      annual_debt_payments: (acc.annual_debt_payments || 0) + (month.debt_payments || 0),
+    }), {
+      annual_income: 0,
+      annual_expenses: 0,
+      annual_net_cash_flow: 0,
+      annual_needs_actual: 0,
+      annual_wants_actual: 0,
+      annual_future_actual: 0,
+      annual_debt_payments: 0,
+    });
+
+    return summary;
   }
 
   async getRecentIncome(userId: string, monthId: number): Promise<IncomeItem[]> {

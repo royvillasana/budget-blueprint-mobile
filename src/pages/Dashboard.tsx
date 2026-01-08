@@ -23,6 +23,7 @@ import { useGamificationNotifications } from '@/hooks/useGamificationNotificatio
 interface MonthlySummary {
   month_name: string | null;
   month_id: number | null;
+  year: number | null;
   total_income: number | null;
   total_expenses: number | null;
   net_cash_flow: number | null;
@@ -481,18 +482,22 @@ const Dashboard = () => {
                 color: 'hsl(var(--chart-2))'
               }
             } satisfies ChartConfig} className="h-[250px] sm:h-[300px] w-full">
-              <AreaChart accessibilityLayer data={monthlySummaries.map(m => ({
-                month: getMonthName(m.month_id || 1, config.language),
-                income: m.total_income || 0,
-                expenses: Math.abs(m.total_expenses || 0)
-              }))} margin={{
+              <AreaChart accessibilityLayer data={monthlySummaries.map(m => {
+                const monthName = getMonthName(m.month_id || 1, config.language).slice(0, 3); // First 3 letters
+                const yearShort = String(m.year || 2025).slice(-2); // Last 2 digits of year
+                return {
+                  month: `${monthName} ${yearShort}`, // "Feb 25", "Mar 25", etc.
+                  income: m.total_income || 0,
+                  expenses: Math.abs(m.total_expenses || 0)
+                };
+              })} margin={{
                 left: 12,
                 right: 12,
                 top: 12,
                 bottom: 12
               }}>
                 <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={value => value.slice(0, 3)} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} stroke="hsl(var(--muted-foreground))" fontSize={11} />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={value => `${config.currency === 'EUR' ? '€' : '$'}${(value / 1000).toFixed(0)}K`} stroke="hsl(var(--muted-foreground))" width={50} fontSize={12} />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                 <defs>
