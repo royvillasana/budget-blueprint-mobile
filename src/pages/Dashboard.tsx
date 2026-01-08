@@ -121,10 +121,13 @@ const Dashboard = () => {
 
       // Load monthly summary view
       const monthlyData = await storage.getMonthlySummaries(user.id);
+      console.log('[Dashboard] Monthly summaries:', monthlyData);
       setMonthlySummaries(monthlyData || []);
 
       // Load annual summary view - filter by user_id
       const annualData = await storage.getAnnualSummary(user.id);
+      console.log('[Dashboard] Annual summary:', annualData);
+      console.log('[Dashboard] Current year:', new Date().getFullYear());
       setAnnualSummary(annualData);
 
       // Load current month data
