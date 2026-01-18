@@ -43,7 +43,7 @@ const MonthlyBudget = () => {
   const [monthId, setMonthId] = useState<number>(0);
   const [userId, setUserId] = useState<string>('');
   const [currentMonth, setCurrentMonth] = useState<number>(1);
-  const [currentYear, setCurrentYear] = useState<number>(2025);
+  const [currentYear, setCurrentYear] = useState<number>(new Date().getFullYear());
 
   // Settings
   const [challenge, setChallenge] = useState('');
@@ -104,7 +104,7 @@ const MonthlyBudget = () => {
 
   useEffect(() => {
     const monthNum = parseInt(month || '1');
-    const yearNum = parseInt(year || '2025');
+    const yearNum = parseInt(year || String(new Date().getFullYear()));
     setCurrentMonth(monthNum);
     setCurrentYear(yearNum);
     loadMonthData();

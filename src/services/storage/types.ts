@@ -30,6 +30,7 @@ export interface IncomeItem {
   amount: number;
   date: string;
   month_id: number;
+  year: number;
   user_id: string;
   currency_code?: string;
 }
@@ -37,6 +38,7 @@ export interface IncomeItem {
 export interface TransactionItem {
   id: string;
   month_id: number;
+  year: number;
   user_id: string;
   category_id: string;
   description: string;
@@ -66,6 +68,7 @@ export interface DebtItem {
   payment_made: number;
   ending_balance: number;
   month_id: number;
+  year: number;
   user_id: string;
   debt_account_id: string;
   interest_rate_apr: number;
@@ -83,6 +86,7 @@ export interface WishItem {
   estimated_cost: number;
   priority: string;
   month_id: number;
+  year: number;
   user_id: string;
 }
 

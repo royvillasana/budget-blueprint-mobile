@@ -292,6 +292,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       const date = new Date(transaction.date);
       const monthNum = date.getMonth() + 1;
+      const yearNum = date.getFullYear();
 
       // Dynamic import to avoid circular dependencies if any, or just standard import if possible.
       // Since we are in a context, standard import should be fine if we add it to the top.
@@ -301,6 +302,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       const newTxnData = {
         month_id: monthNum, // Note: This assumes month_id matches month number (1-12) which seems to be the case in MonthlyBudget.tsx
+        year: yearNum,
         user_id: user.id,
         category_id: transaction.category,
         description: transaction.description,

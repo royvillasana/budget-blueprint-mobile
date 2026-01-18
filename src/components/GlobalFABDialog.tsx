@@ -135,21 +135,24 @@ export const GlobalFABDialog = () => {
     const handleAdd = async () => {
         if (!userId) return;
         setLoading(true);
-        const { month: activeMonth } = getActivePeriod();
+        const { month: activeMonth, year: activeYear } = getActivePeriod();
 
         try {
             if (selectedType === 'income') {
                 const dateObj = new Date(newIncome.date);
                 // getMonth() returns 0-11, so we add 1. If date is invalid, fall back to activeMonth
                 const targetMonth = !isNaN(dateObj.getTime()) ? dateObj.getMonth() + 1 : activeMonth;
-                await storage.addIncome({ ...newIncome, user_id: userId, month_id: targetMonth, currency_code: config.currency });
+                const targetYear = !isNaN(dateObj.getTime()) ? dateObj.getFullYear() : activeYear;
+                await storage.addIncome({ ...newIncome, user_id: userId, month_id: targetMonth, year: targetYear, currency_code: config.currency });
             } else if (selectedType === 'transaction') {
                 const dateObj = new Date(newTxn.date);
                 const targetMonth = !isNaN(dateObj.getTime()) ? dateObj.getMonth() + 1 : activeMonth;
+                const targetYear = !isNaN(dateObj.getTime()) ? dateObj.getFullYear() : activeYear;
                 await storage.addTransaction({
                     ...newTxn,
                     user_id: userId,
                     month_id: targetMonth,
+                    year: targetYear,
                     amount: -Math.abs(newTxn.amount),
                     direction: 'EXPENSE',
                     currency_code: config.currency,
@@ -158,15 +161,16 @@ export const GlobalFABDialog = () => {
                     account_id: newTxn.account_id || undefined
                 });
             } else if (selectedType === 'debt') {
-                // Debts and Wishlist don't have a date picker, so we keep using the active view's month
+                // Debts and Wishlist don't have a date picker, so we keep using the active view's month/year
                 await storage.addDebt({
                     ...newDebt,
                     user_id: userId,
                     month_id: activeMonth,
+                    year: activeYear,
                     ending_balance: newDebt.starting_balance - newDebt.payment_made
                 });
             } else if (selectedType === 'wishlist') {
-                await storage.addWish({ ...newWish, user_id: userId, month_id: activeMonth });
+                await storage.addWish({ ...newWish, user_id: userId, month_id: activeMonth, year: activeYear });
             }
 
             toast({ title: 'Agregado', description: 'Registro guardado exitosamente' });
