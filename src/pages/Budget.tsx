@@ -5,13 +5,14 @@ import { Header } from '@/components/Header';
 import { useApp } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, ArrowRight } from 'lucide-react';
+import { Calendar, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getMonthName, MONTH_INFO } from '@/utils/monthUtils';
 
 const Budget = () => {
   const navigate = useNavigate();
   const { config } = useApp();
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     console.log('Budget: mounting');
@@ -23,15 +24,13 @@ const Budget = () => {
       }
       setLoading(false);
 
-      // Auto-redirect to current month
+      // Auto-redirect to current month and year
       const now = new Date();
       const currentMonth = now.getMonth() + 1; // 1-12
       const currentYear = now.getFullYear();
 
-      // Only redirect if it's 2025, otherwise show month selector
-      if (currentYear === 2025) {
-        navigate(`/budget/2025/${currentMonth}`, { replace: true });
-      }
+      // Redirect to current month/year
+      navigate(`/budget/${currentYear}/${currentMonth}`, { replace: true });
     });
   }, [navigate]);
 
@@ -52,10 +51,31 @@ const Budget = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Presupuestos Mensuales 2025
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Presupuestos Mensuales {selectedYear}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSelectedYear(prev => prev - 1)}
+                  title="Año anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium min-w-[60px] text-center">{selectedYear}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSelectedYear(prev => prev + 1)}
+                  title="Año siguiente"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -64,7 +84,7 @@ const Budget = () => {
                   key={num}
                   variant="outline"
                   className="h-20 flex flex-col items-center justify-center gap-2 hover:bg-primary hover:text-primary-foreground transition-all"
-                  onClick={() => navigate(`/budget/2025/${num}`)}
+                  onClick={() => navigate(`/budget/${selectedYear}/${num}`)}
                 >
                   <span className="text-lg font-semibold">
                     {getMonthName(parseInt(num), config.language)}
