@@ -1080,12 +1080,36 @@ ${cd.annualSummary ? `
 
   async transcribeAudio(audioFile: File): Promise<string> {
     try {
-      const response = await this.openai.audio.transcriptions.create({
-        file: audioFile,
-        model: 'whisper-1',
-        language: 'es' // Hint for Spanish
+      // Call Edge Function instead of OpenAI directly
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+      // Prepare FormData with audio file
+      const formData = new FormData();
+      formData.append('file', audioFile);
+      formData.append('language', 'es');
+
+      console.log('Sending audio file to transcription service:', audioFile.name, audioFile.size, 'bytes');
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-transcribe`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: formData,
       });
-      return response.text;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Transcription service error:', errorData);
+        throw new Error(errorData.error || `Transcription failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Transcription successful:', result.text);
+      return result.text;
     } catch (error) {
       console.error('Error transcribing audio:', error);
       throw error;
